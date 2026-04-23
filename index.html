@@ -474,7 +474,19 @@ html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD)
 <script>
 const $ = id => document.getElementById(id);
 const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
-let U = {}, bodyView='front', bodySex='female', selPart=null, chatHistory=[], docFilter='all', isChatLoading=false;
+
+// ── PERSISTENT STORAGE ──────────────────────────────
+function saveUser(){ try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){} }
+function loadUser(){ try{ const s=localStorage.getItem('hv_user'); return s?JSON.parse(s):null; }catch(e){return null;} }
+function saveKey(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function loadKey(k){ try{ return localStorage.getItem(k)||''; }catch(e){return '';} }
+
+let U = loadUser() || {}, bodyView='front', bodySex='female', selPart=null, chatHistory=[], docFilter='all', isChatLoading=false;
+
+// Restore saved AI URLs
+if(loadKey('hv_as_url')) window._APPS_SCRIPT_URL = loadKey('hv_as_url');
+if(loadKey('hv_oai_key')) window._OPENAI_KEY = loadKey('hv_oai_key');
+
 const AUTH = ['splash','login','onboard'];
 
 function go(s) {
@@ -500,6 +512,12 @@ function go(s) {
 
 /* ══ SPLASH ══ */
 function rSplash(){
+  // If already logged in, go straight to home
+  const saved = loadUser();
+  if(saved && saved.name && saved.members){
+    U = saved;
+    setTimeout(()=>go('home'), 800);
+  }
   SCR.innerHTML=`<div class="splash sc">
   <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
   <div class="sp-name">HealthVault</div>
@@ -555,6 +573,12 @@ function doLogin(){const e=$('fe')?.value.trim(),p=$('fp')?.value;hideE();if(!e|
 function doSignup(){const n=$('fn')?.value.trim(),e=$('fe')?.value.trim(),p=$('fp')?.value,p2=$('fp2')?.value,c=$('fc')?.checked;hideE();if(!n){showE('Please enter your full name.');return;}if(!e||!e.includes('@')){showE('Please enter a valid email.');return;}if(!p||p.length<6){showE('Password must be at least 6 characters.');return;}if(p!==p2){showE('Passwords do not match.');return;}if(!c){showE('Please accept the Terms to continue.');return;}U.name=n;U.email=e;go('onboard');}
 function doGoogle(){U.name='New User';U.email='user@gmail.com';go('onboard');}
 function doGuest(){U.name='Guest';U.isGuest=true;go('onboard');}
+function doLogout(){
+  if(!confirm('Sign out of HealthVault?')) return;
+  try{ localStorage.removeItem('hv_user'); }catch(e){}
+  U={};
+  go('splash');
+}
 
 /* ══ ONBOARDING ══ */
 let obStep=0;
@@ -612,7 +636,7 @@ function renderOB(){
 }
 function setU(k,v,el,cls){U[k]=v;(cls?document.querySelectorAll('.'+cls):el.closest('.pills').querySelectorAll('.popt')).forEach(o=>o.classList.remove('on'));el.classList.add('on');}
 function nextOB(){if(obStep<OB_TOTAL-1){obStep++;renderOB();}else finishOB();}
-function finishOB(){if(!U.name)U.name='User';U.members=[{id:'self',name:U.name,role:'Me',age:U.age,gender:U.gender,avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];go('home');}
+function finishOB(){if(!U.name)U.name='User';U.members=[{id:'self',name:U.name,role:'Me',age:U.age,gender:U.gender,avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];saveUser();go('home');}
 
 /* ══ HOME ══ */
 function rHome(){
@@ -1033,10 +1057,10 @@ function rProfile(){
   <div>
     <div style="padding:12px 14px;font-size:10px;font-weight:700;color:var(--g4);text-transform:uppercase;letter-spacing:.5px">Account & Settings</div>
     ${[{i:'👤',l:'Personal Info',v:nm},{i:'🔔',l:'Reminders',v:'3 active'},{i:'🔒',l:'Privacy & Data',v:'Encrypted'},{i:'👨‍👩‍👧',l:'Family Profiles',v:(U.members?.length||1)+' members'},{i:'🌐',l:'Language',v:U.language||'English'},{i:'⚕️',l:'Emergency Contact',v:U.ecName||'Not set'},{i:'📤',l:'Export Health Data',v:''},{i:'🗑️',l:'Delete Account',v:''}].map(s=>`<div class="sit"><div class="sii">${s.i}</div><div class="sil">${s.l}</div><div class="siv">${s.v}</div><div class="sia">›</div></div>`).join('')}
-    <div class="sit" onclick="showAPIKeyModal()"><div class="sii">🤖</div><div class="sil">AI / OpenAI API Key</div><div class="siv" style="color:${OPENAI_KEY&&OPENAI_KEY!=='YOUR_OPENAI_KEY_HERE'?'var(--green)':'var(--amber)'}">${OPENAI_KEY&&OPENAI_KEY!=='YOUR_OPENAI_KEY_HERE'?'Connected ✓':'Not set'}</div><div class="sia">›</div></div>
+    <div class="sit" style="cursor:default"><div class="sii">🤖</div><div class="sil">AI Health Assistant</div><div class="siv" style="color:var(--green)">Active ✓</div></div>
   </div>
   <div class="p16" style="padding-top:14px">
-    <button style="background:var(--rl);color:#C5221F;border:1.5px solid #F7C1C1;border-radius:12px;padding:12px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit" onclick="U={};go('splash')">Sign Out</button>
+    <button style="background:var(--rl);color:#C5221F;border:1.5px solid #F7C1C1;border-radius:12px;padding:12px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit" onclick="doLogout()">Sign Out</button>
     <div class="pb"></div>
   </div></div>`;
 }
@@ -1102,20 +1126,23 @@ User profile: ${JSON.stringify({name:U.name,age:U.age,gender:U.gender,conditions
 
 // ── GOOGLE APPS SCRIPT BACKEND URL ──────────────────
 // After deploying Code.gs, paste your Web App URL here:
-const APPS_SCRIPT_URL = window._APPS_SCRIPT_URL || 'YOUR_APPS_SCRIPT_URL_HERE';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3WUayX2KmNdRFrI2yhO6zwH-QHVhIpIwaS-Dpt-t8w5ZDcEYULqK9B44kKpWOqzzu/exec';
 
-// Helper: POST to Apps Script backend
+// Helper: POST to Apps Script backend (hardcoded URL — users never configure this)
 async function appsScriptPost(action, payload) {
-  const url = window._APPS_SCRIPT_URL || APPS_SCRIPT_URL;
-  if (!url || url === 'YOUR_APPS_SCRIPT_URL_HERE') return null;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    // Apps Script requires redirect follow for POST
-    redirect: 'follow',
-    body: JSON.stringify({ action, ...payload })
-  });
-  return res.json();
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...payload }),
+      redirect: 'follow'
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch(e) { return { error: 'Bad response: ' + text.substring(0,100) }; }
+  } catch(err) {
+    console.error('AppsScript error:', err);
+    return { error: err.message };
+  }
 }
 
 // Save user profile to Google Sheets
@@ -1135,38 +1162,16 @@ async function saveMedToSheets(medicine) {
 
 async function callGPT(messages, feature) {
   try {
-    const url    = window._APPS_SCRIPT_URL || APPS_SCRIPT_URL;
-    const key    = window.OPENAI_KEY;
-    const hasAS  = url && url !== 'YOUR_APPS_SCRIPT_URL_HERE';
-    const hasKey = key && key !== 'YOUR_OPENAI_KEY_HERE';
-
-    if (!hasAS && !hasKey) {
-      return '⚙️ AI not configured. Go to Profile → Settings to connect your backend.';
-    }
-
-    if (hasAS) {
-      // ✅ Secure: key stays in Google Apps Script, never in browser
-      const data = await appsScriptPost('chat', {
-        messages: messages.filter(m => m.role !== 'system'),
-        feature:  feature || 'chat',
-        userProfile: { name: U.name, age: U.age, gender: U.gender }
-      });
-      if (data?.reply) return data.reply;
-      throw new Error(data?.error || 'Apps Script error');
-    } else {
-      // Fallback: direct OpenAI (dev only — key visible in browser!)
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: JSON.stringify({ model: 'gpt-4o', messages, max_tokens: 350, temperature: 0.4 })
-      });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
-      const data = await res.json();
-      return data.choices[0].message.content.trim();
-    }
+    const data = await appsScriptPost('chat', {
+      messages: messages.filter(m => m.role !== 'system'),
+      feature:  feature || 'chat',
+      userProfile: { name: U.name, age: U.age, gender: U.gender }
+    });
+    if (data?.reply) return data.reply;
+    throw new Error(data?.error || 'No reply received');
   } catch(e) {
     console.error('GPT error:', e);
-    return null;
+    return '❌ AI temporarily unavailable. Please check your internet connection and try again.';
   }
 }
 function rChatbot(){
@@ -1231,62 +1236,281 @@ function typingHTML(){
 /* ══ NEARBY CARE ══ */
 function rNearby(){
   const cats=['All','Hospitals','Clinics','Pharmacies','Labs'];
-  let catIdx=0;
-  const places=[
-    {i:'🏥',n:'Apollo Hospital',m:'Emergency · ICU · 24/7',dist:'1.2 km',open:true,type:'Hospitals',color:'#E8F0FE'},
-    {i:'🏥',n:'Fortis Healthcare',m:'Multi-speciality · 24/7',dist:'2.1 km',open:true,type:'Hospitals',color:'#E8F0FE'},
-    {i:'🏪',n:'MedPlus Pharmacy',m:'Open till 10 PM · Delivery',dist:'0.4 km',open:true,type:'Pharmacies',color:'#E6F4EA'},
-    {i:'🏪',n:'Apollo Pharmacy',m:'24/7 · Home delivery',dist:'0.8 km',open:true,type:'Pharmacies',color:'#E6F4EA'},
-    {i:'🩺',n:'Dr. Meera Nair Clinic',m:'GP · Mon–Sat 9AM–7PM',dist:'0.9 km',open:true,type:'Clinics',color:'#EDE7FE'},
-    {i:'🧪',n:'SRL Diagnostics',m:'Lab · Reports in 6h',dist:'1.5 km',open:false,type:'Labs',color:'var(--al)'},
-    {i:'🧪',n:'Thyrocare Lab',m:'Home collection available',dist:'2.4 km',open:true,type:'Labs',color:'var(--al)'},
-  ];
-  function render(filter){
-    const filtered=filter==='All'?places:places.filter(p=>p.type===filter);
-    $('nc-list').innerHTML=filtered.map(p=>`<div class="nc-item"><div class="nc-icon" style="background:${p.color}">${p.i}</div><div style="flex:1"><div class="nc-name">${p.n}</div><div class="nc-meta">${p.m}</div></div><div class="nc-dist">${p.dist}<span class="nc-open" style="color:${p.open?'var(--green)':'var(--red)'}">${p.open?'Open':'Closed'}</span></div></div>`).join('');
-  }
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Nearby Care</div><div class="hdr-s">Hospitals, clinics, pharmacies near you</div></div>
-  <div class="nc-map"><div style="text-align:center;z-index:1"><div style="font-size:13px;font-weight:700;color:#0D47A1;margin-bottom:10px">📍 Your location detected</div><div style="display:flex;gap:16px;justify-content:center">${['🏥','🏪','🩺','🧪'].map(e=>`<div style="font-size:24px">${e}</div>`).join('')}</div><div style="font-size:11px;color:var(--g5);margin-top:8px">Interactive map — tap to get directions</div></div></div>
-  <div style="display:flex;gap:7px;padding:0 14px 11px;overflow-x:auto" id="nc-cats">
+  <div class="hdr"><div class="hdr-t">Nearby Care</div><div class="hdr-s">Real-time results based on your location</div></div>
+  <div class="nc-map" id="nc-map-area" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;min-height:120px;background:linear-gradient(135deg,#E8F0FE,#E3F2FD)">
+    <div style="font-size:28px">📍</div>
+    <div id="nc-loc-status" style="font-size:13px;font-weight:700;color:#0D47A1">Getting your location…</div>
+    <div id="nc-loc-sub" style="font-size:11px;color:var(--g5)">Please allow location access</div>
+  </div>
+  <div style="display:flex;gap:7px;padding:10px 14px;overflow-x:auto" id="nc-cats">
     ${cats.map((c,i)=>`<div class="dc ${i===0?'on':''}" onclick="ncFilter('${c}',this)">${c}</div>`).join('')}
   </div>
-  <div class="p16" style="padding-top:0"><div id="nc-list"></div><div class="pb"></div></div></div>`;
-  render('All');
-  window.ncFilter=(cat,el)=>{document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on');render(cat);};
+  <div class="p16" style="padding-top:0"><div id="nc-list"><div style="text-align:center;padding:20px;color:var(--g4);font-size:13px">Detecting location…</div></div><div class="pb"></div></div></div>`;
+
+  let userLat=null, userLng=null, currentFilter='All';
+
+  function buildGoogleMapsUrl(query, lat, lng){
+    if(lat && lng){
+      return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${lat},${lng},15z`;
+    }
+    return `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
+  }
+
+  function renderPlaces(filter){
+    currentFilter = filter;
+    if(!userLat){ $('nc-list').innerHTML='<div style="text-align:center;padding:20px;color:var(--g4);font-size:13px">Waiting for location…</div>'; return; }
+
+    const queries = {
+      'All':        ['hospitals near me','clinics near me','pharmacy near me','diagnostic lab near me'],
+      'Hospitals':  ['hospitals near me'],
+      'Clinics':    ['clinics near me','doctors near me'],
+      'Pharmacies': ['pharmacy near me','medical shop near me'],
+      'Labs':       ['diagnostic lab near me','pathology lab near me'],
+    };
+
+    const icons = { 'Hospitals':'🏥', 'Clinics':'🩺', 'Pharmacies':'🏪', 'Labs':'🧪' };
+    const colors = { 'Hospitals':'#E8F0FE', 'Clinics':'#EDE7FE', 'Pharmacies':'#E6F4EA', 'Labs':'var(--al)' };
+
+    const types = filter === 'All'
+      ? ['Hospitals','Clinics','Pharmacies','Labs']
+      : [filter];
+
+    $('nc-list').innerHTML = types.map(type => {
+      const q = queries[type][0];
+      const mapsUrl = buildGoogleMapsUrl(q, userLat, userLng);
+      return `
+        <div style="margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:8px">${icons[type]} ${type} near you</div>
+          <div class="card" style="background:${colors[type]};border:none;cursor:pointer;padding:14px 16px"
+               onclick="window.open('${mapsUrl}','_blank')">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:28px">${icons[type]}</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--g6)">Search ${type} on Google Maps</div>
+                <div style="font-size:11px;color:var(--g5);margin-top:3px">📍 Based on your current location · Tap to open</div>
+              </div>
+              <div style="font-size:18px;color:var(--blue)">›</div>
+            </div>
+          </div>
+          <button class="btn2" style="margin-top:4px" onclick="window.open('${buildGoogleMapsUrl(q+' open now', userLat, userLng)}','_blank')">
+            🟢 Show only Open Now
+          </button>
+        </div>`;
+    }).join('') + `
+      <div class="card" style="background:var(--gl);border:none;cursor:default;margin-top:4px">
+        <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:5px">💡 Your location</div>
+        <div style="font-size:11px;color:#2D7A4F;line-height:1.6">
+          Lat: ${userLat.toFixed(5)}, Lng: ${userLng.toFixed(5)}<br>
+          Results open in Google Maps with real-time distances, ratings, and open/close status.
+        </div>
+      </div>
+      <button class="btn2" style="margin-top:8px" onclick="window.open('https://www.google.com/maps/search/hospitals/@${userLat},${userLng},14z','_blank')">
+        🗺️ Open Full Map View
+      </button>`;
+  }
+
+  // Get real GPS location
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+        $('nc-loc-status').textContent = '📍 Location found!';
+        $('nc-loc-sub').textContent = `${userLat.toFixed(4)}, ${userLng.toFixed(4)}`;
+        renderPlaces(currentFilter);
+      },
+      err => {
+        $('nc-loc-status').textContent = '⚠️ Location access denied';
+        $('nc-loc-sub').textContent = 'Enable location in browser settings';
+        $('nc-list').innerHTML = `
+          <div class="card" style="background:var(--al);border:none;cursor:default">
+            <div style="font-size:13px;font-weight:700;color:#B06000;margin-bottom:6px">📍 Location needed</div>
+            <div style="font-size:12px;color:#B06000;line-height:1.5">Please allow location access to find nearby hospitals and clinics. You can also search manually below.</div>
+          </div>
+          <button class="btn" onclick="window.open('https://www.google.com/maps/search/hospitals+near+me','_blank')">🗺️ Search on Google Maps</button>`;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  } else {
+    $('nc-loc-status').textContent = '⚠️ Location not supported';
+    $('nc-list').innerHTML = `<button class="btn" onclick="window.open('https://www.google.com/maps/search/hospitals+near+me','_blank')">🗺️ Search on Google Maps</button>`;
+  }
+
+  window.ncFilter=(cat,el)=>{document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on');renderPlaces(cat);};
 }
 
-/* ══ ACTIVITY TRACKER ══ */
+/* ══ ACTIVITY TRACKER — Real GPS Walk Tracker ══ */
+let walkState = { active:false, watchId:null, coords:[], startTime:null, distance:0, steps:0, calories:0 };
+
 function rActivity(){
-  const steps=6842,goal=10000,pct=Math.round(steps/goal*100);
-  const days=['M','T','W','T','F','S','S'],vals=[7200,8100,5400,9200,6842,0,0];
-  const maxV=Math.max(...vals);
+  const today = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
+  const hist = JSON.parse(localStorage.getItem('hv_walks')||'[]');
+  const todayKm = hist.filter(w=>w.date===new Date().toDateString()).reduce((s,w)=>s+w.km,0);
+  const weekKm  = hist.slice(-7).reduce((s,w)=>s+w.km,0);
+
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Activity Tracker</div><div class="hdr-s">Today · Wednesday Apr 23</div></div>
+  <div class="hdr"><div class="hdr-t">Activity Tracker</div><div class="hdr-s">${today}</div></div>
   <div class="p16" style="padding-top:16px">
-    <div class="at-ring">
-      <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--g2)" stroke-width="10"/><circle cx="60" cy="60" r="52" fill="none" stroke="var(--blue)" stroke-width="10" stroke-dasharray="${Math.round(2*Math.PI*52*pct/100)} ${Math.round(2*Math.PI*52*(1-pct/100))}" stroke-dashoffset="${Math.round(2*Math.PI*52*0.25)}" stroke-linecap="round"/></svg>
-      <div class="at-ring-center"><div class="at-steps">${steps.toLocaleString()}</div><div class="at-goal">/ ${goal.toLocaleString()} steps</div><div style="font-size:11px;font-weight:700;color:var(--blue);margin-top:2px">${pct}%</div></div>
+
+    <!-- LIVE TRACKER CARD -->
+    <div class="card" style="cursor:default;border:2px solid var(--blue);padding:20px;text-align:center;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--g5);margin-bottom:12px">🏃 GPS Walk Tracker</div>
+
+      <div style="display:flex;justify-content:space-around;margin-bottom:18px">
+        <div><div id="wt-dist" style="font-size:28px;font-weight:900;color:var(--blue)">${walkState.active?walkState.distance.toFixed(2):'0.00'}</div><div style="font-size:11px;color:var(--g4)">km</div></div>
+        <div><div id="wt-time" style="font-size:28px;font-weight:900;color:var(--green)">0:00</div><div style="font-size:11px;color:var(--g4)">time</div></div>
+        <div><div id="wt-cal" style="font-size:28px;font-weight:900;color:var(--orange)">${walkState.active?walkState.calories:0}</div><div style="font-size:11px;color:var(--g4)">cal</div></div>
+      </div>
+
+      <div id="wt-status" style="font-size:12px;color:var(--g4);margin-bottom:14px">
+        ${walkState.active ? '🟢 Tracking active — GPS on' : 'Press Start to begin tracking your walk'}
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button id="wt-start" onclick="startWalk()" style="background:var(--green);color:#fff;border:none;border-radius:13px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;${walkState.active?'display:none':''}">▶ Start Walk</button>
+        <button id="wt-stop" onclick="stopWalk()" style="background:var(--red);color:#fff;border:none;border-radius:13px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;${!walkState.active?'display:none':''}">⏹ Stop & Save</button>
+        <button id="wt-pause" onclick="pauseWalk()" style="background:var(--amber);color:#fff;border:none;border-radius:13px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;${!walkState.active?'display:none':''}">⏸</button>
+      </div>
     </div>
-    <div class="at-stats">
-      <div class="at-stat"><div class="at-sv">4.2</div><div class="at-sl">km walked</div></div>
-      <div class="at-stat"><div class="at-sv">210</div><div class="at-sl">cal burned</div></div>
-      <div class="at-stat"><div class="at-sv">38</div><div class="at-sl">active min</div></div>
+
+    <!-- TODAY SUMMARY -->
+    <div class="at-stats" style="margin-bottom:16px">
+      <div class="at-stat"><div class="at-sv">${todayKm.toFixed(1)}</div><div class="at-sl">km today</div></div>
+      <div class="at-stat"><div class="at-sv">${weekKm.toFixed(1)}</div><div class="at-sl">km this week</div></div>
+      <div class="at-stat"><div class="at-sv">${hist.length}</div><div class="at-sl">total walks</div></div>
     </div>
-    <div class="sec" style="padding:0">This Week</div>
-    <div class="week-bars">
-      ${days.map((d,i)=>{const h=vals[i]?Math.round((vals[i]/maxV)*60):4;const c=vals[i]>=goal?'var(--green)':vals[i]>0?'var(--blue)':'var(--g2)';return `<div class="wbar-wrap"><div class="wbar" style="height:${h}px;background:${c}"></div><div class="wbar-lbl">${d}</div></div>`;}).join('')}
-    </div>
-    <div class="card" style="cursor:default">
-      <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:9px">Health Insights</div>
-      ${[{i:'🏆',t:'3-day streak!',s:'Keep going — you\'ve been active 3 days in a row',c:'var(--gl)'},{i:'⚠️',t:'Below goal today',s:'You need 3,158 more steps to reach your 10,000 goal',c:'var(--al)'},{i:'💡',t:'Tip for hypertension',s:'30 min brisk walk daily can lower systolic BP by 4–9 mmHg',c:'var(--bl)'}].map(x=>`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:.5px solid var(--g2)"><div style="font-size:20px">${x.i}</div><div><div style="font-size:12px;font-weight:700;color:var(--g6)">${x.t}</div><div style="font-size:11px;color:var(--g4);margin-top:2px;line-height:1.4">${x.s}</div></div></div>`).join('')}
-    </div>
-    <div class="sec" style="padding:0">Connect Devices</div>
-    <div class="card" style="cursor:default">
-      ${[{i:'⌚',n:'Apple Watch / Fitbit',s:'Sync steps, heart rate, sleep',connected:false},{i:'📱',n:'Google Fit',s:'Phone pedometer — connected',connected:true},{i:'❤️',n:'Heart Rate Monitor',s:'Pair via Bluetooth',connected:false}].map(d=>`<div class="crow" style="padding:7px 0;border-bottom:.5px solid var(--g2)"><div style="font-size:20px;flex-shrink:0">${d.i}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--g6)">${d.n}</div><div style="font-size:11px;color:var(--g4)">${d.s}</div></div><span class="badge ${d.connected?'bg':'by'}" style="flex-shrink:0">${d.connected?'Connected':'Connect'}</span></div>`).join('')}
+
+    <!-- WALK HISTORY -->
+    <div class="sec" style="padding:0">Recent Walks</div>
+    ${hist.length === 0
+      ? `<div class="card" style="cursor:default;text-align:center;color:var(--g4);font-size:13px">No walks recorded yet. Press Start to begin! 🚶</div>`
+      : hist.slice().reverse().slice(0,10).map(w=>`
+        <div class="vitem">
+          <div class="vico">🏃</div>
+          <div style="flex:1">
+            <div class="vt">${w.km.toFixed(2)} km · ${w.duration}</div>
+            <div class="vs">${w.date} · ${w.cal} cal burned</div>
+          </div>
+          <span class="badge bg">${w.km>=5?'Great!':w.km>=2?'Good':'Short'}</span>
+        </div>`).join('')
+    }
+
+    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default;margin-top:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">💡 Health tip</div>
+      <div style="font-size:11px;color:#185EA5;line-height:1.6">WHO recommends 150 min of moderate walking per week. A 5 km walk burns ~300 calories and improves cardiovascular health.</div>
     </div>
     <div class="pb"></div>
   </div></div>`;
+
+  // If walk already active, resume timer display
+  if(walkState.active && walkState.startTime){
+    startTimerDisplay();
+  }
+}
+
+function startWalk(){
+  if(!navigator.geolocation){ alert('GPS not available on this device.'); return; }
+  walkState = { active:true, watchId:null, coords:[], startTime:Date.now(), distance:0, steps:0, calories:0, paused:false };
+  $('wt-start').style.display='none';
+  $('wt-stop').style.display='';
+  $('wt-pause').style.display='';
+  $('wt-status').textContent='🟢 GPS tracking active…';
+  $('wt-status').style.color='var(--green)';
+
+  walkState.watchId = navigator.geolocation.watchPosition(
+    pos => {
+      const {latitude:lat, longitude:lng, accuracy} = pos.coords;
+      if(accuracy > 50) return; // ignore poor accuracy
+      const pts = walkState.coords;
+      if(pts.length > 0){
+        const prev = pts[pts.length-1];
+        const d = haversine(prev.lat, prev.lng, lat, lng);
+        if(d > 0.003 && d < 0.1){ // filter noise: >3m and <100m per reading
+          walkState.distance += d;
+          walkState.calories = Math.round(walkState.distance * 65); // ~65 cal/km avg
+          if($('wt-dist')) $('wt-dist').textContent = walkState.distance.toFixed(2);
+          if($('wt-cal'))  $('wt-cal').textContent  = walkState.calories;
+        }
+      }
+      pts.push({lat, lng});
+    },
+    err => {
+      if($('wt-status')) $('wt-status').textContent = '⚠️ GPS error: ' + err.message;
+    },
+    { enableHighAccuracy:true, maximumAge:2000, timeout:10000 }
+  );
+
+  startTimerDisplay();
+}
+
+function startTimerDisplay(){
+  if(walkState._timerInterval) clearInterval(walkState._timerInterval);
+  walkState._timerInterval = setInterval(()=>{
+    if(!walkState.active || !$('wt-time')) { clearInterval(walkState._timerInterval); return; }
+    const elapsed = Math.floor((Date.now() - walkState.startTime) / 1000);
+    const m = Math.floor(elapsed/60), s = elapsed%60;
+    $('wt-time').textContent = m+':'+(s<10?'0':'')+s;
+  }, 1000);
+}
+
+function pauseWalk(){
+  if(walkState.watchId !== null){
+    navigator.geolocation.clearWatch(walkState.watchId);
+    walkState.watchId = null;
+    $('wt-pause').textContent='▶';
+    $('wt-status').textContent='⏸ Paused — tap ▶ to resume';
+    $('wt-status').style.color='var(--amber)';
+  } else {
+    // Resume
+    walkState.watchId = navigator.geolocation.watchPosition(
+      pos => {
+        const {latitude:lat,longitude:lng,accuracy}=pos.coords;
+        if(accuracy>50)return;
+        const pts=walkState.coords;
+        if(pts.length>0){const prev=pts[pts.length-1];const d=haversine(prev.lat,prev.lng,lat,lng);if(d>0.003&&d<0.1){walkState.distance+=d;walkState.calories=Math.round(walkState.distance*65);if($('wt-dist'))$('wt-dist').textContent=walkState.distance.toFixed(2);if($('wt-cal'))$('wt-cal').textContent=walkState.calories;}}
+        pts.push({lat,lng});
+      },
+      ()=>{},
+      {enableHighAccuracy:true,maximumAge:2000,timeout:10000}
+    );
+    $('wt-pause').textContent='⏸';
+    $('wt-status').textContent='🟢 Resumed tracking';
+    $('wt-status').style.color='var(--green)';
+  }
+}
+
+function stopWalk(){
+  if(walkState.watchId !== null){ navigator.geolocation.clearWatch(walkState.watchId); }
+  if(walkState._timerInterval){ clearInterval(walkState._timerInterval); }
+
+  const elapsed = Math.floor((Date.now() - walkState.startTime) / 1000);
+  const m = Math.floor(elapsed/60), s = elapsed%60;
+  const duration = m+'m '+(s<10?'0':'')+s+'s';
+
+  if(walkState.distance > 0.01){
+    const hist = JSON.parse(localStorage.getItem('hv_walks')||'[]');
+    hist.push({
+      date: new Date().toDateString(),
+      time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      km: walkState.distance,
+      duration,
+      cal: walkState.calories
+    });
+    localStorage.setItem('hv_walks', JSON.stringify(hist));
+    // Save to Google Sheets
+    saveVitalToSheets('Walk', walkState.distance.toFixed(2), 'km', duration+' · '+walkState.calories+' cal');
+  }
+
+  walkState = { active:false, watchId:null, coords:[], startTime:null, distance:0, steps:0, calories:0 };
+  rActivity(); // re-render with saved data
+}
+
+// Haversine formula: returns km between two GPS coords
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
 /* ══ INSURANCE & EXPENSES ══ */
@@ -1439,56 +1663,6 @@ function rFoodInt(){
 }
 
 
-/* ══ API KEY MODAL ══ */
-function showAPIKeyModal(){
-  const existing = OPENAI_KEY !== 'YOUR_OPENAI_KEY_HERE' ? OPENAI_KEY : '';
-  const modal = document.createElement('div');
-  modal.id = 'api-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:999;';
-  modal.innerHTML = `
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:375px;margin:0 auto">
-      <div style="width:36px;height:4px;background:#BDC1C6;border-radius:2px;margin:0 auto 18px"></div>
-      <div style="font-size:17px;font-weight:800;color:#202124;margin-bottom:4px">🤖 Connect AI Backend</div>
-      <div style="font-size:12px;color:#80868B;margin-bottom:14px;line-height:1.5">Connect your Google Apps Script backend to enable AI features. Your OpenAI key stays safely on Google's servers — never in the browser.</div>
-
-      <div style="background:#E8F0FE;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#0D47A1;line-height:1.6">
-        ✅ <strong>Recommended:</strong> Google Apps Script URL<br>
-        Free · Secure · No server needed · Saves to Google Sheets
-      </div>
-
-      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">Google Apps Script URL</div>
-      <input id="backend-url-inp" type="url" placeholder="https://script.google.com/macros/s/..." value="${window._APPS_SCRIPT_URL||''}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:13px;color:#202124;outline:none;font-family:inherit;margin-bottom:14px"/>
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><div style="flex:1;height:.5px;background:#E8EAED"></div><span style="font-size:11px;color:#80868B;font-weight:600">OR (dev/testing only)</span><div style="flex:1;height:.5px;background:#E8EAED"></div></div>
-
-      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">Direct OpenAI Key ⚠️ not secure</div>
-      <input id="api-key-inp" type="password" placeholder="sk-proj-..." value="${existing}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:14px;color:#202124;outline:none;font-family:inherit;margin-bottom:14px"/>
-
-      <button onclick="saveAPIKey()" style="background:#1A73E8;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:700;width:100%;cursor:pointer;font-family:inherit;margin-bottom:8px">Save & Connect</button>
-      <button onclick="document.getElementById('api-modal').remove()" style="background:#F8F9FA;color:#5F6368;border:.5px solid #E8EAED;border-radius:13px;padding:12px;font-size:13px;font-weight:600;width:100%;cursor:pointer;font-family:inherit">Cancel</button>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
-  setTimeout(()=>document.getElementById('api-key-inp')?.focus(), 100);
-}
-
-function saveAPIKey(){
-  const keyInp = document.getElementById('api-key-inp');
-  const urlInp = document.getElementById('backend-url-inp');
-  const key = keyInp?.value.trim() || '';
-  const url = urlInp?.value.trim() || '';
-  const hasBackend = url.startsWith('http');
-  const hasKey = key.startsWith('sk-');
-  if(!hasBackend && !hasKey){
-    if(keyInp){ keyInp.style.borderColor='#EA4335'; keyInp.placeholder='Must start with sk-...'; }
-    if(urlInp){ urlInp.style.borderColor='#EA4335'; urlInp.placeholder='Must start with https://script.google.com/...'; }
-    return;
-  }
-  if(hasBackend) window._APPS_SCRIPT_URL = url;
-  if(hasKey) window._OPENAI_KEY = key;
-  document.getElementById('api-modal')?.remove();
-  go('profile');
-}
 
 // Override OPENAI_KEY getter to use saved key
 Object.defineProperty(window, 'OPENAI_KEY', {
@@ -1497,7 +1671,10 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   configurable: true
 });
 
-go('splash');
+// Launch app — go to home if already logged in, else splash
+const _saved = loadUser();
+if(_saved && _saved.name && _saved.members){ U = _saved; go('home'); }
+else { go('splash'); }
 
 /* ── Hide fake status bar on real mobile devices ──────────────
    .notch and .status are decorative "phone frame" UI for desktop
