@@ -1073,14 +1073,129 @@ async function rResults(){
 /* ══ SCANNER ══ */
 function rScan(){
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Prescription Scanner</div><div class="hdr-s">Upload for OCR analysis</div></div>
-  <div class="upz" onclick="go('ocr')"><div style="font-size:42px;margin-bottom:9px">📋</div><div style="font-size:15px;font-weight:700;color:var(--g6);margin-bottom:3px">Tap to upload prescription</div><div style="font-size:12px;color:var(--g4)">Supports handwritten and printed slips</div></div>
-  <div class="br2"><button class="bol" onclick="go('ocr')">📷 Camera</button><button class="bol" onclick="go('ocr')">🖼️ Gallery</button></div>
+  <div class="hdr"><div class="hdr-t">Prescription Scanner</div><div class="hdr-s">AI reads medicines, doses & timing</div></div>
+  <input type="file" id="rx-file-cam" accept="image/*" capture="environment" style="display:none" onchange="handleRxFile(this)"/>
+  <input type="file" id="rx-file-gal" accept="image/*,application/pdf" style="display:none" onchange="handleRxFile(this)"/>
+  <div class="upz" onclick="document.getElementById('rx-file-gal').click()">
+    <div style="font-size:42px;margin-bottom:9px">📋</div>
+    <div style="font-size:15px;font-weight:700;color:var(--g6);margin-bottom:3px">Tap to upload prescription</div>
+    <div style="font-size:12px;color:var(--g4)">Supports handwritten & printed slips · JPG, PNG, PDF</div>
+  </div>
+  <div class="br2">
+    <button class="bol" onclick="document.getElementById('rx-file-cam').click()">📷 Camera</button>
+    <button class="bol" onclick="document.getElementById('rx-file-gal').click()">🖼️ Gallery</button>
+  </div>
   <div class="p16">
-    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default"><div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:7px">How it works</div><div style="font-size:11px;color:#185EA5;line-height:1.7">1 · Take a clear photo · 2 · AI reads medicines, doses & timing · 3 · Review and confirm · 4 · Reminders set automatically</div></div>
-    <div class="sec" style="padding:0;margin-top:14px">Past Prescriptions</div>
-    <div class="card" onclick="go('ocr')"><div class="crow"><div class="ic" style="background:var(--bl)">📋</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">Dr. Rajesh Kumar · Apr 18</div><div style="font-size:11px;color:var(--g4)">3 medicines · Apollo Hospital</div></div><div style="color:var(--g3);font-size:17px">›</div></div></div>
-    <div class="card"><div class="crow"><div class="ic" style="background:#E6F4EA">📋</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">Dr. Meera Nair · Mar 2</div><div style="font-size:11px;color:var(--g4)">2 medicines · City Clinic</div></div><div style="color:var(--g3);font-size:17px">›</div></div></div>
+    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default">
+      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:7px">How it works</div>
+      <div style="font-size:11px;color:#185EA5;line-height:1.7">1 · Take or upload a clear photo · 2 · Gemini AI reads medicines, doses & timing · 3 · Review and confirm · 4 · Reminders set automatically</div>
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+function handleRxFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const dataUrl = e.target.result;
+    const base64 = dataUrl.split(',')[1];
+    const mime = file.type || 'image/jpeg';
+    doRxOCR(base64, mime, file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doRxOCR(base64, mime, fileName){
+  const key = getGeminiKey();
+  if(!key){ showGeminiKeyModal(); return; }
+
+  // Show loading
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('scan')">←</div><div style="flex:1"><div class="bk-t">Reading Prescription…</div><div class="bk-s">Gemini AI is analysing the image</div></div></div>
+  <div class="p16" style="padding-top:30px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">🔍</div>
+    <div style="font-size:15px;font-weight:700;color:var(--bd);margin-bottom:10px">AI is reading your prescription…</div>
+    <div style="display:flex;justify-content:center"><div class="typing"><span></span><span></span><span></span></div></div>
+    <div style="font-size:12px;color:var(--g4);margin-top:12px">This usually takes 5–10 seconds</div>
+  </div></div>`;
+
+  try {
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + key,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mime, data: base64 } },
+              { text: 'This is a medical prescription image. Extract ALL medicines with their: name, dosage/strength, timing (morning/afternoon/night as 1 or 0), duration, food instructions (before/after/with food), and any special notes. Return ONLY a JSON array like: [{"name":"Med","dosage":"500mg","morning":1,"afternoon":0,"night":1,"duration":"5 days","food":"after food","notes":""}]. No markdown, no explanation, just the JSON array.' }
+            ]
+          }],
+          generationConfig: { maxOutputTokens: 800, temperature: 0.1 }
+        })
+      }
+    );
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let meds = [];
+    try {
+      const clean = text.replace(/```json|```/g,'').trim();
+      meds = JSON.parse(clean);
+    } catch(e){ meds = []; }
+    renderOCRResult(meds, fileName);
+  } catch(err) {
+    SCR.innerHTML=`<div class="sc">
+    <div class="brow"><div class="bk" onclick="go('scan')">←</div><div style="flex:1"><div class="bk-t">OCR Failed</div></div></div>
+    <div class="p16" style="padding-top:20px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">❌</div>
+      <div style="font-size:14px;color:var(--red);font-weight:700;margin-bottom:8px">Could not read prescription</div>
+      <div style="font-size:12px;color:var(--g4);margin-bottom:20px">${err.message}</div>
+      <button class="btn" onclick="go('scan')">← Try Again</button>
+    </div></div>`;
+  }
+}
+
+function renderOCRResult(meds, fileName){
+  if(!meds.length){
+    SCR.innerHTML=`<div class="sc">
+    <div class="brow"><div class="bk" onclick="go('scan')">←</div><div style="flex:1"><div class="bk-t">No Medicines Found</div></div></div>
+    <div class="p16" style="padding-top:20px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">🔍</div>
+      <div style="font-size:14px;font-weight:700;color:var(--g6);margin-bottom:8px">Could not detect medicines</div>
+      <div style="font-size:12px;color:var(--g4);margin-bottom:20px">Try a clearer, well-lit photo. Make sure the medicine names are visible.</div>
+      <button class="btn" onclick="go('scan')">← Try Again</button>
+    </div></div>`;
+    return;
+  }
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('scan')">←</div><div style="flex:1"><div class="bk-t">Medicines Detected</div><div class="bk-s">${meds.length} medicine${meds.length>1?'s':''} found · Review carefully</div></div></div>
+  <div class="iban iby"><span>✏️</span><span>Review all details carefully before saving. AI may make errors.</span></div>
+  <div class="p16" style="padding-top:10px">
+    ${meds.map((m,i)=>`
+    <div class="ocard" style="margin-bottom:12px">
+      <div style="padding:11px 15px;border-bottom:.5px solid var(--g2);display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:15px;font-weight:800;color:var(--g6)">${m.name||'Unknown'}</div><div style="font-size:11px;color:var(--g4)">${m.dosage||''}</div></div>
+        <div class="badge bg">Detected ✓</div>
+      </div>
+      <div class="ocf"><span class="ocfl">Timing</span><div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${m.morning?'<span class="tc">🌅 Morning</span>':''}
+        ${m.afternoon?'<span class="tc">☀️ Afternoon</span>':''}
+        ${m.night?'<span class="tc">🌙 Night</span>':''}
+        ${(!m.morning&&!m.afternoon&&!m.night)?'<span class="tc">As directed</span>':''}
+      </div></div>
+      <div class="ocf"><span class="ocfl">Duration</span><span class="ocfv">${m.duration||'As prescribed'}</span></div>
+      <div class="ocf"><span class="ocfl">Food</span><span class="ocfv">${m.food||'As directed'}</span></div>
+      ${m.notes?'<div class="ocf"><span class="ocfl">Notes</span><span class="ocfv">'+m.notes+'</span></div>':''}
+    </div>`).join('')}
+    <div class="card" style="background:var(--gl);border:1px solid #A8D5B5;cursor:default">
+      <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:4px">✅ AI Read Successfully</div>
+      <div style="font-size:11px;color:#2D7A4F;line-height:1.5">Always verify with your actual prescription. Consult your doctor or pharmacist if anything looks wrong.</div>
+    </div>
+    <button class="btn" style="margin-top:11px" onclick="go('home')">✓ Confirm & Save to Record</button>
+    <button class="btn2" onclick="go('scan')">← Scan Another</button>
     <div class="pb"></div>
   </div></div>`;
 }
@@ -1105,20 +1220,149 @@ function rOCR(){
 /* ══ LAB ══ */
 function rLab(){
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Lab Report Analyser</div><div class="hdr-s">CBC + Lipid Panel · Apr 18, 2026</div></div>
+  <div class="hdr"><div class="hdr-t">Lab Report Analyser</div><div class="hdr-s">Upload your report for AI analysis</div></div>
   <div class="iban ibl"><span>ℹ️</span><span>Educational only. All lab values must be interpreted by a qualified doctor.</span></div>
-  <div class="lgrid"><div class="ls"><div class="lsv" style="color:var(--green)">18</div><div class="lsl">Normal</div></div><div class="ls"><div class="lsv" style="color:var(--red)">2</div><div class="lsl">Out of range</div></div><div class="ls"><div class="lsv" style="color:var(--blue)">CBC</div><div class="lsl">Panel type</div></div><div class="ls"><div class="lsv" style="color:#9C27B0">Lipid</div><div class="lsl">Also included</div></div></div>
-  <div style="padding:0 14px 6px;font-size:13px;font-weight:700;color:var(--red)">⚠️ Out of Range</div>
-  <div class="tcrd"><div class="tcrd-h"><div class="tcrd-n">LDL Cholesterol</div><div class="badge br">High</div></div><div class="trow"><div class="trn"><div style="font-weight:700">LDL</div><div style="font-size:10px;color:var(--g4)">Bad cholesterol</div></div><div style="text-align:right"><div class="trv vh" style="font-size:17px">148</div><div class="trr">mg/dL · &lt;130</div></div></div><div class="ib" style="background:var(--rl);color:#C5221F">Slightly elevated. May indicate cardiovascular risk. Discuss with your doctor.</div></div>
-  <div class="tcrd"><div class="tcrd-h"><div class="tcrd-n">Hemoglobin</div><div class="badge by">Low</div></div><div class="trow"><div class="trn"><div style="font-weight:700">Hb</div><div style="font-size:10px;color:var(--g4)">Oxygen-carrying</div></div><div style="text-align:right"><div class="trv vl" style="font-size:17px">10.8</div><div class="trr">g/dL · 12–16</div></div></div><div class="ib" style="background:var(--bl);color:var(--bd)">Below normal. Possible mild anemia. Discuss iron/B12 with doctor.</div></div>
-  <div style="padding:0 14px 6px;font-size:13px;font-weight:700;color:var(--green);margin-top:4px">✓ Normal Range</div>
-  <div class="tcrd"><div class="tcrd-h"><div class="tcrd-n">CBC</div><div class="badge bg">Normal</div></div>${[{n:'WBC',v:'7.2',r:'4–11 k/µL'},{n:'RBC',v:'4.1',r:'3.9–5.0'},{n:'Platelets',v:'230',r:'150–400'},{n:'MCV',v:'82',r:'80–100 fL'}].map(r=>`<div class="trow"><div class="trn">${r.n}</div><div class="trv vn">${r.v}</div><div class="trr">${r.r}</div></div>`).join('')}</div>
+  <input type="file" id="lab-file-cam" accept="image/*" capture="environment" style="display:none" onchange="handleLabFile(this)"/>
+  <input type="file" id="lab-file-gal" accept="image/*,application/pdf" style="display:none" onchange="handleLabFile(this)"/>
+
+  <!-- Upload area -->
+  <div style="margin:16px;border:2px dashed var(--blue);border-radius:16px;padding:28px 16px;text-align:center;background:#F0F4FF;cursor:pointer" onclick="document.getElementById('lab-file-gal').click()">
+    <div style="font-size:44px;margin-bottom:10px">🧪</div>
+    <div style="font-size:15px;font-weight:700;color:var(--bd);margin-bottom:4px">Upload Lab Report</div>
+    <div style="font-size:12px;color:var(--g4)">Photo, scan or PDF · Gemini AI will analyse all values</div>
+  </div>
+  <div class="br2" style="margin:0 16px 16px">
+    <button class="bol" onclick="document.getElementById('lab-file-cam').click()">📷 Camera</button>
+    <button class="bol" onclick="document.getElementById('lab-file-gal').click()">🖼️ Gallery / PDF</button>
+  </div>
+
   <div class="p16">
-    <div class="card" style="background:#E6F4EA;border:1px solid #A8D5B5;cursor:default"><div style="font-size:12px;font-weight:800;color:#1B5E20;margin-bottom:7px">📋 Questions for your doctor</div><div style="font-size:11px;color:#2D7A4F;line-height:1.7">• Is my LDL elevation diet-related or genetic?<br>• Should I start iron supplements?<br>• What dietary changes help most?<br>• When should I repeat the panel?</div></div>
-    <button class="btn" style="margin-top:11px">📥 Download Summary</button>
-    <button class="btn2">📈 View Trends</button>
+    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default">
+      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:6px">What AI analyses</div>
+      <div style="font-size:11px;color:#185EA5;line-height:1.8">
+        🔴 Flags out-of-range values · 🟢 Confirms normal values<br>
+        📖 Explains each result in plain language<br>
+        ❓ Suggests questions to ask your doctor<br>
+        🩸 Supports CBC, Lipid, Thyroid, Diabetes panels & more
+      </div>
+    </div>
     <div class="pb"></div>
   </div></div>`;
+}
+
+function handleLabFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const dataUrl = e.target.result;
+    const base64 = dataUrl.split(',')[1];
+    const mime = file.type || 'image/jpeg';
+    doLabAnalysis(base64, mime, file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doLabAnalysis(base64, mime, fileName){
+  const key = getGeminiKey();
+  if(!key){ showGeminiKeyModal(); return; }
+
+  // Show loading
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('lab')">←</div><div style="flex:1"><div class="bk-t">Analysing Report…</div><div class="bk-s">Gemini AI is reading your lab report</div></div></div>
+  <div class="p16" style="padding-top:30px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">🧬</div>
+    <div style="font-size:15px;font-weight:700;color:var(--bd);margin-bottom:10px">Reading your lab report…</div>
+    <div style="display:flex;justify-content:center"><div class="typing"><span></span><span></span><span></span></div></div>
+    <div style="font-size:12px;color:var(--g4);margin-top:12px">Analysing all values — takes about 10 seconds</div>
+  </div></div>`;
+
+  try {
+    const userProfile = 'Age: '+(U.age||'unknown')+', Gender: '+(U.gender||'unknown')+', Conditions: '+(U.conditions||'none');
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + key,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mime, data: base64 } },
+              { text: 'This is a medical lab report. Patient profile: ' + userProfile + '. Analyse ALL test results in this report. For each test, identify: test name, value, unit, reference range, and whether it is HIGH/LOW/NORMAL. Return a JSON object: { "panelName": "string", "date": "string or unknown", "results": [ {"test":"name","value":"val","unit":"u","refRange":"range","status":"HIGH|LOW|NORMAL","plainExplanation":"1 sentence plain English explanation"} ], "summary": "2-3 sentence overall summary", "doctorQuestions": ["q1","q2","q3"] }. No markdown, just JSON.' }
+            ]
+          }],
+          generationConfig: { maxOutputTokens: 1500, temperature: 0.1 }
+        })
+      }
+    );
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let report = null;
+    try {
+      const clean = text.replace(/```json|```/g,'').trim();
+      report = JSON.parse(clean);
+    } catch(e){ report = null; }
+    renderLabResult(report, text);
+  } catch(err) {
+    SCR.innerHTML=`<div class="sc">
+    <div class="brow"><div class="bk" onclick="go('lab')">←</div><div style="flex:1"><div class="bk-t">Analysis Failed</div></div></div>
+    <div class="p16" style="padding-top:20px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">❌</div>
+      <div style="font-size:14px;color:var(--red);font-weight:700;margin-bottom:8px">Could not analyse report</div>
+      <div style="font-size:12px;color:var(--g4);margin-bottom:20px">${err.message}</div>
+      <button class="btn" onclick="go('lab')">← Try Again</button>
+    </div></div>`;
+  }
+}
+
+function renderLabResult(report, rawText){
+  if(!report || !report.results){
+    // Show raw AI text if JSON parsing failed
+    SCR.innerHTML=`<div class="sc">
+    <div class="brow"><div class="bk" onclick="go('lab')">←</div><div style="flex:1"><div class="bk-t">Lab Analysis</div><div class="bk-s">AI interpretation</div></div></div>
+    <div class="iban iby"><span>⚕️</span><span>Educational only — consult your doctor for medical decisions.</span></div>
+    <div class="p16" style="padding-top:14px">
+      <div style="background:#fff;border-radius:14px;padding:16px;border:.5px solid var(--g2);font-size:13px;color:var(--g6);line-height:1.8;white-space:pre-wrap">${rawText.replace(/</g,'&lt;')}</div>
+      <button class="btn" style="margin-top:14px" onclick="go('lab')">← Upload Another</button>
+      <div class="pb"></div>
+    </div></div>`;
+    return;
+  }
+
+  const high = report.results.filter(r=>r.status==='HIGH');
+  const low  = report.results.filter(r=>r.status==='LOW');
+  const norm = report.results.filter(r=>r.status==='NORMAL');
+
+  const resultRow = (r) => {
+    const color = r.status==='HIGH'?'var(--red)':r.status==='LOW'?'var(--amber)':'var(--green)';
+    const bg    = r.status==='HIGH'?'var(--rl)':r.status==='LOW'?'var(--al)':'var(--gl)';
+    const badge = r.status==='HIGH'?'br':r.status==='LOW'?'by':'bg';
+    return '<div class="tcrd">'+
+      '<div class="tcrd-h"><div class="tcrd-n">'+r.test+'</div><div class="badge '+badge+'">'+r.status+'</div></div>'+
+      '<div class="trow">'+
+        '<div class="trn"><div style="font-weight:700">'+r.test+'</div><div style="font-size:10px;color:var(--g4)">'+r.unit+'</div></div>'+
+        '<div style="text-align:right"><div class="trv" style="font-size:17px;color:'+color+'">'+r.value+'</div><div class="trr">'+r.refRange+'</div></div>'+
+      '</div>'+
+      (r.plainExplanation ? '<div class="ib" style="background:'+bg+';color:var(--g6)">'+r.plainExplanation+'</div>' : '')+
+    '</div>';
+  };
+
+  const labBackBtn = '<div class="brow"><div class="bk" onclick="go(\'lab\')">\u2190</div><div style="flex:1"><div class="bk-t">'+(report.panelName||'Lab Report')+'</div><div class="bk-s">'+(report.date||'')+'</div></div></div>';
+  const labUploadBtn = '<div class="p16"><button class="btn" onclick="go(\'lab\')">\u2190 Upload Another Report</button><div class="pb"></div></div>';
+  SCR.innerHTML='<div class="sc">'+
+  labBackBtn+
+  '<div class="iban ibl"><span>\u2139\ufe0f</span><span>Educational only. Consult your doctor for all medical decisions.</span></div>'+
+  '<div class="lgrid">'+
+    '<div class="ls"><div class="lsv" style="color:var(--green)">'+norm.length+'</div><div class="lsl">Normal</div></div>'+
+    '<div class="ls"><div class="lsv" style="color:var(--red)">'+high.length+'</div><div class="lsl">High</div></div>'+
+    '<div class="ls"><div class="lsv" style="color:var(--amber)">'+low.length+'</div><div class="lsl">Low</div></div>'+
+    '<div class="ls"><div class="lsv" style="color:var(--blue)">'+report.results.length+'</div><div class="lsl">Total</div></div>'+
+  '</div>'+
+  (report.summary ? '<div class="p16"><div style="background:var(--bl);border-radius:12px;padding:14px;font-size:13px;color:var(--bd);line-height:1.7;margin-bottom:4px"><strong>\ud83d\udccb Summary</strong><br>'+report.summary+'</div></div>' : '')+
+  ((high.length||low.length) ? '<div style="padding:0 14px 6px;font-size:13px;font-weight:700;color:var(--red)">\u26a0\ufe0f Needs Attention</div>'+high.map(resultRow).join('')+low.map(resultRow).join('') : '')+
+  (norm.length ? '<div style="padding:8px 14px 6px;font-size:13px;font-weight:700;color:var(--green)">\u2713 Normal Range</div>'+norm.map(resultRow).join('') : '')+
+  (report.doctorQuestions&&report.doctorQuestions.length ? '<div class="p16"><div class="card" style="background:#E6F4EA;border:1px solid #A8D5B5;cursor:default"><div style="font-size:12px;font-weight:800;color:#1B5E20;margin-bottom:7px">\ud83d\udccb Ask your doctor</div><div style="font-size:11px;color:#2D7A4F;line-height:1.8">'+report.doctorQuestions.map(q=>'\u2022 '+q).join('<br>')+'</div></div></div>' : '')+
+  labUploadBtn+'</div>';
 }
 
 /* ══ MORE MENU ══ */
@@ -1334,7 +1578,7 @@ async function callGemini(systemPrompt, userMessages) {
       });
     });
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
