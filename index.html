@@ -453,7 +453,7 @@ html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD)
     <div class="tabbar" id="TBAR" style="display:none">
       <div class="tab on" id="T-home" onclick="go('home')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span>Home</span></div>
       <div class="tab" id="T-body" onclick="go('body')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v6M9 10h6M9 21l3-8 3 8"/><path d="M10 17H7l-2 4M14 17h3l2 4"/></svg><span>Body</span></div>
-      <div class="tab" id="T-scan" onclick="go('scan')"><div class="tdot"></div><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><circle cx="17" cy="17" r="3"/></svg><span>Scanner</span></div>
+      <div class="tab" id="T-scan" onclick="go('scan')"><div class="tdot"></div><svg viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="4" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/><path d="M7 14v3a5 5 0 0 0 10 0v-3"/></svg><span>Medicines</span></div>
       <div class="tab" id="T-lab" onclick="go('lab')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M9 3h6v8l3 9H6l3-9V3z"/><path d="M6 9h12"/></svg><span>Lab</span></div>
       <div class="tab" id="T-more" onclick="go('more')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></div>
       <div class="tab" id="T-profile" onclick="go('profile')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
@@ -1066,16 +1066,41 @@ function rResults(result, sym){
 }
 
 /* ══ SCANNER — Manual Medicine Entry + Photo ══ */
+/* ══ MEDICINES TAB ══ */
 function rScan(){
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Add Medicine</div><div class="hdr-s">Manual entry or photo upload</div></div>
+  <div class="hdr"><div class="hdr-t">Medicines</div><div class="hdr-s">Add, manage and track your medicines</div></div>
   <div style="display:flex;gap:0;margin:14px 14px 0;border-radius:11px;overflow:hidden;border:1.5px solid var(--g2)">
     <div id="scan-tab-manual" style="flex:1;padding:11px;text-align:center;font-size:13px;font-weight:700;background:var(--blue);color:#fff;cursor:pointer" onclick="showScanTab('manual')">✏️ Manual Entry</div>
-    <div id="scan-tab-photo" style="flex:1;padding:11px;text-align:center;font-size:13px;font-weight:700;background:var(--g1);color:var(--g5);cursor:pointer" onclick="showScanTab('photo')">📷 Photo Upload</div>
+    <div id="scan-tab-photo" style="flex:1;padding:11px;text-align:center;font-size:13px;font-weight:700;background:var(--g1);color:var(--g5);cursor:pointer" onclick="showScanTab('photo')">📷 Scan Prescription</div>
   </div>
   <div id="scan-content"></div>
+  <div style="padding:0 14px 6px;margin-top:6px">
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:8px">Your Medicines</div>
+    <div id="scan-med-list">${renderMedListInline()}</div>
+  </div>
   </div>`;
   showScanTab('manual');
+}
+
+function renderMedListInline(){
+  const meds = getMeds();
+  if(!meds.length) return '<div style="text-align:center;padding:12px;color:var(--g4);font-size:12px;background:var(--g1);border-radius:10px">No medicines yet. Add one above.</div>';
+  return meds.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:#fff;border-radius:10px;margin-bottom:7px;border:.5px solid var(--g2)">
+    <div style="font-size:18px">💊</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage||''}</div>
+      <div style="font-size:10px;color:var(--g4)">${m.food||''} · ${m.duration||''} · ${[m.morning?'🌅':'',m.afternoon?'☀️':'',m.night?'🌙':''].filter(Boolean).join(' ')||'As directed'}</div>
+    </div>
+    <button onclick="deleteMedInline('${m.id}')" style="background:var(--rl);border:none;border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer;color:#C5221F">🗑️</button>
+  </div>`).join('') + '<div class="pb"></div>';
+}
+
+function deleteMedInline(id){
+  if(!confirm('Remove this medicine?')) return;
+  saveMeds(getMeds().filter(m=>m.id!==id));
+  const el = document.getElementById('scan-med-list');
+  if(el) el.innerHTML = renderMedListInline();
 }
 
 function showScanTab(tab){
@@ -1085,7 +1110,7 @@ function showScanTab(tab){
   if(tab==='manual'){
     c.innerHTML=`
     <div class="p16" style="padding-top:14px">
-      <div class="fld"><div class="flbl">Medicine Name *</div><input class="inp" id="med-name" placeholder="e.g. Paracetamol, Amoxicillin…"/></div>
+      <div class="fld"><div class="flbl">Medicine Name *</div><input class="inp" id="med-name" placeholder="e.g. Paracetamol, Amoxicillin"/></div>
       <div class="fld"><div class="flbl">Dosage / Strength</div><input class="inp" id="med-dose" placeholder="e.g. 500mg, 10ml, 1 tablet"/></div>
       <div class="fld"><div class="flbl">Timing</div>
         <div style="display:flex;gap:10px;margin-top:6px">
@@ -1109,97 +1134,212 @@ function showScanTab(tab){
       <div class="fld">
         <div class="flbl">Prescription Photo (optional)</div>
         <input type="file" id="med-photo-inp" accept="image/*" style="display:none" onchange="previewMedPhoto(this)"/>
-        <div onclick="document.getElementById('med-photo-inp').click()" style="border:2px dashed var(--g3);border-radius:11px;padding:16px;text-align:center;cursor:pointer;background:var(--g1)" id="med-photo-zone">
-          <div style="font-size:24px;margin-bottom:4px">📷</div>
-          <div style="font-size:12px;color:var(--g4)">Tap to attach prescription photo</div>
+        <div onclick="document.getElementById('med-photo-inp').click()" style="border:2px dashed var(--g3);border-radius:11px;padding:14px;text-align:center;cursor:pointer;background:var(--g1)" id="med-photo-zone">
+          <div style="font-size:20px;margin-bottom:3px">📷</div>
+          <div style="font-size:11px;color:var(--g4)">Tap to attach prescription photo</div>
         </div>
         <div id="med-photo-preview"></div>
       </div>
       <button class="btn" onclick="saveMedicine()">✅ Save Medicine</button>
-      <button class="btn2" onclick="go('home')">Cancel</button>
-      <div class="pb"></div>
     </div>`;
   } else {
     c.innerHTML=`
     <div class="p16" style="padding-top:14px">
-      <div class="iban iby" style="margin:0 0 14px;border-radius:11px"><span>ℹ️</span><span>Take a clear photo of your prescription. You can then manually enter the medicines from the image.</span></div>
-      <input type="file" id="rx-cam" accept="image/*" capture="environment" style="display:none" onchange="showRxPhoto(this)"/>
-      <input type="file" id="rx-gal" accept="image/*,application/pdf" style="display:none" onchange="showRxPhoto(this)"/>
-      <div onclick="document.getElementById('rx-cam').click()" style="border:2px dashed var(--blue);border-radius:14px;padding:32px 18px;text-align:center;cursor:pointer;background:#F0F4FF;margin-bottom:10px">
-        <div style="font-size:44px;margin-bottom:10px">📷</div>
-        <div style="font-size:15px;font-weight:700;color:var(--bd);margin-bottom:4px">Take Photo</div>
-        <div style="font-size:12px;color:var(--g4)">Use your camera to photograph the prescription</div>
+      <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">📋 How prescription scanning works</div>
+        <div style="font-size:11px;color:#185EA5;line-height:1.7">① Take or upload a clear photo of your prescription<br>② App reads and extracts all visible text automatically<br>③ Extracted text is shown exactly as read from the photo<br>④ Copy or save the text, then add medicine details below</div>
       </div>
-      <button class="btn2" onclick="document.getElementById('rx-gal').click()">🖼️ Choose from Gallery / PDF</button>
-      <div id="rx-photo-area"></div>
-      <div class="pb"></div>
+      <input type="file" id="rx-cam" accept="image/*" capture="environment" style="display:none" onchange="extractTextFromRx(this)"/>
+      <input type="file" id="rx-gal" accept="image/*" style="display:none" onchange="extractTextFromRx(this)"/>
+      <div onclick="document.getElementById('rx-cam').click()" style="border:2px dashed var(--blue);border-radius:14px;padding:28px 18px;text-align:center;cursor:pointer;background:#F0F4FF;margin-bottom:10px">
+        <div style="font-size:40px;margin-bottom:8px">📷</div>
+        <div style="font-size:15px;font-weight:700;color:var(--bd);margin-bottom:3px">Take Photo of Prescription</div>
+        <div style="font-size:12px;color:var(--g4)">Clear, well-lit photo gives best results</div>
+      </div>
+      <button class="btn2" onclick="document.getElementById('rx-gal').click()">🖼️ Choose from Gallery</button>
+      <div id="rx-extract-area"></div>
     </div>`;
   }
 }
 
-function previewMedPhoto(input){
+function extractTextFromRx(input){
   const file = input.files[0]; if(!file) return;
+  const area = document.getElementById('rx-extract-area');
+  if(area) area.innerHTML=`<div style="text-align:center;padding:24px;margin-top:14px;background:var(--g1);border-radius:12px">
+    <div style="font-size:36px;margin-bottom:10px">🔍</div>
+    <div style="font-size:14px;font-weight:700;color:var(--bd)">Reading prescription text...</div>
+    <div style="font-size:12px;color:var(--g4);margin-top:6px">This takes 10-20 seconds — please wait</div>
+    <div style="margin-top:12px;background:var(--g2);border-radius:6px;height:6px;overflow:hidden">
+      <div id="ocr-bar" style="height:100%;background:var(--blue);border-radius:6px;width:5%;transition:width .3s"></div>
+    </div>
+    <div id="ocr-pct" style="font-size:11px;color:var(--g4);margin-top:6px">Loading OCR engine...</div>
+  </div>`;
   const reader = new FileReader();
   reader.onload = function(e){
-    window._medPhotoData = e.target.result;
-    const prev = document.getElementById('med-photo-preview');
-    if(prev) prev.innerHTML=`<img src="${e.target.result}" style="width:100%;border-radius:10px;margin-top:8px;border:.5px solid var(--g2)"/>`;
-    const zone = document.getElementById('med-photo-zone');
-    if(zone) zone.innerHTML='<div style="font-size:11px;color:var(--green);font-weight:700">✅ Photo attached — scroll down to save</div>';
+    window._rxPhotoData = e.target.result;
+    if(!window.Tesseract){
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+      s.onload = function(){ runTesseract(e.target.result, area); };
+      s.onerror = function(){ showRxFallback(e.target.result, area, 'OCR library could not load. Check internet connection.'); };
+      document.head.appendChild(s);
+    } else {
+      runTesseract(e.target.result, area);
+    }
   };
   reader.readAsDataURL(file);
 }
 
-function showRxPhoto(input){
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const area = document.getElementById('rx-photo-area');
-    if(!area) return;
-    area.innerHTML=`
-      <div style="margin-top:14px">
-        <img src="${e.target.result}" style="width:100%;border-radius:12px;border:.5px solid var(--g2);margin-bottom:12px"/>
-        <div class="card" style="background:var(--gl);cursor:default">
-          <div style="font-size:13px;font-weight:700;color:#1B5E20;margin-bottom:6px">📋 Now enter medicines manually</div>
-          <div style="font-size:12px;color:#2D7A4F;line-height:1.6">Read each medicine from the prescription photo above and use the Manual Entry tab to add them one by one.</div>
+function runTesseract(dataUrl, area){
+  try {
+    Tesseract.recognize(dataUrl, 'eng', {
+      logger: function(m){
+        if(m.status === 'recognizing text'){
+          const pct = Math.round((m.progress||0)*100);
+          const bar = document.getElementById('ocr-bar');
+          const pctEl = document.getElementById('ocr-pct');
+          if(bar) bar.style.width = pct + '%';
+          if(pctEl) pctEl.textContent = pct + '% — reading text...';
+        } else if(m.status === 'loading tesseract core' || m.status === 'initializing tesseract'){
+          const pctEl = document.getElementById('ocr-pct');
+          if(pctEl) pctEl.textContent = 'Loading OCR engine...';
+        }
+      }
+    }).then(function(result){
+      showExtractedText(dataUrl, (result.data.text||'').trim(), area);
+    }).catch(function(err){
+      showRxFallback(dataUrl, area, 'OCR failed: ' + err.message);
+    });
+  } catch(e){
+    showRxFallback(dataUrl, area, 'OCR error: ' + e.message);
+  }
+}
+
+function showExtractedText(dataUrl, extractedText, area){
+  if(!area) return;
+  window._rxExtractedText = extractedText;
+  const hasText = extractedText && extractedText.length > 4;
+  const escaped = extractedText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  area.innerHTML=`
+    <div style="margin-top:16px">
+      <img src="${dataUrl}" style="width:100%;border-radius:12px;border:.5px solid var(--g2);margin-bottom:14px"/>
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:8px">${hasText ? '📄 Text extracted from prescription:' : '⚠️ Could not read text clearly'}</div>
+        ${hasText ? `<div style="background:var(--g1);border-radius:10px;padding:13px;border:1.5px solid var(--g2);font-size:12px;color:var(--g6);line-height:1.9;white-space:pre-wrap;max-height:220px;overflow-y:auto;font-family:monospace">${escaped}</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button onclick="copyRxText()" style="flex:1;background:var(--bl);color:var(--bd);border:1.5px solid #C5D9F8;border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📋 Copy Text</button>
+            <button onclick="saveRxTextOnly()" style="flex:1;background:var(--gl);color:#1B5E20;border:1.5px solid #A8D5B5;border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">💾 Save to Vault</button>
+          </div>` :
+          `<div style="background:var(--al);border-radius:10px;padding:13px;font-size:12px;color:#B06000;line-height:1.6">Try a clearer, well-lit photo in focus. You can still save the photo and enter details manually below.</div>`}
+      </div>
+      <div style="background:#fff;border-radius:11px;border:1.5px solid var(--g2);padding:13px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--g6);margin-bottom:8px">💊 Enter medicine details for reminders:</div>
+        <input class="inp" id="rx-med-name" placeholder="Medicine name *" style="margin-bottom:8px"/>
+        <input class="inp" id="rx-med-dose" placeholder="Dosage e.g. 500mg" style="margin-bottom:8px"/>
+        <div style="display:flex;gap:8px;margin-bottom:0px">
+          <select class="sel" id="rx-med-food" style="flex:1"><option>After food</option><option>Before food</option><option>With food</option><option>As directed</option></select>
+          <input class="inp" id="rx-med-dur" placeholder="Duration e.g. 5 days" style="flex:1"/>
         </div>
-        <button class="btn" onclick="showScanTab('manual')">✏️ Go to Manual Entry →</button>
-      </div>`;
+      </div>
+      <button class="btn" onclick="saveRxMedicine()">✅ Save Medicine + Extracted Text</button>
+      <button class="btn2" onclick="showScanTab('manual')">✏️ Switch to Manual Entry</button>
+    </div>`;
+}
+
+function showRxFallback(dataUrl, area, msg){
+  if(!area) return;
+  window._rxExtractedText = '';
+  area.innerHTML=`
+    <div style="margin-top:14px">
+      <img src="${dataUrl}" style="width:100%;border-radius:12px;border:.5px solid var(--g2);margin-bottom:12px"/>
+      <div class="card" style="background:var(--al);cursor:default;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:#B06000;margin-bottom:4px">⚠️ ${msg}</div>
+        <div style="font-size:11px;color:#B06000">Switch to Manual Entry to type details. Your photo will still be saved.</div>
+      </div>
+      <button class="btn" onclick="showScanTab('manual')">✏️ Manual Entry</button>
+    </div>`;
+}
+
+function copyRxText(){
+  const text = window._rxExtractedText || '';
+  if(!text){ alert('No text to copy.'); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(text).then(function(){ alert('Prescription text copied to clipboard!'); }); }
+  else { const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); alert('Text copied!'); }
+}
+
+function saveRxTextOnly(){
+  const text = window._rxExtractedText || '';
+  if(!text){ alert('No text to save.'); return; }
+  const vault = getVaultItems();
+  vault.unshift({ id:'v'+Date.now(), type:'prescription_text', icon:'📄', title:'Prescription Scanned Text', subtitle:text.substring(0,80), date:today() });
+  saveVaultItems(vault);
+  alert('Prescription text saved to Health Vault!');
+}
+
+function saveRxMedicine(){
+  const name = (document.getElementById('rx-med-name')?.value||'').trim();
+  if(!name){ alert('Please enter the medicine name.'); return; }
+  const extractedText = window._rxExtractedText || '';
+  const med = {
+    id: 'm'+Date.now(), name,
+    dosage: (document.getElementById('rx-med-dose')?.value||'').trim(),
+    morning:false, afternoon:false, night:false,
+    duration: (document.getElementById('rx-med-dur')?.value||'As prescribed').trim(),
+    food: document.getElementById('rx-med-food')?.value||'As directed',
+    doctor:'', notes: extractedText ? 'Prescription text: '+extractedText.substring(0,500) : '',
+    photo: window._rxPhotoData||'', prescriptionText:extractedText, date:today(), active:true
+  };
+  const meds=getMeds(); meds.push(med); saveMeds(meds);
+  const vault=getVaultItems();
+  vault.unshift({ id:'v'+Date.now(), type:'medicine', icon:'💊', title:'Medicine: '+name+' '+med.dosage, subtitle:'Scanned from prescription · '+med.food, date:today() });
+  saveVaultItems(vault);
+  window._rxPhotoData=null; window._rxExtractedText=null;
+  alert('Medicine saved with prescription photo and extracted text!');
+  go('scan');
+}
+
+function previewMedPhoto(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    window._medPhotoData=e.target.result;
+    const prev=document.getElementById('med-photo-preview');
+    if(prev) prev.innerHTML='<img src="'+e.target.result+'" style="width:100%;border-radius:10px;margin-top:8px;border:.5px solid var(--g2)"/>';
+    const zone=document.getElementById('med-photo-zone');
+    if(zone) zone.innerHTML='<div style="font-size:11px;color:var(--green);font-weight:700;padding:8px">Photo attached</div>';
   };
   reader.readAsDataURL(file);
 }
 
 function saveMedicine(){
-  const name = document.getElementById('med-name')?.value.trim();
+  const name=(document.getElementById('med-name')?.value||'').trim();
   if(!name){ alert('Please enter the medicine name.'); return; }
-  const med = {
-    id: 'm'+Date.now(),
-    name,
-    dosage: document.getElementById('med-dose')?.value.trim()||'',
-    morning: document.getElementById('med-m')?.checked||false,
-    afternoon: document.getElementById('med-a')?.checked||false,
-    night: document.getElementById('med-n')?.checked||false,
-    duration: document.getElementById('med-dur')?.value.trim()||'Ongoing',
-    food: document.getElementById('med-food')?.value||'As directed',
-    doctor: document.getElementById('med-doc')?.value.trim()||'',
-    notes: document.getElementById('med-notes')?.value.trim()||'',
-    photo: window._medPhotoData||'',
-    date: today(),
-    active: true
+  const med={
+    id:'m'+Date.now(), name,
+    dosage:(document.getElementById('med-dose')?.value||'').trim(),
+    morning:document.getElementById('med-m')?.checked||false,
+    afternoon:document.getElementById('med-a')?.checked||false,
+    night:document.getElementById('med-n')?.checked||false,
+    duration:(document.getElementById('med-dur')?.value||'Ongoing').trim(),
+    food:document.getElementById('med-food')?.value||'As directed',
+    doctor:(document.getElementById('med-doc')?.value||'').trim(),
+    notes:(document.getElementById('med-notes')?.value||'').trim(),
+    photo:window._medPhotoData||'', date:today(), active:true
   };
-  const meds = getMeds();
-  meds.push(med);
-  saveMeds(meds);
-  // Add to vault
-  const vault = getVaultItems();
-  vault.unshift({ id:'v'+Date.now(), type:'medicine', icon:'💊', title:`Medicine added: ${name} ${med.dosage}`, subtitle:`${med.food} · ${med.duration}`, date:today() });
+  const meds=getMeds(); meds.push(med); saveMeds(meds);
+  const vault=getVaultItems();
+  vault.unshift({ id:'v'+Date.now(), type:'medicine', icon:'💊', title:'Medicine added: '+name+' '+med.dosage, subtitle:med.food+' · '+med.duration, date:today() });
   saveVaultItems(vault);
-  window._medPhotoData = null;
-  alert('✅ Medicine saved!');
-  go('scan');
+  window._medPhotoData=null;
+  ['med-name','med-dose','med-dur','med-doc','med-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  ['med-m','med-a','med-n'].forEach(function(id){ const el=document.getElementById(id); if(el) el.checked=false; });
+  const zone=document.getElementById('med-photo-zone');
+  if(zone) zone.innerHTML='<div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:11px;color:var(--g4)">Tap to attach prescription photo</div>';
+  const prev=document.getElementById('med-photo-preview'); if(prev) prev.innerHTML='';
+  const list=document.getElementById('scan-med-list'); if(list) list.innerHTML=renderMedListInline();
+  alert('Medicine saved!');
 }
 
-/* ══ OCR — redirect to manual scan ══ */
 function rOCR(){ go('scan'); }
 
 /* ══ LAB — manual entry + local analysis ══ */
@@ -1499,7 +1639,7 @@ function rInteractions(){
   <div class="p16">
     <div class="sec" style="padding:0;margin-top:14px">Your Current Medicines</div>
     <div class="card" style="cursor:default">
-      ${medNames.length===0?'<div style="color:var(--g4);font-size:13px;text-align:center">No medicines saved. Add medicines in the Scanner tab.</div>':''}
+      ${medNames.length===0?'<div style="color:var(--g4);font-size:13px;text-align:center">No medicines saved. Add medicines in the Medicines tab.</div>':''}
       <div style="display:flex;flex-wrap:wrap" id="int-tags">
         ${medNames.map(m=>`<span class="med-tag">${m}<span onclick="this.parentElement.remove()">×</span></span>`).join('')}
       </div>
