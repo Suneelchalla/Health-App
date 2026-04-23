@@ -1,24 +1,48 @@
 {
   "name": "HealthVault",
   "short_name": "HealthVault",
-  "description": "Your complete personal health companion",
-  "start_url": "/Health-App/",
+  "description": "Your complete personal health companion. Safe · Private · Smart.",
+  "start_url": "/Health-App/index.html",
+  "scope": "/Health-App/",
   "display": "standalone",
   "background_color": "#1A73E8",
   "theme_color": "#1A73E8",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["health", "medical", "lifestyle"],
   "icons": [
     {
-      "src": "https://via.placeholder.com/192x192/1A73E8/ffffff?text=HV",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://via.placeholder.com/512x512/1A73E8/ffffff?text=HV",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "HealthVault Home Screen"
     }
   ]
 }
