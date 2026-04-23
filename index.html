@@ -1082,39 +1082,67 @@ Rules you MUST follow:
 6. Always end health advice with "This is educational information — consult a qualified doctor for personal medical decisions."
 User profile: ${JSON.stringify({name:U.name,age:U.age,gender:U.gender,conditions:U.conditions,allergies:U.allergies})}`;
 
-// Backend proxy URL — set this to your deployed backend
-// e.g. 'https://healthvault-backend.onrender.com'
-const BACKEND_URL = window._BACKEND_URL || '';
+// ── GOOGLE APPS SCRIPT BACKEND URL ──────────────────
+// After deploying Code.gs, paste your Web App URL here:
+const APPS_SCRIPT_URL = window._APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbx3WUayX2KmNdRFrI2yhO6zwH-QHVhIpIwaS-Dpt-t8w5ZDcEYULqK9B44kKpWOqzzu/exec';
+
+// Helper: POST to Apps Script backend
+async function appsScriptPost(action, payload) {
+  const url = window._APPS_SCRIPT_URL || APPS_SCRIPT_URL;
+  if (!url || url === 'YOUR_APPS_SCRIPT_URL_HERE') return null;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Apps Script requires redirect follow for POST
+    redirect: 'follow',
+    body: JSON.stringify({ action, ...payload })
+  });
+  return res.json();
+}
+
+// Save user profile to Google Sheets
+async function saveProfileToSheets(profile) {
+  try { await appsScriptPost('saveData', { userProfile: profile }); } catch(e) {}
+}
+
+// Save a vital reading to Google Sheets
+async function saveVitalToSheets(type, value, unit, note) {
+  try { await appsScriptPost('saveVital', { userName: U.name, type, value, unit, note }); } catch(e) {}
+}
+
+// Save a medicine to Google Sheets
+async function saveMedToSheets(medicine) {
+  try { await appsScriptPost('saveMed', { userName: U.name, medicine }); } catch(e) {}
+}
 
 async function callGPT(messages, feature) {
   try {
-    const key = window.OPENAI_KEY;
+    const url    = window._APPS_SCRIPT_URL || APPS_SCRIPT_URL;
+    const key    = window.OPENAI_KEY;
+    const hasAS  = url && url !== 'YOUR_APPS_SCRIPT_URL_HERE';
     const hasKey = key && key !== 'YOUR_OPENAI_KEY_HERE';
-    const hasBackend = BACKEND_URL && BACKEND_URL.length > 0;
 
-    if (!hasKey && !hasBackend) {
-      return '⚙️ AI not configured. Go to Profile → AI / OpenAI API Key to connect.';
+    if (!hasAS && !hasKey) {
+      return '⚙️ AI not configured. Go to Profile → Settings to connect your backend.';
     }
 
-    let res;
-    if (hasBackend) {
-      // Use secure backend proxy (recommended for production)
-      res = await fetch(BACKEND_URL + '/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messages.filter(m=>m.role!=='system'), feature: feature||'chat' })
+    if (hasAS) {
+      // ✅ Secure: key stays in Google Apps Script, never in browser
+      const data = await appsScriptPost('chat', {
+        messages: messages.filter(m => m.role !== 'system'),
+        feature:  feature || 'chat',
+        userProfile: { name: U.name, age: U.age, gender: U.gender }
       });
-      if (!res.ok) { const e=await res.json(); throw new Error(e.error||'Backend error'); }
-      const data = await res.json();
-      return data.reply;
+      if (data?.reply) return data.reply;
+      throw new Error(data?.error || 'Apps Script error');
     } else {
-      // Direct OpenAI call (development only — key visible in browser)
-      res = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Fallback: direct OpenAI (dev only — key visible in browser!)
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: JSON.stringify({ model: 'gpt-4o', messages: messages, max_tokens: 350, temperature: 0.4 })
+        body: JSON.stringify({ model: 'gpt-4o', messages, max_tokens: 350, temperature: 0.4 })
       });
-      if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||'API error'); }
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
       const data = await res.json();
       return data.choices[0].message.content.trim();
     }
@@ -1402,13 +1430,22 @@ function showAPIKeyModal(){
   modal.innerHTML = `
     <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:375px;margin:0 auto">
       <div style="width:36px;height:4px;background:#BDC1C6;border-radius:2px;margin:0 auto 18px"></div>
-      <div style="font-size:17px;font-weight:800;color:#202124;margin-bottom:4px">🤖 OpenAI API Key</div>
-      <div style="font-size:12px;color:#80868B;margin-bottom:16px;line-height:1.5">Enter your OpenAI API key to enable AI-powered symptom analysis and the health chatbot. Your key is stored only in your browser memory and never sent to our servers.</div>
-      <div style="background:#FEF7E0;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#B06000;line-height:1.5">⚠️ Production: enter your backend URL below instead of a key. Your key stays on your server and is never exposed to the browser.</div>
-      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">Backend URL (recommended)</div>
-      <input id="backend-url-inp" type="url" placeholder="https://your-backend.onrender.com" value="${window._BACKEND_URL||''}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:13px;color:#202124;outline:none;font-family:inherit;margin-bottom:10px"/>
-      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">— OR — Direct API Key (dev/testing only)</div>
-      <input id="api-key-inp" type="password" placeholder="sk-proj-..." value="${existing}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:14px;color:#202124;outline:none;font-family:inherit;margin-bottom:12px"/>
+      <div style="font-size:17px;font-weight:800;color:#202124;margin-bottom:4px">🤖 Connect AI Backend</div>
+      <div style="font-size:12px;color:#80868B;margin-bottom:14px;line-height:1.5">Connect your Google Apps Script backend to enable AI features. Your OpenAI key stays safely on Google's servers — never in the browser.</div>
+
+      <div style="background:#E8F0FE;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#0D47A1;line-height:1.6">
+        ✅ <strong>Recommended:</strong> Google Apps Script URL<br>
+        Free · Secure · No server needed · Saves to Google Sheets
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">Google Apps Script URL</div>
+      <input id="backend-url-inp" type="url" placeholder="https://script.google.com/macros/s/..." value="${window._APPS_SCRIPT_URL||''}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:13px;color:#202124;outline:none;font-family:inherit;margin-bottom:14px"/>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><div style="flex:1;height:.5px;background:#E8EAED"></div><span style="font-size:11px;color:#80868B;font-weight:600">OR (dev/testing only)</span><div style="flex:1;height:.5px;background:#E8EAED"></div></div>
+
+      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">Direct OpenAI Key ⚠️ not secure</div>
+      <input id="api-key-inp" type="password" placeholder="sk-proj-..." value="${existing}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:14px;color:#202124;outline:none;font-family:inherit;margin-bottom:14px"/>
+
       <button onclick="saveAPIKey()" style="background:#1A73E8;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:700;width:100%;cursor:pointer;font-family:inherit;margin-bottom:8px">Save & Connect</button>
       <button onclick="document.getElementById('api-modal').remove()" style="background:#F8F9FA;color:#5F6368;border:.5px solid #E8EAED;border-radius:13px;padding:12px;font-size:13px;font-weight:600;width:100%;cursor:pointer;font-family:inherit">Cancel</button>
     </div>`;
@@ -1426,10 +1463,10 @@ function saveAPIKey(){
   const hasKey = key.startsWith('sk-');
   if(!hasBackend && !hasKey){
     if(keyInp){ keyInp.style.borderColor='#EA4335'; keyInp.placeholder='Must start with sk-...'; }
-    if(urlInp){ urlInp.style.borderColor='#EA4335'; }
+    if(urlInp){ urlInp.style.borderColor='#EA4335'; urlInp.placeholder='Must start with https://script.google.com/...'; }
     return;
   }
-  if(hasBackend) window._BACKEND_URL = url;
+  if(hasBackend) window._APPS_SCRIPT_URL = url;
   if(hasKey) window._OPENAI_KEY = key;
   document.getElementById('api-modal')?.remove();
   go('profile');
