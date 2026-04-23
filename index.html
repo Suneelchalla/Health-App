@@ -1293,6 +1293,12 @@ function saveRxMedicine(){
   const vault=getVaultItems();
   vault.unshift({ id:'v'+Date.now(), type:'medicine', icon:'💊', title:'Medicine: '+name+' '+med.dosage, subtitle:'Scanned from prescription · '+med.food, date:today() });
   saveVaultItems(vault);
+  // Auto-save prescription photo to permanent photo vault
+  if(window._rxPhotoData){
+    const photos=getPhotos();
+    photos.push({ id:'ph'+Date.now(), cat:'doc', docCat:'Prescription', data:window._rxPhotoData, label:'Prescription — '+name, date:today() });
+    savePhotos(photos);
+  }
   window._rxPhotoData=null; window._rxExtractedText=null;
   alert('Medicine saved with prescription photo and extracted text!');
   go('scan');
@@ -1330,6 +1336,12 @@ function saveMedicine(){
   const vault=getVaultItems();
   vault.unshift({ id:'v'+Date.now(), type:'medicine', icon:'💊', title:'Medicine added: '+name+' '+med.dosage, subtitle:med.food+' · '+med.duration, date:today() });
   saveVaultItems(vault);
+  // Auto-save medicine photo to permanent photo vault
+  if(window._medPhotoData){
+    const photos=getPhotos();
+    photos.push({ id:'ph'+Date.now(), cat:'doc', docCat:'Prescription', data:window._medPhotoData, label:'Prescription photo — '+name, date:today() });
+    savePhotos(photos);
+  }
   window._medPhotoData=null;
   ['med-name','med-dose','med-dur','med-doc','med-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   ['med-m','med-a','med-n'].forEach(function(id){ const el=document.getElementById(id); if(el) el.checked=false; });
@@ -1487,6 +1499,12 @@ function saveReport(existingId){
   const vault = getVaultItems();
   vault.unshift({ id:'v'+Date.now(), type:'lab', icon:'🧪', title:`${name}`, subtitle:`${abnormal>0?abnormal+' abnormal':'All normal'} · ${report.lab||'Lab'}`, date:report.date });
   saveVaultItems(vault);
+  // Auto-save lab photo to permanent photo vault
+  if(window._rpPhotoData){
+    const photos=getPhotos();
+    photos.push({ id:'ph'+Date.now(), cat:'doc', docCat:'Lab Report', data:window._rpPhotoData, label:'Lab Report — '+name, date:report.date });
+    savePhotos(photos);
+  }
   window._rpPhotoData = null;
   alert('✅ Report saved!');
   go('lab');
@@ -1506,6 +1524,20 @@ function rVault(){
   SCR.innerHTML=`<div class="sc">
   <div class="hdr"><div class="hdr-t">Health Vault</div><div class="hdr-s">Complete medical history</div></div>
   <div class="p16">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div onclick="go('skin')" style="flex:1;background:var(--pkl);border-radius:10px;padding:11px;text-align:center;cursor:pointer">
+        <div style="font-size:20px">📸</div><div style="font-size:11px;font-weight:700;color:var(--pink);margin-top:3px">Skin Photos</div>
+        <div style="font-size:10px;color:var(--g4)">${getPhotos().filter(p=>p.cat==='skin').length} saved</div>
+      </div>
+      <div onclick="go('doclocker')" style="flex:1;background:var(--bl);border-radius:10px;padding:11px;text-align:center;cursor:pointer">
+        <div style="font-size:20px">📎</div><div style="font-size:11px;font-weight:700;color:var(--bd);margin-top:3px">Documents</div>
+        <div style="font-size:10px;color:var(--g4)">${getPhotos().filter(p=>p.cat==='doc').length} saved</div>
+      </div>
+      <div onclick="exportData()" style="flex:1;background:var(--gl);border-radius:10px;padding:11px;text-align:center;cursor:pointer">
+        <div style="font-size:20px">📤</div><div style="font-size:11px;font-weight:700;color:#1B5E20;margin-top:3px">Export All</div>
+        <div style="font-size:10px;color:var(--g4)">Backup data</div>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;margin-bottom:8px">
       <div style="font-size:14px;font-weight:700;color:var(--g6)">Activity Log</div>
       ${vault.length>0?`<button onclick="clearVault()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;font-weight:700">Clear all</button>`:''}
@@ -2166,41 +2198,131 @@ function stopWalk(){
 function haversine(lat1,lng1,lat2,lng2){const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
 /* ══ SKIN TRACKER ══ */
+// ── Photo storage helpers ──────────────────────────
+function getPhotos(){ try{ return JSON.parse(localStorage.getItem('hv_photos')||'[]'); }catch(e){ return []; } }
+function savePhotos(arr){ try{ localStorage.setItem('hv_photos', JSON.stringify(arr)); }catch(e){ alert('Storage full — try deleting old photos or exporting data.'); } }
+
+/* ══ SKIN TRACKER + PHOTO VAULT ══ */
 function rSkin(){
+  const photos = getPhotos().filter(p=>p.cat==='skin');
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Skin & Wound Tracker</div><div class="hdr-s">Photo progress log</div></div>
-  <div class="iban iby"><span>ℹ️</span><span>Photos stored on your device only. Consult a dermatologist for diagnosis.</span></div>
+  <div class="hdr"><div class="hdr-t">Skin & Wound Tracker</div><div class="hdr-s">Photo progress — stored permanently on device</div></div>
+  <div class="iban iby"><span>ℹ️</span><span>Photos stored permanently on this device. Never deleted automatically. Consult a dermatologist for diagnosis.</span></div>
   <div class="p16" style="padding-top:14px">
-    <div class="card" style="border:2px dashed var(--g3);background:var(--g1);text-align:center;cursor:pointer">
-      <div style="font-size:32px;margin-bottom:6px">📸</div>
-      <div style="font-size:13px;font-weight:700;color:var(--g5)">Add Skin/Wound Photo</div>
-      <div style="font-size:11px;color:var(--g4);margin-top:3px">Track healing progress over time</div>
+    <input type="file" id="skin-photo-inp" accept="image/*" capture="environment" style="display:none" onchange="addSkinPhoto(this)"/>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn" style="margin-top:0;flex:1" onclick="document.getElementById('skin-photo-inp').click()">📷 Take Photo</button>
+      <button class="btn2" style="margin-top:0;flex:1" onclick="document.getElementById('skin-photo-inp').click()">🖼️ Upload</button>
     </div>
-    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default">
-      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">How to use</div>
-      <div style="font-size:11px;color:#185EA5;line-height:1.7">Take a photo of the affected area regularly. Compare photos over time to track changes. Always consult a dermatologist if a rash, mole or wound is changing in size, color or shape.</div>
-    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">📸 All Photos (${photos.length})</div>
+    ${photos.length===0
+      ? '<div style="text-align:center;padding:20px;color:var(--g4);font-size:13px;background:var(--g1);border-radius:12px">No photos yet. Tap Take Photo to start tracking.</div>'
+      : '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+photos.slice().reverse().map(p=>`
+        <div style="border-radius:11px;overflow:hidden;border:.5px solid var(--g2);cursor:pointer" onclick="viewPhoto('${p.id}')">
+          <img src="${p.data}" style="width:100%;height:110px;object-fit:cover;display:block"/>
+          <div style="padding:7px 9px;background:#fff">
+            <div style="font-size:11px;font-weight:700;color:var(--g6)">${p.label||'Skin photo'}</div>
+            <div style="font-size:10px;color:var(--g4)">${fmtDate(p.date)}</div>
+          </div>
+        </div>`).join('')+'</div>'
+    }
     <div class="pb"></div>
   </div></div>`;
 }
 
-/* ══ DOCUMENT LOCKER ══ */
+function addSkinPhoto(input){
+  const file=input.files[0]; if(!file) return;
+  const label=prompt('Label this photo (e.g. "Right forearm rash"):','Skin photo') || 'Skin photo';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const photos=getPhotos();
+    photos.push({ id:'ph'+Date.now(), cat:'skin', data:e.target.result, label, date:today() });
+    savePhotos(photos);
+    rSkin();
+  };
+  reader.readAsDataURL(file);
+}
+
+function viewPhoto(id){
+  const photos=getPhotos();
+  const p=photos.find(x=>x.id===id);
+  if(!p) return;
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`
+    <div style="width:100%;max-width:480px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="color:#fff;font-size:14px;font-weight:700">${p.label}</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer">✕</button>
+      </div>
+      <img src="${p.data}" style="width:100%;border-radius:12px;max-height:70vh;object-fit:contain"/>
+      <div style="color:rgba(255,255,255,.7);font-size:11px;margin-top:8px;text-align:center">${fmtDate(p.date)}</div>
+    </div>`;
+  overlay.addEventListener('click',function(e){ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+/* ══ DOCUMENT LOCKER — permanent photo/doc storage ══ */
+function getDocPhotos(){ return getPhotos().filter(p=>p.cat==='doc'); }
+
 function rDocLocker(){
+  const docs = getDocPhotos();
+  const cats=['All','Prescription','Lab Report','Insurance','Discharge','Certificate','Other'];
+  let activeDocCat='All';
+  function filteredDocs(cat){ return cat==='All'?docs:docs.filter(d=>d.docCat===cat); }
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Document Locker</div><div class="hdr-s">Secure encrypted health documents</div></div>
-  <div class="iban ibl"><span>🔐</span><span>All documents are stored locally on your device only.</span></div>
+  <div class="hdr"><div class="hdr-t">Document Locker</div><div class="hdr-s">Photos stored permanently — never auto-deleted</div></div>
+  <div class="iban ibl"><span>🔐</span><span>All document photos are stored permanently on this device in localStorage. They are never deleted unless you clear the app data.</span></div>
   <div class="p16" style="padding-top:14px">
-    <div class="card" style="border:2px dashed var(--g3);background:var(--g1);text-align:center;cursor:pointer">
-      <div style="font-size:32px;margin-bottom:6px">📎</div>
-      <div style="font-size:13px;font-weight:700;color:var(--g5)">Add Document</div>
-      <div style="font-size:11px;color:var(--g4);margin-top:3px">Prescriptions, lab reports, insurance cards…</div>
+    <input type="file" id="doc-photo-inp" accept="image/*,application/pdf" style="display:none" onchange="addDocPhoto(this)"/>
+    <button class="btn" style="margin-top:0;margin-bottom:12px" onclick="document.getElementById('doc-photo-inp').click()">📎 Add Document / Photo</button>
+    <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px" id="doc-cat-bar">
+      ${cats.map((c,i)=>`<div class="dc ${i===0?'on':''}" onclick="filterDocCat('${c}',this)" style="flex-shrink:0">${c}</div>`).join('')}
     </div>
-    <div class="card" style="background:var(--gl);border:1px solid #A8D5B5;cursor:default">
-      <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:5px">🔒 Privacy first</div>
-      <div style="font-size:11px;color:#2D7A4F;line-height:1.5">Use your lab report uploads in the Lab tab to store reports with analysis. Photos attached to medicines are stored in the Medicines section of the Vault.</div>
+    <div id="doc-grid">
+      ${renderDocGrid(docs)}
     </div>
     <div class="pb"></div>
   </div></div>`;
+  window.filterDocCat=function(cat,el){
+    document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));
+    el.classList.add('on');
+    const grid=document.getElementById('doc-grid');
+    if(grid) grid.innerHTML=renderDocGrid(filteredDocs(cat));
+  };
+}
+
+function renderDocGrid(docs){
+  if(!docs.length) return '<div style="text-align:center;padding:20px;color:var(--g4);font-size:13px;background:var(--g1);border-radius:12px">No documents yet. Tap Add to upload.</div>';
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+    docs.slice().reverse().map(p=>`
+      <div style="border-radius:11px;overflow:hidden;border:.5px solid var(--g2);cursor:pointer" onclick="viewPhoto('${p.id}')">
+        <div style="height:100px;background:${p.data&&p.data.startsWith('data:image')?'transparent':'var(--bl)'};display:flex;align-items:center;justify-content:center;overflow:hidden">
+          ${p.data&&p.data.startsWith('data:image')?`<img src="${p.data}" style="width:100%;height:100%;object-fit:cover"/>`:
+            '<div style="font-size:36px">📄</div>'}
+        </div>
+        <div style="padding:7px 9px;background:#fff">
+          <div style="font-size:11px;font-weight:700;color:var(--g6)">${p.label||'Document'}</div>
+          <div style="font-size:10px;color:var(--g4)">${p.docCat||'Doc'} · ${fmtDate(p.date)}</div>
+        </div>
+      </div>`).join('')+
+  '</div>';
+}
+
+function addDocPhoto(input){
+  const file=input.files[0]; if(!file) return;
+  const catChoice=prompt('Category:\n1=Prescription\n2=Lab Report\n3=Insurance\n4=Discharge\n5=Certificate\n6=Other\n\nEnter number:','1');
+  const cats=['Prescription','Lab Report','Insurance','Discharge','Certificate','Other'];
+  const docCat=cats[(parseInt(catChoice)||1)-1]||'Other';
+  const label=prompt('Document label (e.g. "Apollo CBC Report Apr 2026"):',docCat)||docCat;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const photos=getPhotos();
+    photos.push({ id:'ph'+Date.now(), cat:'doc', docCat, data:e.target.result, label, date:today() });
+    savePhotos(photos);
+    rDocLocker();
+  };
+  reader.readAsDataURL(file);
 }
 
 
