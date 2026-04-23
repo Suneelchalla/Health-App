@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<title>HealthVault v2.0</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#1A73E8;--bl:#E8F0FE;--bd:#0D47A1;--bm:#4A90D9;
+  --green:#34A853;--gl:#E6F4EA;
+  --amber:#F9AB00;--al:#FEF7E0;
+  --red:#EA4335;--rl:#FCE8E6;
+  --purple:#7C4DFF;--pl:#EDE7FE;
+  --teal:#00897B;--tl:#E0F2F1;
+  --orange:#FA7B17;--ol:#FEF3E2;
+  --pink:#D81B60;--pkl:#FCE4EC;
+  --g1:#F8F9FA;--g2:#E8EAED;--g3:#BDC1C6;--g4:#80868B;--g5:#5F6368;--g6:#202124;
+  --w:#fff;--sh:0 2px 12px rgba(0,0,0,.1);--ss:0 1px 4px rgba(0,0,0,.08);
+  --r:16px;--rs:10px;
+}
+html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex;align-items:center;justify-content:center;padding:0;min-height:100vh;overflow-x:hidden}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;padding:12px 0 20px}
+.badge-top{display:flex;align-items:center;gap:8px;background:#fff;padding:7px 16px;border-radius:24px;
+  box-shadow:0 2px 12px rgba(26,115,232,.15);border:1px solid #C5D9F8}
+.badge-top svg{width:20px;height:20px;stroke:var(--blue);fill:none;stroke-width:2}
+.badge-top b{font-size:14px;font-weight:700;color:var(--bd)}
+.badge-top small{font-size:11px;color:var(--g4);background:#F0F4FF;padding:2px 8px;border-radius:10px}
+
+/* PHONE FRAME */
+.phone{width:min(375px,100vw);height:min(812px,100dvh);background:var(--w);
+  border-radius:clamp(0px,4vw,50px);overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);
+  position:relative;display:flex;flex-direction:column;flex-shrink:0}
+@media(max-width:480px){
+  html,body{padding:0;align-items:flex-start}
+  .wrap{padding:0;gap:0}
+  .badge-top,.subnav-wrap{display:none!important}
+  .phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}
+  .notch{display:none!important}.status{display:none!important}
+  .screen{padding-top:env(safe-area-inset-top,0)}
+  .tabbar{height:calc(60px + env(safe-area-inset-bottom,0));padding-bottom:env(safe-area-inset-bottom,0)}
+}
+/* Hide fake status bar in standalone PWA mode (added to homescreen) */
+@media(display-mode:standalone){
+  .notch{display:none!important}
+  .status{display:none!important}
+}
+@media(max-width:360px){.tab span{font-size:9px}.tab svg{width:19px;height:19px}}
+
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:126px;height:34px;background:#fff;border-radius:0 0 20px 20px;z-index:20}
+.status{height:50px;background:var(--w);display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:12px;font-weight:700;color:var(--g6);flex-shrink:0;z-index:10;position:relative}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.screen::-webkit-scrollbar{display:none}
+
+/* TAB BAR */
+.tabbar{height:86px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-top:.5px solid var(--g2);display:flex;align-items:flex-start;padding-top:10px;flex-shrink:0;width:100%}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 2px;position:relative;min-width:0}
+.tab svg{width:20px;height:20px;stroke-width:1.8;fill:none;transition:stroke .15s}
+.tab span{font-size:9px;font-weight:600;letter-spacing:.1px;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.tab.on svg{stroke:var(--blue)}.tab.on span{color:var(--blue)}
+.tab:not(.on) svg{stroke:var(--g4)}.tab:not(.on) span{color:var(--g4)}
+.tdot{position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:16px;height:2px;background:var(--blue);border-radius:2px;opacity:0;transition:opacity .15s}
+.tab.on .tdot{opacity:1}
+
+/* SHARED UI */
+.sc{animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.hdr{background:var(--w);padding:14px 18px 12px;border-bottom:.5px solid var(--g2);flex-shrink:0}
+.hdr-t{font-size:19px;font-weight:800;color:var(--g6);letter-spacing:-.3px}
+.hdr-s{font-size:13px;color:var(--g4);margin-top:3px}
+.brow{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;border-bottom:.5px solid var(--g2)}
+.bk{width:34px;height:34px;background:var(--g1);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:.5px solid var(--g2);font-size:16px;flex-shrink:0}
+.bk-t{font-size:15px;font-weight:700;color:var(--g6)}.bk-s{font-size:11px;color:var(--g4);margin-top:1px}
+.sec{font-size:14px;font-weight:700;color:var(--g6);margin:16px 0 8px;padding:0 16px}
+.card{background:var(--w);border-radius:var(--r);padding:14px;box-shadow:var(--ss);border:.5px solid var(--g2);margin-bottom:10px;cursor:pointer}
+.card:active{background:var(--g1)}
+.crow{display:flex;align-items:center;gap:12px}
+.ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.bg{background:var(--gl);color:#1B5E20}.by{background:var(--al);color:#B06000}
+.br{background:var(--rl);color:#C5221F}.bb{background:var(--bl);color:var(--bd)}
+.bor{background:var(--ol);color:#B85000}.bp{background:var(--pl);color:#311B92}
+.btn{background:var(--blue);color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:700;width:100%;cursor:pointer;margin-top:10px;font-family:inherit}
+.btn:active{opacity:.88}
+.btn2{background:var(--g1);color:var(--g6);border:.5px solid var(--g2);border-radius:13px;padding:12px;font-size:13px;font-weight:600;width:100%;cursor:pointer;margin-top:8px;font-family:inherit}
+.btn2:active{background:var(--g2)}
+.btn-sm{padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+.iban{padding:10px 14px;display:flex;gap:8px;align-items:flex-start;border-bottom:.5px solid}
+.iban span:last-child{font-size:12px;font-weight:500;line-height:1.5}
+.ibl{background:#E8F0FE;border-color:#C5D9F8}.ibl span:last-child{color:var(--bd)}
+.iby{background:var(--al);border-color:var(--amber)}.iby span:last-child{color:#B06000}
+.ibr{background:var(--rl);border-color:var(--red)}.ibr span:last-child{color:#C5221F}
+.inp{width:100%;background:var(--g1);border:1.5px solid var(--g2);border-radius:11px;padding:12px 13px;font-size:14px;color:var(--g6);outline:none;font-family:inherit;transition:border-color .15s}
+.inp:focus{border-color:var(--blue)}
+.sel{width:100%;background:var(--g1);border:1.5px solid var(--g2);border-radius:11px;padding:12px 13px;font-size:14px;color:var(--g6);outline:none;font-family:inherit;appearance:none}
+.sel:focus{border-color:var(--blue)}
+.flbl{font-size:12px;font-weight:700;color:var(--g5);margin-bottom:5px}
+.fld{margin-bottom:15px}
+.pills{display:flex;background:var(--g1);border-radius:11px;padding:3px;border:.5px solid var(--g2)}
+.popt{flex:1;padding:8px 6px;border-radius:9px;font-size:12px;font-weight:600;color:var(--g4);cursor:pointer;text-align:center;transition:all .2s}
+.popt.on{background:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(26,115,232,.35)}
+.pgrid{display:flex;background:var(--g1);border-radius:11px;padding:3px;border:.5px solid var(--g2);gap:2px}
+.pgo{flex:1;padding:6px 4px;border-radius:9px;font-size:11px;font-weight:600;color:var(--g4);cursor:pointer;text-align:center;transition:all .2s}
+.pgo.on{background:var(--blue);color:#fff}
+.pb{padding-bottom:30px}
+.p16{padding:0 16px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}
+
+/* SPLASH */
+.splash{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#1A73E8,#0D47A1);padding:40px 28px;text-align:center;position:relative;overflow:hidden}
+.splash::before{content:"";position:absolute;top:-80px;right:-80px;width:280px;height:280px;background:rgba(255,255,255,.07);border-radius:50%}
+.splash::after{content:"";position:absolute;bottom:-100px;left:-60px;width:240px;height:240px;background:rgba(255,255,255,.05);border-radius:50%}
+.sp-logo{width:84px;height:84px;background:rgba(255,255,255,.18);border-radius:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid rgba(255,255,255,.3);position:relative;z-index:1}
+.sp-logo svg{width:46px;height:46px;stroke:#fff;fill:none;stroke-width:1.8}
+.sp-name{font-size:34px;font-weight:900;color:#fff;letter-spacing:-.5px;position:relative;z-index:1}
+.sp-tag{font-size:14px;color:rgba(255,255,255,.82);margin-top:12px;position:relative;z-index:1;line-height:1.55}
+.sp-note{font-size:11px;color:rgba(255,255,255,.55);margin-top:28px;position:relative;z-index:1;line-height:1.5}
+
+/* LOGIN */
+.login-top{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:36px 24px 30px;color:#fff;flex-shrink:0}
+.login-top-logo{width:50px;height:50px;background:rgba(255,255,255,.2);border-radius:15px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;border:1.5px solid rgba(255,255,255,.3)}
+.login-top-logo svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2}
+.login-top h1{font-size:24px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px}
+.login-top p{font-size:13px;opacity:.84;line-height:1.5}
+.ltabs{display:flex;background:var(--g1);border-radius:11px;padding:3px;gap:2px;margin-bottom:18px;border:.5px solid var(--g2)}
+.ltab{flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:700;color:var(--g4);cursor:pointer;text-align:center;transition:all .2s}
+.ltab.on{background:var(--w);color:var(--g6);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.or-div{display:flex;align-items:center;gap:10px;margin:14px 0}
+.or-div::before,.or-div::after{content:"";flex:1;height:.5px;background:var(--g2)}
+.or-div span{font-size:11px;color:var(--g4);font-weight:600}
+.soc-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--g2);background:var(--w);font-size:13px;font-weight:600;color:var(--g6);cursor:pointer;margin-bottom:9px;font-family:inherit}
+.soc-btn:active{background:var(--g1)}
+.soc-btn svg{width:19px;height:19px}
+.err{background:var(--rl);color:#C5221F;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:600;margin-bottom:12px;display:none}
+.guest-lnk{text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:10px;font-weight:700}
+
+/* ONBOARDING */
+.ob-hdr{padding:22px 22px 14px;background:var(--w);border-bottom:.5px solid var(--g2)}
+.ob-step{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.ob-title{font-size:21px;font-weight:800;color:var(--g6);letter-spacing:-.3px;margin-bottom:4px}
+.ob-sub{font-size:13px;color:var(--g4);line-height:1.5}
+.ob-prog{height:3px;background:var(--g2)}
+.ob-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s}
+.ob-body{padding:20px}
+.bt-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.bt-opt{padding:13px 10px;border-radius:11px;border:1.5px solid var(--g2);cursor:pointer;text-align:center;background:var(--w)}
+.bt-opt.on{border-color:var(--blue);background:var(--bl)}
+.bt-opt .bti{font-size:26px;margin-bottom:5px}.bt-opt .btl{font-size:12px;font-weight:700;color:var(--g6)}
+.bt-opt.on .btl{color:var(--bd)}.bt-opt .bts{font-size:10px;color:var(--g4);margin-top:1px}
+
+/* HOME */
+.hh{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:16px 18px 32px;color:#fff;position:relative;overflow:hidden}
+.hh::before{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:rgba(255,255,255,.07);border-radius:50%}
+.sos{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);border-radius:22px;padding:6px 12px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:4px}
+.hgreet{font-size:12px;opacity:.85;margin-bottom:2px}
+.hname{font-size:21px;font-weight:800;margin-bottom:12px;letter-spacing:-.3px}
+.hstats{display:flex;gap:9px;position:relative;z-index:1}
+.hstat{background:rgba(255,255,255,.14);border-radius:12px;padding:8px 11px;border:1px solid rgba(255,255,255,.2)}
+.hstat .sv{font-size:15px;font-weight:700}.hstat .sl{font-size:10px;opacity:.8}
+.hbody{padding:0 14px;margin-top:-16px}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+.qa{background:var(--w);border-radius:var(--rs);padding:13px 11px;box-shadow:var(--ss);border:.5px solid var(--g2);cursor:pointer;display:flex;flex-direction:column;gap:5px}
+.qa:active{transform:scale(.97);background:var(--g1)}
+.qa .qi{font-size:20px}.qa .ql{font-size:12px;font-weight:700;color:var(--g6)}.qa .qs{font-size:10px;color:var(--g4)}
+.med-chip{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;margin-bottom:7px}
+.med-chip:last-child{margin-bottom:0}
+
+/* FAMILY PROFILES */
+.fp-scroll{display:flex;gap:10px;padding:4px 16px 4px;overflow-x:auto;flex-shrink:0}
+.fp-scroll::-webkit-scrollbar{display:none}
+.fp-card{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;padding:8px 12px;border-radius:12px;border:1.5px solid var(--g2);background:var(--w);min-width:72px;transition:all .2s}
+.fp-card.on{border-color:var(--blue);background:var(--bl)}
+.fp-card:active{opacity:.8}
+.fp-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;border:2px solid rgba(0,0,0,.08)}
+.fp-nm{font-size:11px;font-weight:700;color:var(--g6);text-align:center;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fp-rl{font-size:10px;color:var(--g4);text-align:center}
+.fp-add{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;padding:8px 12px;border-radius:12px;border:1.5px dashed var(--g3);background:var(--g1);min-width:72px}
+.fp-add span{font-size:10px;font-weight:600;color:var(--g4)}
+
+/* BODY EXPLORER */
+.body-top{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px}
+.pgrp{display:flex;background:var(--g1);border-radius:20px;padding:3px;border:.5px solid var(--g2)}
+.pgopt{padding:5px 11px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--g5)}
+.pgopt.on{background:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(26,115,232,.35)}
+.srch{background:var(--g1);border-radius:22px;padding:8px 13px;display:flex;align-items:center;gap:7px;margin:9px 14px;border:1px solid var(--g2)}
+.srch input{border:none;background:transparent;font-size:13px;color:var(--g6);flex:1;outline:none;font-family:inherit}
+.bcanv{height:340px;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#EEF3FF,#E4EDFF)}
+.bc-lbl{position:absolute;top:9px;left:11px;font-size:10px;color:var(--blue);background:rgba(255,255,255,.92);padding:4px 10px;border-radius:11px;border:.5px solid #C5D9F8;font-weight:600}
+.vw-lbl{position:absolute;top:9px;right:11px;font-size:10px;color:var(--g5);background:rgba(255,255,255,.85);padding:4px 10px;border-radius:11px;border:.5px solid var(--g2);font-weight:600}
+.zctrl{position:absolute;right:11px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px}
+.zb{width:32px;height:32px;background:#fff;border-radius:8px;border:.5px solid var(--g2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;font-weight:600;color:var(--g5);box-shadow:var(--ss)}
+.rh{position:absolute;bottom:9px;font-size:10px;color:var(--g4);display:flex;align-items:center;gap:3px}
+.hs{cursor:pointer}
+.hs .ha{fill:rgba(26,115,232,.07);stroke:rgba(26,115,232,.25);stroke-width:.5;transition:all .2s}
+.hs:active .ha,.hs.sel .ha{fill:rgba(26,115,232,.2);stroke:var(--blue);stroke-width:1.5}
+.pp{background:var(--w);margin:11px 14px;border-radius:var(--r);border:1.5px solid #C5D9F8;overflow:hidden;box-shadow:var(--ss)}
+.pp-hdr{background:linear-gradient(135deg,#1A73E8,#0D47A1);padding:12px 15px;color:#fff}
+.pp-n{font-size:16px;font-weight:800}.pp-s{font-size:11px;opacity:.85;margin-top:2px}
+.sy-item{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:.5px solid var(--g2);cursor:pointer}
+.sy-item:last-child{border-bottom:none}
+.sy-item:active{background:var(--bl)}
+.sy-e{font-size:16px;width:26px;text-align:center;flex-shrink:0}
+.sy-t{flex:1}.sy-t strong{font-size:13px;color:var(--g6);display:block;font-weight:600}
+.sy-t small{font-size:10px;color:var(--g4)}
+.sy-arr{color:var(--g3);font-size:15px}
+
+/* SYMPTOM CHECKER */
+.prog-bar{height:3px;background:var(--g2)}
+.prog-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s}
+.scb{padding:14px}
+.qcard{background:var(--g1);border-radius:var(--r);padding:14px;margin-bottom:12px;border:.5px solid var(--g2)}
+.qlbl{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.qtxt{font-size:15px;font-weight:700;color:var(--g6);margin-bottom:12px;line-height:1.35}
+.ogrid{display:flex;flex-wrap:wrap;gap:7px}
+.opt{padding:7px 13px;background:#fff;border:1.5px solid var(--g2);border-radius:20px;font-size:12px;font-weight:600;color:var(--g5);cursor:pointer}
+.opt:active,.opt.on{border-color:var(--blue);color:var(--blue);background:var(--bl)}
+.prow{display:flex;gap:3px;justify-content:space-between;padding:4px 0}
+.pn{width:25px;height:25px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--g2);color:var(--g5)}
+.eb{background:var(--red);border-radius:var(--r);padding:12px;margin-bottom:12px;color:#fff;display:flex;gap:9px}
+.ei{font-size:20px;flex-shrink:0}.et{font-size:13px;font-weight:800;margin-bottom:3px}.es{font-size:11px;opacity:.9;line-height:1.4}
+
+/* RESULTS */
+.rsec{background:var(--w);border-radius:var(--r);padding:14px;margin-bottom:9px;box-shadow:var(--ss);border:.5px solid var(--g2)}
+.rtitle{font-size:10px;font-weight:700;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+.cause{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px}
+.cdot{width:5px;height:5px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.cause strong{font-size:13px;color:var(--g6);display:block;margin-bottom:2px}
+.cause small{font-size:11px;color:var(--g4);line-height:1.4}
+.sci{display:flex;align-items:center;gap:7px;padding:8px 11px;background:var(--gl);border-radius:8px;margin-bottom:5px;font-size:12px;color:#1B5E20;font-weight:600}
+
+/* SCANNER */
+.upz{border:2px dashed var(--g3);border-radius:var(--r);padding:28px 18px;text-align:center;cursor:pointer;margin:14px;background:var(--g1)}
+.upz:active{border-color:var(--blue);background:var(--bl)}
+.br2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 14px 14px}
+.bol{border:1.5px solid var(--blue);color:var(--blue);background:#fff;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.ocard{background:var(--w);border-radius:var(--r);border:.5px solid var(--g2);overflow:hidden;box-shadow:var(--ss);margin-bottom:11px}
+.ocr-ch{background:linear-gradient(135deg,#1A73E8,#0D47A1);padding:11px 15px;color:#fff}
+.ocr-ch strong{font-size:13px;font-weight:800;display:block}
+.ocr-ch span{font-size:10px;opacity:.85}
+.ocf{padding:9px 15px;border-bottom:.5px solid var(--g2);display:flex;align-items:center}
+.ocf:last-child{border-bottom:none}
+.ocfl{font-size:10px;color:var(--g4);width:70px;flex-shrink:0;font-weight:600}
+.ocfv{font-size:13px;color:var(--g6);font-weight:600;flex:1}
+.ocfe{font-size:14px;color:var(--g3);cursor:pointer;padding:4px}
+.tc{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;background:var(--bl);color:var(--bd);border-radius:18px;font-size:10px;font-weight:700;margin:2px}
+.cbar{height:4px;background:var(--g2);border-radius:2px;margin:5px 15px 9px}
+.cfill{height:100%;border-radius:2px;background:var(--green)}
+
+/* LAB */
+.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px}
+.ls{background:var(--w);border-radius:var(--rs);padding:12px;border:.5px solid var(--g2);box-shadow:var(--ss)}
+.lsv{font-size:20px;font-weight:800}.lsl{font-size:10px;color:var(--g4);margin-top:2px}
+.tcrd{background:var(--w);border-radius:var(--rs);margin:0 14px 9px;border:.5px solid var(--g2);overflow:hidden;box-shadow:var(--ss)}
+.tcrd-h{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--g2)}
+.tcrd-n{font-size:13px;font-weight:700;color:var(--g6)}
+.trow{display:flex;align-items:center;padding:8px 13px;gap:9px;border-bottom:.5px solid var(--g2)}
+.trow:last-child{border-bottom:none}
+.trn{flex:1;font-size:12px;color:var(--g6)}.trv{font-size:13px;font-weight:800}
+.trr{font-size:10px;color:var(--g4);min-width:56px;text-align:right}
+.vh{color:var(--red)}.vl{color:var(--blue)}.vn{color:var(--green)}
+.ib{margin:5px 13px;padding:9px 11px;border-radius:8px;font-size:11px;font-weight:500;line-height:1.5}
+
+/* VAULT */
+.vitem{display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--w);border-radius:var(--rs);margin-bottom:7px;border:.5px solid var(--g2);cursor:pointer}
+.vitem:active{background:var(--g1)}
+.vico{font-size:20px;width:34px;text-align:center;flex-shrink:0}
+.vt{font-size:13px;font-weight:600;color:var(--g6)}.vs{font-size:11px;color:var(--g4);margin-top:1px}
+.vd{font-size:10px;color:var(--g4);text-align:right;flex-shrink:0}
+
+/* PROFILE */
+.ph{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:26px 18px 20px;text-align:center;color:#fff}
+.pav{width:70px;height:70px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;margin:0 auto 9px;border:2.5px solid rgba(255,255,255,.4)}
+.pnm{font-size:19px;font-weight:800;margin-bottom:2px}
+.pmt{font-size:12px;opacity:.8}
+.pgr{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px}
+.ps{background:var(--w);border-radius:var(--rs);padding:12px;border:.5px solid var(--g2);box-shadow:var(--ss)}
+.psv{font-size:17px;font-weight:800;color:var(--blue)}.psl{font-size:10px;color:var(--g4);margin-top:2px}
+.sit{display:flex;align-items:center;padding:13px 14px;border-bottom:.5px solid var(--g2);cursor:pointer;gap:11px}
+.sit:active{background:var(--g1)}
+.sii{font-size:17px;width:22px;text-align:center}.sil{font-size:14px;color:var(--g6);font-weight:500;flex:1}
+.siv{font-size:12px;color:var(--g4)}.sia{color:var(--g3);font-size:15px}
+
+/* EMERGENCY */
+.emfh{background:var(--red);padding:20px 18px;color:#fff}
+.emfp{font-size:12px;font-weight:700;opacity:.9;margin-bottom:3px}
+.emft{font-size:22px;font-weight:900;margin-bottom:7px;letter-spacing:-.3px}
+.emfs{font-size:13px;opacity:.9;line-height:1.4}
+.emb{background:var(--red);color:#fff;border:none;border-radius:15px;padding:16px;font-size:16px;font-weight:800;width:100%;cursor:pointer;margin-bottom:11px;display:flex;align-items:center;justify-content:center;gap:9px;font-family:inherit;box-shadow:0 4px 16px rgba(234,67,53,.35)}
+.emb:active{opacity:.88}
+
+/* MEDICINE INTERACTIONS */
+.int-level{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:11px;margin-bottom:9px;border:1.5px solid}
+.int-sev{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.int-t{font-size:13px;font-weight:700;flex:1}.int-s{font-size:11px;margin-top:2px;line-height:1.4}
+.int-mild{background:#E6F4EA;border-color:#A8D5B5}.int-mild .int-t{color:#1B5E20}.int-mild .int-s{color:#2D7A4F}
+.int-mod{background:var(--al);border-color:#F9AB00}.int-mod .int-t{color:#B06000}.int-mod .int-s{color:#7B4700}
+.int-sev-c{background:var(--rl);border-color:var(--red)}.int-sev-c .int-t{color:#C5221F}.int-sev-c .int-s{color:#960000}
+.med-search-wrap{padding:0 14px 10px}
+.med-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bl);color:var(--bd);border-radius:20px;font-size:11px;font-weight:700;margin:3px;cursor:pointer}
+.med-tag span{font-size:13px;line-height:1}
+
+/* NEARBY CARE */
+.nc-map{height:160px;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border-radius:var(--r);margin:0 14px 12px;display:flex;align-items:center;justify-content:center;border:.5px solid #90CAF9;position:relative;overflow:hidden}
+.nc-map-bg{position:absolute;inset:0;opacity:.3}
+.nc-pin{width:36px;height:36px;background:var(--red);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(234,67,53,.4)}
+.nc-pin-inner{transform:rotate(45deg);font-size:16px}
+.nc-item{display:flex;align-items:center;gap:11px;padding:12px 13px;background:var(--w);border-radius:var(--rs);margin-bottom:8px;border:.5px solid var(--g2)}
+.nc-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.nc-name{font-size:13px;font-weight:700;color:var(--g6)}
+.nc-meta{font-size:11px;color:var(--g4);margin-top:2px}
+.nc-dist{font-size:12px;font-weight:700;color:var(--blue);margin-left:auto;text-align:right;flex-shrink:0}
+.nc-open{display:block;font-size:10px;color:var(--green);font-weight:600}
+
+/* ACTIVITY TRACKER */
+.at-ring{width:120px;height:120px;position:relative;margin:0 auto 14px}
+.at-ring svg{width:100%;height:100%}
+.at-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.at-steps{font-size:22px;font-weight:800;color:var(--g6)}
+.at-goal{font-size:11px;color:var(--g4)}
+.at-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 14px 14px}
+.at-stat{background:var(--w);border-radius:var(--rs);padding:11px 9px;border:.5px solid var(--g2);text-align:center;box-shadow:var(--ss)}
+.at-sv{font-size:16px;font-weight:800;color:var(--blue)}.at-sl{font-size:10px;color:var(--g4);margin-top:2px}
+.week-bars{display:flex;align-items:flex-end;gap:6px;height:70px;padding:0 14px;margin-bottom:14px}
+.wbar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.wbar{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .3s}
+.wbar-lbl{font-size:10px;color:var(--g4);font-weight:600}
+
+/* INSURANCE */
+.ins-card{background:linear-gradient(135deg,#1A73E8,#0D47A1);border-radius:var(--r);padding:18px;margin:0 14px 12px;color:#fff}
+.ins-name{font-size:16px;font-weight:800;margin-bottom:2px}
+.ins-num{font-size:13px;opacity:.8;margin-bottom:12px}
+.ins-row{display:flex;justify-content:space-between}
+.ins-field{font-size:11px;opacity:.75}.ins-val{font-size:13px;font-weight:700;margin-top:2px}
+.exp-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--w);border-radius:var(--rs);margin-bottom:7px;border:.5px solid var(--g2)}
+.exp-cat{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.exp-name{font-size:13px;font-weight:600;color:var(--g6)}.exp-date{font-size:11px;color:var(--g4);margin-top:1px}
+.exp-amt{font-size:14px;font-weight:800;color:var(--g6);margin-left:auto}
+.exp-stat{font-size:10px;font-weight:700;display:block;margin-top:2px;text-align:right}
+
+/* SKIN TRACKER */
+.skin-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 14px 12px}
+.skin-photo{border-radius:11px;overflow:hidden;border:.5px solid var(--g2);cursor:pointer}
+.skin-photo-img{height:100px;background:linear-gradient(135deg,#FFF3E0,#FFE0B2);display:flex;align-items:center;justify-content:center;font-size:32px}
+.skin-photo-meta{padding:8px 9px;background:var(--w)}
+.skin-photo-date{font-size:11px;font-weight:700;color:var(--g6)}
+.skin-photo-note{font-size:10px;color:var(--g4);margin-top:1px}
+.skin-change{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:3px}
+
+/* VACCINATION */
+.vac-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--w);border-radius:var(--rs);margin-bottom:7px;border:.5px solid var(--g2)}
+.vac-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.vac-name{font-size:13px;font-weight:700;color:var(--g6)}.vac-date{font-size:11px;color:var(--g4);margin-top:1px}
+.vac-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;margin-left:auto;flex-shrink:0}
+
+/* FOOD INTERACTIONS */
+.food-int-item{border-radius:11px;border:1.5px solid var(--g2);overflow:hidden;margin-bottom:9px;background:var(--w)}
+.food-int-hdr{padding:10px 13px;display:flex;align-items:center;gap:9px}
+.food-int-hdr-ico{font-size:20px;flex-shrink:0}
+.food-int-hdr-t{font-size:13px;font-weight:700;color:var(--g6);flex:1}
+.food-int-body{padding:0 13px 12px}
+.food-avoid{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:.5px solid var(--g2)}
+.food-avoid:last-child{border-bottom:none}
+.food-avoid-ico{font-size:16px;flex-shrink:0;margin-top:1px}
+.food-avoid-t{font-size:12px;color:var(--g6);flex:1}.food-avoid-t small{display:block;font-size:10px;color:var(--g4);margin-top:1px}
+.food-avoid-sev{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;flex-shrink:0}
+
+/* AI CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:100%}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px 13px}
+.chat-msgs::-webkit-scrollbar{display:none}
+.msg-row{display:flex;gap:8px;margin-bottom:12px}
+.msg-row.user{flex-direction:row-reverse}
+.msg-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:1.5px solid rgba(0,0,0,.08)}
+.msg-bubble{max-width:78%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5}
+.msg-bot .msg-bubble{background:var(--g1);color:var(--g6);border:.5px solid var(--g2);border-bottom-left-radius:4px}
+.msg-user .msg-bubble{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
+.msg-time{font-size:10px;color:var(--g4);margin-top:4px;text-align:right}
+.chat-input-wrap{padding:10px 13px;border-top:.5px solid var(--g2);background:var(--w);display:flex;gap:8px;align-items:flex-end}
+.chat-inp{flex:1;background:var(--g1);border:1.5px solid var(--g2);border-radius:20px;padding:9px 14px;font-size:13px;color:var(--g6);outline:none;font-family:inherit;resize:none;max-height:80px;min-height:38px}
+.chat-inp:focus{border-color:var(--blue)}
+.chat-send{width:38px;height:38px;background:var(--blue);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-send svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2}
+.chat-suggest{display:flex;gap:7px;padding:8px 13px 2px;overflow-x:auto}
+.chat-suggest::-webkit-scrollbar{display:none}
+.cs-btn{padding:7px 12px;background:var(--w);border:1.5px solid var(--g2);border-radius:18px;font-size:11px;font-weight:600;color:var(--g6);cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0}
+.cs-btn:active{background:var(--g1)}
+.typing{display:flex;gap:3px;align-items:center;padding:8px 12px}
+.typing span{width:6px;height:6px;background:var(--g3);border-radius:50%;animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+/* DOCUMENT LOCKER */
+.doc-cat{display:flex;gap:7px;padding:4px 14px 10px;overflow-x:auto}
+.doc-cat::-webkit-scrollbar{display:none}
+.dc{padding:7px 13px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--g2);background:var(--w);color:var(--g4);white-space:nowrap;flex-shrink:0}
+.dc.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.doc-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--w);border-radius:var(--rs);margin-bottom:7px;border:.5px solid var(--g2);cursor:pointer}
+.doc-item:active{background:var(--g1)}
+.doc-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.doc-nm{font-size:13px;font-weight:700;color:var(--g6)}.doc-meta{font-size:10px;color:var(--g4);margin-top:2px}
+.doc-sz{font-size:10px;color:var(--g4);margin-left:auto;text-align:right}
+.doc-lock{display:block;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge-top">
+    <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg>
+    <b>HealthVault</b>
+  </div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status">
+      <span style="padding-left:6px">9:41</span>
+      <div style="display:flex;gap:5px;align-items:center">
+        <svg width="15" height="11" viewBox="0 0 15 11" fill="#202124"><rect x="0" y="2" width="3" height="9" rx="1"/><rect x="4" y="1" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="11" rx="1"/><rect x="12" y="1" width="2.5" height="10" rx="1" opacity=".4"/></svg>
+        <svg width="24" height="11" viewBox="0 0 24 11"><rect x="0" y="1" width="21" height="9" rx="2.5" fill="none" stroke="#202124" stroke-width="1.1"/><rect x="1.2" y="2.2" width="15" height="6.6" rx="1.5" fill="#202124"/><rect x="22" y="3" width="1.5" height="5" rx=".75" fill="#202124"/></svg>
+      </div>
+    </div>
+    <div class="screen" id="SCR"></div>
+    <div class="tabbar" id="TBAR" style="display:none">
+      <div class="tab on" id="T-home" onclick="go('home')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span>Home</span></div>
+      <div class="tab" id="T-body" onclick="go('body')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v6M9 10h6M9 21l3-8 3 8"/><path d="M10 17H7l-2 4M14 17h3l2 4"/></svg><span>Body</span></div>
+      <div class="tab" id="T-scan" onclick="go('scan')"><div class="tdot"></div><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><circle cx="17" cy="17" r="3"/></svg><span>Scanner</span></div>
+      <div class="tab" id="T-lab" onclick="go('lab')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M9 3h6v8l3 9H6l3-9V3z"/><path d="M6 9h12"/></svg><span>Lab</span></div>
+      <div class="tab" id="T-more" onclick="go('more')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></div>
+      <div class="tab" id="T-profile" onclick="go('profile')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+  <div class="subnav-wrap" id="SNW" style="display:none;flex-wrap:wrap;gap:7px;justify-content:center;max-width:410px">
+    <button onclick="go('family')" style="background:#fff;border:1.5px solid var(--blue);color:var(--blue);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">👨‍👩‍👧 Family</button>
+    <button onclick="go('interactions')" style="background:#fff;border:1.5px solid var(--purple);color:var(--purple);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">⚗️ Interactions</button>
+    <button onclick="go('chatbot')" style="background:#fff;border:1.5px solid var(--teal);color:var(--teal);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🤖 AI Chat</button>
+    <button onclick="go('nearby')" style="background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📍 Nearby</button>
+    <button onclick="go('activity')" style="background:#fff;border:1.5px solid var(--orange);color:var(--orange);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🏃 Activity</button>
+    <button onclick="go('insurance')" style="background:#fff;border:1.5px solid var(--amber);color:#B06000;border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🏦 Insurance</button>
+    <button onclick="go('skin')" style="background:#fff;border:1.5px solid var(--pink);color:var(--pink);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📸 Skin</button>
+    <button onclick="go('doclocker')" style="background:#fff;border:1.5px solid var(--g5);color:var(--g5);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔒 Docs</button>
+    <button onclick="go('vaccines')" style="background:#fff;border:1.5px solid var(--blue);color:var(--blue);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">💉 Vaccines</button>
+    <button onclick="go('foodint')" style="background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🍽️ Food+Med</button>
+    <button onclick="go('emergency')" style="background:#FCE8E6;border:1.5px solid var(--red);color:#C5221F;border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🆘 Emergency</button>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
+let U = {}, bodyView='front', bodySex='female', selPart=null, chatHistory=[], docFilter='all', isChatLoading=false;
+const AUTH = ['splash','login','onboard'];
+
+function go(s) {
+  const isAuth = AUTH.includes(s);
+  TB.style.display = isAuth ? 'none' : 'flex';
+  SN.style.display = isAuth ? 'none' : 'flex';
+  ['home','body','scan','lab','more','profile'].forEach(t => {
+    const e = $('T-'+t); if(e) e.className = 'tab'+(t===s?' on':'');
+  });
+  SCR.scrollTop = 0;
+  const map = {
+    splash:rSplash, login:rLogin, onboard:rOnboard,
+    home:rHome, body:rBody, scan:rScan, lab:rLab,
+    more:rMore, profile:rProfile, family:rFamily,
+    symptom:rSymptom, ocr:rOCR, results:rResults, emergency:rEmergency,
+    vault:rVault, interactions:rInteractions, chatbot:rChatbot,
+    nearby:rNearby, activity:rActivity, insurance:rInsurance,
+    skin:rSkin, doclocker:rDocLocker, vaccines:rVaccines, foodint:rFoodInt,
+    pediatric:rPediatric, elderly:rElderly
+  };
+  if(map[s]) map[s]();
+}
+
+/* ══ SPLASH ══ */
+function rSplash(){
+  SCR.innerHTML=`<div class="splash sc">
+  <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
+  <div class="sp-name">HealthVault</div>
+
+  <div class="sp-tag">Your complete personal health companion<br>Safe · Private · Smart · Always with you</div>
+  <div style="position:relative;z-index:1;margin-top:48px;width:100%">
+    <button class="btn" style="background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);margin-top:0" onclick="go('login')">Get Started</button>
+  </div>
+  <div class="sp-note">Your data is encrypted end-to-end.<br>We never sell your health information.</div>
+  </div>`;
+}
+
+/* ══ LOGIN ══ */
+let loginMode='login';
+function rLogin(){
+  SCR.innerHTML=`<div class="sc" style="height:100%;overflow-y:auto;display:flex;flex-direction:column">
+  <div class="login-top">
+    <div class="login-top-logo"><svg viewBox="0 0 24 24" width="26" height="26" stroke="#fff" fill="none" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
+    <h1>Welcome to HealthVault</h1>
+    <p>Your safe space for managing health, medicines, reports and family wellness</p>
+  </div>
+  <div style="padding:22px 20px;flex:1">
+    <div class="ltabs"><div class="ltab on" id="lt-login" onclick="swLT('login')">Sign In</div><div class="ltab" id="lt-signup" onclick="swLT('signup')">Create Account</div></div>
+    <div id="err-m" class="err"></div>
+    <div id="lf"></div>
+  </div></div>`;
+  renderLF('login');
+}
+function swLT(m){loginMode=m;['login','signup'].forEach(t=>{$('lt-'+t).className='ltab'+(t===m?' on':'')});renderLF(m);}
+function renderLF(m){
+  const c=$('lf');
+  if(m==='login') c.innerHTML=`
+    <div class="fld"><div class="flbl">Email or Phone</div><input class="inp" id="fe" type="email" placeholder="you@example.com"/></div>
+    <div class="fld"><div class="flbl">Password</div><input class="inp" id="fp" type="password" placeholder="Your password"/></div>
+    <button class="btn" style="margin-top:6px" onclick="doLogin()">Sign In</button>
+    <div style="text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:11px;font-weight:700">Forgot password?</div>
+    <div class="or-div"><span>or continue with</span></div>
+    <button class="soc-btn" onclick="doGoogle()"><svg viewBox="0 0 24 24" width="19" height="19"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
+    <div class="guest-lnk" onclick="doGuest()">Continue as Guest (limited features)</div>`;
+  else c.innerHTML=`
+    <div class="fld"><div class="flbl">Full Name</div><input class="inp" id="fn" type="text" placeholder="Your full name"/></div>
+    <div class="fld"><div class="flbl">Email</div><input class="inp" id="fe" type="email" placeholder="you@example.com"/></div>
+    <div class="fld"><div class="flbl">Password</div><input class="inp" id="fp" type="password" placeholder="Min 6 characters"/></div>
+    <div class="fld"><div class="flbl">Confirm Password</div><input class="inp" id="fp2" type="password" placeholder="Repeat password"/></div>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px"><input type="checkbox" id="fc" style="margin-top:3px;cursor:pointer"/><label for="fc" style="font-size:11px;color:var(--g5);line-height:1.5;cursor:pointer">I agree to the <span style="color:var(--blue);font-weight:700">Terms</span> and <span style="color:var(--blue);font-weight:700">Privacy Policy</span>. My health data is encrypted and never shared without consent.</label></div>
+    <button class="btn" style="margin-top:4px" onclick="doSignup()">Create Account</button>
+    <div class="or-div"><span>or</span></div>
+    <button class="soc-btn" onclick="doGoogle()"><svg viewBox="0 0 24 24" width="19" height="19"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Sign up with Google</button>`;
+}
+function showE(m){const e=$('err-m');if(e){e.textContent=m;e.style.display='block';}}
+function hideE(){const e=$('err-m');if(e)e.style.display='none';}
+function doLogin(){const e=$('fe')?.value.trim(),p=$('fp')?.value;hideE();if(!e||!e.includes('@')){showE('Please enter a valid email address.');return;}if(!p||p.length<4){showE('Password must be at least 4 characters.');return;}U.name=e.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());U.email=e;go('onboard');}
+function doSignup(){const n=$('fn')?.value.trim(),e=$('fe')?.value.trim(),p=$('fp')?.value,p2=$('fp2')?.value,c=$('fc')?.checked;hideE();if(!n){showE('Please enter your full name.');return;}if(!e||!e.includes('@')){showE('Please enter a valid email.');return;}if(!p||p.length<6){showE('Password must be at least 6 characters.');return;}if(p!==p2){showE('Passwords do not match.');return;}if(!c){showE('Please accept the Terms to continue.');return;}U.name=n;U.email=e;go('onboard');}
+function doGoogle(){U.name='New User';U.email='user@gmail.com';go('onboard');}
+function doGuest(){U.name='Guest';U.isGuest=true;go('onboard');}
+
+/* ══ ONBOARDING ══ */
+let obStep=0;
+const OB_TOTAL=4;
+function rOnboard(){obStep=0;U.gender='female';U.age='';U.bodyType='average';U.country='IN';U.language='English';renderOB();}
+function renderOB(){
+  const pct=Math.round(((obStep+1)/OB_TOTAL)*100);
+  const steps=[
+    ()=>`<div class="ob-hdr"><div class="ob-step">Step 1 of ${OB_TOTAL}</div><div class="ob-title">Tell us about you</div><div class="ob-sub">Personalises symptom guidance and health content for your profile.</div></div>
+    <div class="ob-prog"><div class="ob-fill" style="width:${pct}%"></div></div>
+    <div class="ob-body">
+      <div class="fld"><div class="flbl">Biological sex</div>
+        <div class="pills"><div class="popt ${U.gender==='female'?'on':''}" onclick="setU('gender','female',this)">Female</div><div class="popt ${U.gender==='male'?'on':''}" onclick="setU('gender','male',this)">Male</div><div class="popt ${U.gender==='other'?'on':''}" onclick="setU('gender','other',this)">Other</div></div></div>
+      <div class="fld"><div class="flbl">Age</div><input class="inp" type="number" min="1" max="120" placeholder="Your age in years" value="${U.age}" oninput="U.age=this.value"/></div>
+      <div class="fld"><div class="flbl">Country / Region</div>
+        <select class="sel" onchange="U.country=this.value">
+          <option value="IN" ${U.country==='IN'?'selected':''}>India</option>
+          <option value="US">United States</option><option value="UK">United Kingdom</option>
+          <option value="AU">Australia</option><option value="SG">Singapore</option><option value="OTHER">Other</option>
+        </select></div>
+      <button class="btn" onclick="nextOB()">Continue →</button></div>`,
+    ()=>`<div class="ob-hdr"><div class="ob-step">Step 2 of ${OB_TOTAL}</div><div class="ob-title">Body measurements</div><div class="ob-sub">Optional — helps with BMI and personalised guidance.</div></div>
+    <div class="ob-prog"><div class="ob-fill" style="width:${pct}%"></div></div>
+    <div class="ob-body">
+      <div class="fld"><div class="flbl">Body type</div>
+        <div class="bt-grid">${[['slim','🧍','Slim','Lower BMI'],['average','🚶','Average','Moderate'],['athletic','🏋️','Athletic','Muscular'],['heavy','👤','Heavy-set','Higher BMI']].map(([v,e,l,s])=>`<div class="bt-opt ${U.bodyType===v?'on':''}" onclick="setU('bodyType','${v}',this,'bt-opt')"><div class="bti">${e}</div><div class="btl">${l}</div><div class="bts">${s}</div></div>`).join('')}</div></div>
+      <div class="fld" style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        <div><div class="flbl">Height (cm)</div><input class="inp" type="number" placeholder="e.g. 162" value="${U.height||''}" oninput="U.height=this.value"/></div>
+        <div><div class="flbl">Weight (kg)</div><input class="inp" type="number" placeholder="e.g. 58" value="${U.weight||''}" oninput="U.weight=this.value"/></div></div>
+      <button class="btn" onclick="nextOB()">Continue →</button>
+      <button class="btn2" onclick="nextOB()">Skip</button></div>`,
+    ()=>`<div class="ob-hdr"><div class="ob-step">Step 3 of ${OB_TOTAL}</div><div class="ob-title">Health background</div><div class="ob-sub">Optional — helps flag warnings and personalise guidance.</div></div>
+    <div class="ob-prog"><div class="ob-fill" style="width:${pct}%"></div></div>
+    <div class="ob-body">
+      <div class="fld"><div class="flbl">Known allergies</div><input class="inp" type="text" placeholder="e.g. Penicillin, Sulfa, Peanuts" value="${U.allergies||''}" oninput="U.allergies=this.value"/></div>
+      <div class="fld"><div class="flbl">Blood group</div>
+        <select class="sel" onchange="U.blood=this.value"><option value="">Select</option>${['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(b=>`<option ${U.blood===b?'selected':''}>${b}</option>`).join('')}</select></div>
+      <div class="fld"><div class="flbl">Ongoing conditions</div><input class="inp" type="text" placeholder="e.g. Diabetes, Hypertension" value="${U.conditions||''}" oninput="U.conditions=this.value"/></div>
+      <div class="fld"><div class="flbl">Preferred language</div>
+        <select class="sel" onchange="U.language=this.value">${['English','Hindi','Tamil','Telugu','Kannada','Malayalam','Marathi','Bengali','Gujarati'].map(l=>`<option ${U.language===l?'selected':''}>${l}</option>`).join('')}</select></div>
+      <button class="btn" onclick="nextOB()">Continue →</button>
+      <button class="btn2" onclick="nextOB()">Skip</button></div>`,
+    ()=>`<div class="ob-hdr"><div class="ob-step">Step 4 of ${OB_TOTAL}</div><div class="ob-title">Emergency contact</div><div class="ob-sub">Shown instantly on your SOS screen.</div></div>
+    <div class="ob-prog"><div class="ob-fill" style="width:100%"></div></div>
+    <div class="ob-body">
+      <div class="fld"><div class="flbl">Contact name</div><input class="inp" type="text" placeholder="e.g. Rahul Sharma" value="${U.ecName||''}" oninput="U.ecName=this.value"/></div>
+      <div class="fld"><div class="flbl">Relationship</div>
+        <select class="sel" onchange="U.ecRel=this.value"><option>Spouse / Partner</option><option>Parent</option><option>Child</option><option>Sibling</option><option>Friend</option><option>Doctor</option></select></div>
+      <div class="fld"><div class="flbl">Phone number</div><input class="inp" type="tel" placeholder="+91 98765 43210" value="${U.ecPhone||''}" oninput="U.ecPhone=this.value"/></div>
+      <div class="card" style="background:#E8F0FE;border:1px solid #C5D9F8;cursor:default;margin-bottom:0"><div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:4px">🔒 Privacy first</div><div style="font-size:11px;color:#185EA5;line-height:1.5">Your data stays on your device, encrypted. Never shared without your explicit consent.</div></div>
+      <button class="btn" style="margin-top:14px" onclick="finishOB()">Complete Setup →</button>
+      <button class="btn2" onclick="finishOB()">Skip for now</button></div>`,
+  ];
+  SCR.innerHTML=`<div class="sc" style="height:100%;overflow-y:auto">${steps[obStep]()}</div>`;
+}
+function setU(k,v,el,cls){U[k]=v;(cls?document.querySelectorAll('.'+cls):el.closest('.pills').querySelectorAll('.popt')).forEach(o=>o.classList.remove('on'));el.classList.add('on');}
+function nextOB(){if(obStep<OB_TOTAL-1){obStep++;renderOB();}else finishOB();}
+function finishOB(){if(!U.name)U.name='User';U.members=[{id:'self',name:U.name,role:'Me',age:U.age,gender:U.gender,avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];go('home');}
+
+/* ══ HOME ══ */
+function rHome(){
+  const first=(U.name||'there').split(' ')[0];
+  const active=U.members?.find(m=>m.id===(U.activeMember||'self'))||U.members?.[0]||{name:U.name};
+  SCR.innerHTML=`<div class="sc">
+  <div style="height:${(U.members?.length>1)?'0':'-16'}px"></div>
+  ${U.members?.length>1?`<div style="padding:12px 14px 0"><div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:8px">VIEWING PROFILE FOR</div></div>${familyScrollBar(true)}`:''}
+  <div class="hh">
+    <div class="hgreet">Good morning 👋</div>
+    <div class="hname">Hello, ${first}</div>
+    <button class="sos" onclick="go('emergency')">🆘 SOS</button>
+    <div class="hstats">
+      <div class="hstat"><div class="sv">3</div><div class="sl">Medicines</div></div>
+      <div class="hstat"><div class="sv">2</div><div class="sl">Reports</div></div>
+      <div class="hstat"><div class="sv">${U.gender==='female'?'F':U.gender==='male'?'M':'X'}·${U.age||'--'}</div><div class="sl">Profile</div></div>
+    </div>
+  </div>
+  <div class="hbody">
+    <div class="sec">Quick Actions</div>
+    <div class="qa-grid">
+      <div class="qa" onclick="go('body')"><div class="qi">🫀</div><div class="ql">Body Explorer</div><div class="qs">Tap any body part</div></div>
+      <div class="qa" onclick="go('symptom')"><div class="qi">✅</div><div class="ql">Symptom Checker</div><div class="qs">Guided check</div></div>
+      <div class="qa" onclick="go('scan')"><div class="qi">📋</div><div class="ql">Scan Rx</div><div class="qs">OCR & schedule</div></div>
+      <div class="qa" onclick="go('chatbot')"><div class="qi">🤖</div><div class="ql">AI Health Chat</div><div class="qs">Ask anything</div></div>
+      <div class="qa" onclick="go('interactions')"><div class="qi">⚗️</div><div class="ql">Drug Interactions</div><div class="qs">Check safety</div></div>
+      <div class="qa" onclick="go('nearby')"><div class="qi">📍</div><div class="ql">Nearby Care</div><div class="qs">Hospital, clinic</div></div>
+    </div>
+    <div class="sec">Today's Medicines</div>
+    <div class="card" style="cursor:default">
+      <div class="med-chip" style="background:#E8F0FE"><div style="width:7px;height:7px;background:var(--blue);border-radius:50%;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:700;color:var(--bd)">Paracetamol 650mg</div><div style="font-size:10px;color:var(--bm)">After food · 3 days left</div></div><div style="font-size:10px;font-weight:700;color:var(--green);margin-left:auto">8AM ✓</div></div>
+      <div class="med-chip" style="background:#E6F4EA"><div style="width:7px;height:7px;background:var(--green);border-radius:50%;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:700;color:#1B5E20">Vitamin D3 1000IU</div><div style="font-size:10px;color:#388E3C">With food · Ongoing</div></div><div style="font-size:10px;font-weight:700;color:#388E3C;margin-left:auto">2PM</div></div>
+      <div class="med-chip" style="background:var(--ol)"><div style="width:7px;height:7px;background:var(--orange);border-radius:50%;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:700;color:#B85000">Cetirizine 10mg</div><div style="font-size:10px;color:var(--orange)">Bedtime · 5 days left</div></div><div style="font-size:10px;font-weight:700;color:var(--orange);margin-left:auto">10PM</div></div>
+    </div>
+    <div class="sec">New Features</div>
+    <div class="qa-grid">
+      <div class="qa" onclick="go('family')"><div class="qi">👨‍👩‍👧</div><div class="ql">Family Profiles</div><div class="qs">Manage all members</div></div>
+      <div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity Tracker</div><div class="qs">Steps & fitness</div></div>
+      <div class="qa" onclick="go('insurance')"><div class="qi">🏦</div><div class="ql">Insurance</div><div class="qs">Claims & expenses</div></div>
+      <div class="qa" onclick="go('skin')"><div class="qi">📸</div><div class="ql">Skin Tracker</div><div class="qs">Photo progress</div></div>
+      <div class="qa" onclick="go('doclocker')"><div class="qi">🔒</div><div class="ql">Doc Locker</div><div class="qs">Secure documents</div></div>
+      <div class="qa" onclick="go('vaccines')"><div class="qi">💉</div><div class="ql">Vaccines</div><div class="qs">Track immunisation</div></div>
+    </div>
+    <div class="sec">Recent Reports</div>
+    <div class="card" onclick="go('lab')"><div class="crow"><div class="ic" style="background:#EDE7F6">🧪</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">CBC + Lipid Panel</div><div style="font-size:11px;color:var(--g4)">Apr 18, 2026 · Apollo</div></div><div class="badge by">2 Abnormal</div></div></div>
+    <div class="card" onclick="go('lab')"><div class="crow"><div class="ic" style="background:#E6F4EA">🧫</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">Thyroid Profile TSH T3 T4</div><div style="font-size:11px;color:var(--g4)">Mar 5, 2026 · LabCorp</div></div><div class="badge bg">All Normal</div></div></div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ FAMILY PROFILES ══ */
+function familyScrollBar(homeMode=false){
+  if(!U.members) return '';
+  const active=U.activeMember||'self';
+  return `<div class="fp-scroll" id="fp-bar">
+    ${U.members.map(m=>`<div class="fp-card ${m.id===active&&homeMode?'on':''}" onclick="switchMember('${m.id}')">
+      <div class="fp-av" style="background:${m.color||'#E8F0FE'};color:${m.textColor||'#0D47A1'}">${m.avatar||m.name[0]}</div>
+      <div class="fp-nm">${m.name}</div>
+      <div class="fp-rl">${m.role}</div>
+    </div>`).join('')}
+    <div class="fp-add" onclick="go('addMember')">
+      <div style="font-size:22px">➕</div>
+      <span>Add</span>
+    </div>
+  </div>`;
+}
+function switchMember(id){U.activeMember=id;go('home');}
+function rFamily(){
+  if(!U.members) U.members=[{id:'self',name:U.name,role:'Me',age:U.age,gender:U.gender,avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Family Profiles</div><div class="hdr-s">Manage health for all your family members</div></div>
+  <div style="padding:14px">
+    ${U.members.map((m,i)=>`<div class="card" style="cursor:default">
+      <div class="crow">
+        <div style="width:48px;height:48px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${m.avatar}</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;color:var(--g6)">${m.name} ${m.id==='self'?'(You)':''}</div>
+          <div style="font-size:12px;color:var(--g4)">${m.role} · ${m.age?m.age+' yrs':''} · ${m.gender||''}</div>
+          ${m.mode?`<div style="margin-top:5px"><span class="badge ${m.mode==='pediatric'?'bg':m.mode==='elderly'?'by':'bb'}">${m.mode==='pediatric'?'👶 Pediatric':m.mode==='elderly'?'🧓 Elderly Care':'👤 Standard'}</span></div>`:''}
+        </div>
+        <button class="btn-sm" style="background:var(--bl);color:var(--blue);font-size:12px" onclick="switchMember('${m.id}');go('home')">View</button>
+      </div>
+    </div>`).join('')}
+    <div class="card" style="border:1.5px dashed var(--g3);background:var(--g1);text-align:center;cursor:pointer" onclick="addFamilyMember()">
+      <div style="font-size:28px;margin-bottom:6px">➕</div>
+      <div style="font-size:14px;font-weight:700;color:var(--g5)">Add Family Member</div>
+      <div style="font-size:11px;color:var(--g4);margin-top:3px">Child, spouse, parent, elder</div>
+    </div>
+    <div class="card" style="background:#E8F0FE;border:1px solid #C5D9F8;cursor:default">
+      <div style="font-size:13px;font-weight:700;color:var(--bd);margin-bottom:8px">👶 Pediatric Guardian Mode</div>
+      <div style="font-size:12px;color:#185EA5;line-height:1.6;margin-bottom:10px">Child profiles use lower escalation thresholds, weight-based dosing display, and always prompt guardian review before any health action.</div>
+      <button class="btn-sm" style="background:var(--blue);color:#fff" onclick="go('pediatric')">View Pediatric Mode →</button>
+    </div>
+    <div class="card" style="background:var(--al);border:1px solid #F9AB00;cursor:default">
+      <div style="font-size:13px;font-weight:700;color:#B06000;margin-bottom:8px">🧓 Elderly Care Mode</div>
+      <div style="font-size:12px;color:#7B4700;line-height:1.6;margin-bottom:10px">Simplified UI, larger text, fall risk screening, polypharmacy alerts, and caregiver check-in prompts.</div>
+      <button class="btn-sm" style="background:#B06000;color:#fff" onclick="go('elderly')">View Elderly Mode →</button>
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+function addFamilyMember(){
+  const roles=['Child','Spouse','Parent','Sibling','Other'];
+  const avatars=['👶','🧒','👧','👦','🧑','👩','👨','🧓','👴','👵'];
+  const idx=(U.members?.length||0)%avatars.length;
+  const colors=[['#E6F4EA','#1B5E20'],['#FCE4EC','#880E4F'],['#EDE7FE','#311B92'],['#E0F2F1','#004D40'],['#FFF8E1','#F57F17']];
+  const ci=(U.members?.length||0)%colors.length;
+  const nm={id:'m'+Date.now(),name:'Family Member',role:'Child',age:'',gender:'female',avatar:avatars[idx],color:colors[ci][0],textColor:colors[ci][1],mode:'standard'};
+  if(!U.members) U.members=[];
+  U.members.push(nm);
+  go('family');
+}
+
+/* ══ PEDIATRIC MODE ══ */
+function rPediatric(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('family')">←</div><div><div class="bk-t">Pediatric Guardian Mode</div><div class="bk-s">Children 0–18 · Safety-first approach</div></div></div>
+  <div class="iban iby"><span>⚠️</span><span>All guidance in Pediatric Mode requires guardian review. Lower escalation thresholds apply. Always consult a paediatrician for significant concerns.</span></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Safety Rules Active</div>
+    ${[
+      {i:'🌡️',t:'Fever escalation',s:'38°C+ in infants → immediate escalation. 39°C+ in under-5 → urgent care prompt',c:'var(--rl)',tc:'#C5221F'},
+      {i:'💊',t:'Dosage display',s:'All medicines show weight-based paediatric dose. Never adult dose.',c:'#E8F0FE',tc:'var(--bd)'},
+      {i:'👁️',t:'Guardian confirmation',s:'Every symptom check requires parent/guardian to confirm before results shown',c:'#E6F4EA',tc:'#1B5E20'},
+      {i:'🚫',t:'OTC restrictions',s:'No OTC medicine suggestions for under-2 without doctor note.',c:'var(--ol)',tc:'#B85000'},
+      {i:'📞',t:'Lower call threshold',s:'Any concerning symptom in infant under 6 months → emergency escalation',c:'#E6F4EA',tc:'#1B5E20'},
+    ].map(r=>`<div class="card" style="background:${r.c};border:1px solid ${r.c};cursor:default"><div class="crow"><div style="font-size:22px;flex-shrink:0">${r.i}</div><div><div style="font-size:13px;font-weight:700;color:${r.tc}">${r.t}</div><div style="font-size:11px;color:${r.tc};opacity:.85;margin-top:3px;line-height:1.4">${r.s}</div></div></div></div>`).join('')}
+    <div class="sec" style="padding:0">Vaccine Schedule</div>
+    ${[{v:'BCG',age:'At birth',done:true},{v:'OPV 0',age:'At birth',done:true},{v:'Hepatitis B (1st)',age:'At birth',done:true},{v:'DPT + OPV + Hib (1st)',age:'6 weeks',done:true},{v:'DPT + OPV + Hib (2nd)',age:'10 weeks',done:false},{v:'Measles / MMR (1st)',age:'9 months',done:false}].map(v=>`<div class="vac-item"><div class="vac-icon" style="background:${v.done?'var(--gl)':'#E8F0FE'}">${v.done?'✅':'💉'}</div><div><div class="vac-name">${v.v}</div><div class="vac-date">Due: ${v.age}</div></div><span class="vac-status" style="background:${v.done?'var(--gl)':'var(--al)'};color:${v.done?'#1B5E20':'#B06000'}">${v.done?'Done':'Pending'}</span></div>`).join('')}
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ ELDERLY MODE ══ */
+function rElderly(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('family')">←</div><div><div class="bk-t">Elderly Care Mode</div><div class="bk-s">Optimised for 60+ · Caregiver support</div></div></div>
+  <div class="iban ibl"><span>ℹ️</span><span>Elderly mode activates polypharmacy alerts, fall risk screening, and simplified large-text interface. Caregiver check-in reminders are enabled.</span></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Active Protections</div>
+    ${[
+      {i:'💊',t:'Polypharmacy alert',s:'5+ medicines detected — warns about interaction risk and recommends pharmacist review',c:'var(--rl)',tc:'#C5221F',warn:true},
+      {i:'🦯',t:'Fall risk screening',s:'Quarterly questionnaire. Current risk: Moderate — recommends home safety check',c:'var(--al)',tc:'#B06000',warn:true},
+      {i:'🔔',t:'Caregiver check-in',s:'If app not opened in 24h, emergency contact Rahul is notified',c:'#E8F0FE',tc:'var(--bd)'},
+      {i:'💬',t:'Simplified language',s:'All health content shown in plain language, no medical jargon',c:'var(--gl)',tc:'#1B5E20'},
+      {i:'🔡',t:'Large text mode',s:'Font size increased 140%. High contrast mode available in Settings',c:'var(--gl)',tc:'#1B5E20'},
+    ].map(r=>`<div class="card" style="background:${r.c};border:1px solid ${r.c};cursor:default"><div class="crow"><div style="font-size:22px;flex-shrink:0">${r.i}</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:${r.tc}">${r.t}</div><div style="font-size:11px;color:${r.tc};opacity:.85;margin-top:3px;line-height:1.4">${r.s}</div></div>${r.warn?`<span class="badge by" style="flex-shrink:0;align-self:flex-start">Active</span>`:''}</div></div>`).join('')}
+    <div class="sec" style="padding:0">Current Medicine Load</div>
+    <div class="card" style="cursor:default">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:700;color:var(--g6)">6 Active Medicines</div>
+        <span class="badge by">⚠️ Review advised</span>
+      </div>
+      ${['Metformin 500mg','Amlodipine 5mg','Atorvastatin 10mg','Aspirin 75mg','Pantoprazole 40mg','Vitamin B12'].map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--g2);font-size:12px;color:var(--g6)"><div style="width:7px;height:7px;background:var(--blue);border-radius:50%;flex-shrink:0"></div>${m}${i>=4?'<span class="badge bg" style="margin-left:auto;font-size:9px">Supplement</span>':''}</div>`).join('')}
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ BODY EXPLORER ══ */
+const bpData={
+  head:{n:'Head & Scalp',sub:'Scalp, hair, skull, sinuses',s:[{e:'🤕',t:'Headache or migraine',s:'Tension, cluster, or vascular'},{e:'💇',t:'Hair loss or thinning',s:'Diffuse or patchy fall'},{e:'😵',t:'Dizziness',s:'On standing or spinning'},{e:'🤧',t:'Scalp itching',s:'Seborrheic or dry scalp'}]},
+  neck:{n:'Neck & Throat',sub:'Cervical spine, lymph nodes, thyroid',s:[{e:'😬',t:'Stiff or painful neck',s:'Strain or cervical issue'},{e:'🤒',t:'Sore throat',s:'Viral or bacterial'},{e:'🔵',t:'Swollen lymph nodes',s:'Infection or inflammation'},{e:'🫁',t:'Difficulty swallowing',s:'Needs evaluation'}]},
+  chest:{n:'Chest & Heart',sub:'Heart, lungs, ribs, sternum',s:[{e:'⚠️',t:'Chest tightness or pain',s:'Safety screening required first'},{e:'💨',t:'Shortness of breath',s:'At rest or on exertion'},{e:'💓',t:'Heart palpitations',s:'Racing or skipping'},{e:'🫁',t:'Persistent cough',s:'Productive or dry'}]},
+  abdomen:{n:'Abdomen',sub:'Stomach, liver, intestines',s:[{e:'😣',t:'Stomach pain',s:'Upper, lower, or central'},{e:'🎈',t:'Bloating and gas',s:'After meals or persistent'},{e:'🤢',t:'Nausea or vomiting',s:'Acute or chronic'},{e:'🔥',t:'Acid reflux',s:'Burning in throat'}]},
+  shoulder:{n:'Shoulder',sub:'Rotator cuff, AC joint, bursa',s:[{e:'🦾',t:'Shoulder pain',s:'Sharp or dull'},{e:'🔄',t:'Limited movement',s:'Cannot lift arm fully'},{e:'❄️',t:'Frozen shoulder',s:'Gradual stiffness'},{e:'🎯',t:'Clicking or popping',s:'With or without pain'}]},
+  arm:{n:'Arm & Elbow',sub:'Bicep, tricep, elbow joint',s:[{e:'⚡',t:'Arm pain or numbness',s:'Radiating or localised'},{e:'🎾',t:'Tennis elbow',s:'Lateral epicondyle'},{e:'🖐️',t:'Tingling in fingers',s:'Nerve-related'},{e:'💪',t:'Arm weakness',s:'Difficulty gripping'}]},
+  back:{n:'Back & Spine',sub:'Lumbar, thoracic, cervical',s:[{e:'🔩',t:'Lower back pain',s:'Lumbar strain or disc'},{e:'⚡',t:'Sciatica',s:'Shooting down leg'},{e:'🧱',t:'Upper back stiffness',s:'Thoracic or postural'},{e:'😣',t:'Back + bladder change',s:'Seek urgent evaluation'}]},
+  knee:{n:'Knee & Thigh',sub:'Knee joint, cartilage, thigh',s:[{e:'🦵',t:'Knee pain or swelling',s:'Joint line or surrounding'},{e:'🔒',t:'Locking or clicking',s:'Mechanical joint issue'},{e:'😫',t:'Thigh cramp',s:'Sudden spasm'},{e:'🏃',t:"Runner's knee",s:'Front of knee'}]},
+  foot:{n:'Foot & Ankle',sub:'Plantar fascia, ankle, toes',s:[{e:'👣',t:'Heel pain',s:'Plantar fasciitis'},{e:'🦶',t:'Ankle sprain',s:'Ligament strain'},{e:'💧',t:'Foot swelling',s:'Edema'},{e:'💅',t:'Nail or skin issues',s:'Ingrown, fungal'}]},
+};
+function rBody(){
+  bodyView='front';
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Body Explorer</div>
+    <div class="body-top">
+      <div class="pgrd" id="sex-g"><div class="pgo on" onclick="setV('sex','female',this)">Female</div><div class="pgo" onclick="setV('sex','male',this)">Male</div></div>
+      <div class="pgrd" id="view-g"><div class="pgo on" onclick="setV('view','front',this)">Front</div><div class="pgo" onclick="setV('view','back',this)">Back</div><div class="pgo" onclick="setV('view','side',this)">Side</div></div>
+    </div>
+  </div>
+  <div class="srch"><svg width="14" height="14" fill="none" stroke="var(--g3)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input id="bsrch" placeholder="Search body part…"/></div>
+  <div class="bcanv">
+    <div class="bc-lbl" id="bc-lb">Body — tap a part</div>
+    <div class="vw-lbl" id="vw-lb">Front view</div>
+    <div class="zctrl"><div class="zb">+</div><div class="zb">−</div></div>
+    <div id="bmodel">${fSVG('female')}</div>
+    <div class="rh"><svg width="12" height="12" fill="none" stroke="var(--g3)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Swipe to rotate · Pinch to zoom</div>
+  </div>
+  <div id="pp-wrap"></div>
+  <div class="pb"></div></div>`;
+  $('bsrch').addEventListener('input',function(){const v=this.value.toLowerCase().trim();if(!v)return;const k=Object.keys(bpData).find(k=>k.includes(v)||bpData[k].n.toLowerCase().includes(v));if(k)pickPart(k,null);});
+}
+function setV(type,val,el){
+  if(type==='sex')bodySex=val;else bodyView=val;
+  el.closest(type==='sex'?'#sex-g':'#view-g').querySelectorAll('.pgo').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  const lb={front:'Front view',back:'Back view',side:'Side view'};
+  if(type==='view')$('vw-lb').textContent=lb[val];
+  $('bmodel').innerHTML=bodyView==='front'?fSVG(bodySex):bodyView==='back'?bSVG(bodySex):sSVG(bodySex);
+  $('pp-wrap').innerHTML='';selPart=null;$('bc-lb').textContent='Body — tap a part';
+}
+function pickPart(k,el){
+  selPart=k;
+  document.querySelectorAll('.hs').forEach(h=>h.classList.remove('sel'));
+  if(el)el.classList.add('sel');
+  const p=bpData[k];if(!p)return;
+  $('bc-lb').textContent='Body › '+p.n;
+  $('pp-wrap').innerHTML=`<div class="pp"><div class="pp-hdr"><div class="pp-n">${p.n}</div><div class="pp-s">${p.sub}</div></div>${p.s.map(s=>`<div class="sy-item" onclick="go('symptom')"><div class="sy-e">${s.e}</div><div class="sy-t"><strong>${s.t}</strong><small>${s.s}</small></div><div class="sy-arr">›</div></div>`).join('')}<div style="padding:11px 13px"><button class="btn" style="margin-top:0" onclick="go('symptom')">Start Symptom Check →</button></div></div>`;
+  $('pp-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function fSVG(sex){const sk='#F5CBA7',sk2='#F0B896',hr=sex==='female'?'#5C3317':'#3B2507';return `<svg viewBox="0 0 130 305" style="width:118px;height:270px;cursor:pointer"><g class="hs" onclick="pickPart('head',this)"><ellipse class="ha" cx="65" cy="27" rx="23" ry="24"/><ellipse cx="65" cy="23" rx="18" ry="19" fill="${sk}" stroke="#E8B896" stroke-width=".8"/>${sex==='female'?`<path d="M47 17 Q65 7 83 17 Q83 1 65 1 Q47 1 47 17z" fill="${hr}"/><path d="M47 17 Q44 27 46 35" fill="none" stroke="${hr}" stroke-width="3"/><path d="M83 17 Q86 27 84 35" fill="none" stroke="${hr}" stroke-width="3"/>`:`<ellipse cx="65" cy="11" rx="18" ry="10" fill="${hr}"/>`}<circle cx="58" cy="24" r="2" fill="#7B4F14"/><circle cx="72" cy="24" r="2" fill="#7B4F14"/><path d="M61 32 Q65 36 69 32" fill="none" stroke="#C0804A" stroke-width="1" stroke-linecap="round"/></g><g class="hs" onclick="pickPart('neck',this)"><rect class="ha" x="56" y="47" width="18" height="13" rx="4"/><rect x="58" y="48" width="14" height="11" rx="4" fill="${sk2}"/></g>${sex==='female'?`<g class="hs" onclick="pickPart('chest',this)"><rect class="ha" x="38" y="60" width="54" height="50" rx="6"/><rect x="40" y="61" width="50" height="48" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/><ellipse cx="54" cy="81" rx="8" ry="6" fill="${sk2}" opacity=".6"/><ellipse cx="76" cy="81" rx="8" ry="6" fill="${sk2}" opacity=".6"/></g>`:`<g class="hs" onclick="pickPart('chest',this)"><rect class="ha" x="38" y="60" width="54" height="50" rx="6"/><rect x="40" y="61" width="50" height="48" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/><path d="M65 67 L65 87" stroke="#E0A875" stroke-width=".4" fill="none"/></g>`}<g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="29" cy="66" rx="11" ry="9"/><ellipse cx="29" cy="65" rx="9" ry="8" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="101" cy="66" rx="11" ry="9"/><ellipse cx="101" cy="65" rx="9" ry="8" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="15" y="74" width="16" height="52" rx="7"/><rect x="17" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="99" y="74" width="16" height="52" rx="7"/><rect x="101" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('abdomen',this)"><rect class="ha" x="39" y="110" width="52" height="38" rx="5"/><rect x="41" y="111" width="48" height="36" rx="5" fill="${sk}" stroke="#E8B896" stroke-width=".5"/><ellipse cx="65" cy="127" rx="3" ry="2.5" fill="none" stroke="#C4856A" stroke-width=".5"/></g><g class="hs" onclick="pickPart('abdomen',this)"><rect class="ha" x="39" y="148" width="52" height="22" rx="5"/><rect x="41" y="149" width="48" height="20" rx="4" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="23" cy="134" rx="9" ry="7"/><ellipse cx="23" cy="133" rx="7" ry="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="107" cy="134" rx="9" ry="7"/><ellipse cx="107" cy="133" rx="7" ry="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="40" y="170" width="22" height="52" rx="8"/><rect x="42" y="171" width="18" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="68" y="170" width="22" height="52" rx="8"/><rect x="70" y="171" width="18" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="51" cy="225" rx="13" ry="9"/><ellipse cx="51" cy="224" rx="10" ry="8" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="79" cy="225" rx="13" ry="9"/><ellipse cx="79" cy="224" rx="10" ry="8" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="42" y="234" width="18" height="44" rx="7"/><rect x="44" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="70" y="234" width="18" height="44" rx="7"/><rect x="72" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="50" cy="282" rx="14" ry="8"/><ellipse cx="50" cy="281" rx="11" ry="6" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="80" cy="282" rx="14" ry="8"/><ellipse cx="80" cy="281" rx="11" ry="6" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g></svg>`;}
+function bSVG(sex){const sk='#F0B896',hr=sex==='female'?'#5C3317':'#3B2507';return `<svg viewBox="0 0 130 305" style="width:118px;height:270px;cursor:pointer"><g class="hs" onclick="pickPart('head',this)"><ellipse class="ha" cx="65" cy="27" rx="23" ry="24"/><ellipse cx="65" cy="23" rx="18" ry="19" fill="#E8A882" stroke="#D49060" stroke-width=".8"/>${sex==='female'?`<path d="M47 15 Q65 5 83 15 Q83 0 65 0 Q47 0 47 15z" fill="${hr}"/><rect x="56" y="14" width="18" height="44" rx="9" fill="${hr}" opacity=".8"/>`:` <ellipse cx="65" cy="11" rx="18" ry="10" fill="${hr}"/>`}</g><g class="hs" onclick="pickPart('neck',this)"><rect class="ha" x="56" y="47" width="18" height="13" rx="4"/><rect x="58" y="48" width="14" height="11" rx="4" fill="${sk}"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="29" cy="67" rx="12" ry="10"/><ellipse cx="29" cy="66" rx="10" ry="8" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="101" cy="67" rx="12" ry="10"/><ellipse cx="101" cy="66" rx="10" ry="8" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('back',this)"><rect class="ha" x="37" y="60" width="56" height="90" rx="6"/><rect x="40" y="61" width="50" height="88" rx="7" fill="${sk}" stroke="#D49060" stroke-width=".5"/><path d="M65 64 L65 147" stroke="#C4856A" stroke-width=".6" stroke-dasharray="3,3"/><ellipse cx="53" cy="81" rx="8" ry="10" fill="none" stroke="#C4856A" stroke-width=".6"/><ellipse cx="77" cy="81" rx="8" ry="10" fill="none" stroke="#C4856A" stroke-width=".6"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="15" y="74" width="16" height="52" rx="7"/><rect x="17" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="99" y="74" width="16" height="52" rx="7"/><rect x="101" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('back',this)"><rect class="ha" x="39" y="150" width="52" height="22" rx="5"/><rect x="41" y="151" width="48" height="20" rx="4" fill="#E8A882" stroke="#D49060" stroke-width=".5"/><path d="M65 152 L65 169" stroke="#C4856A" stroke-width=".6" stroke-dasharray="2,2"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="23" cy="134" rx="9" ry="7"/><ellipse cx="23" cy="133" rx="7" ry="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="107" cy="134" rx="9" ry="7"/><ellipse cx="107" cy="133" rx="7" ry="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="40" y="172" width="22" height="50" rx="8"/><rect x="42" y="173" width="18" height="48" rx="7" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="68" y="172" width="22" height="50" rx="8"/><rect x="70" y="173" width="18" height="48" rx="7" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="51" cy="225" rx="13" ry="9"/><ellipse cx="51" cy="224" rx="10" ry="8" fill="#E0A070" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="79" cy="225" rx="13" ry="9"/><ellipse cx="79" cy="224" rx="10" ry="8" fill="#E0A070" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="42" y="234" width="18" height="44" rx="7"/><rect x="44" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="70" y="234" width="18" height="44" rx="7"/><rect x="72" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="50" cy="282" rx="14" ry="8"/><ellipse cx="50" cy="281" rx="11" ry="6" fill="#E0A070" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="80" cy="282" rx="14" ry="8"/><ellipse cx="80" cy="281" rx="11" ry="6" fill="#E0A070" stroke="#D49060" stroke-width=".5"/></g></svg>`;}
+function sSVG(sex){const sk='#F5CBA7',sk2='#F0B896',hr=sex==='female'?'#5C3317':'#3B2507';return `<svg viewBox="0 0 100 305" style="width:92px;height:270px;cursor:pointer"><g class="hs" onclick="pickPart('head',this)"><ellipse class="ha" cx="50" cy="27" rx="24" ry="25"/><ellipse cx="50" cy="23" rx="19" ry="20" fill="${sk}" stroke="#E8B896" stroke-width=".8"/><path d="M66 23 Q70 27 68 31" fill="none" stroke="#C4856A" stroke-width="1" stroke-linecap="round"/><ellipse cx="32" cy="24" rx="5" ry="7" fill="${sk2}" stroke="#E0A875" stroke-width=".6"/><ellipse cx="59" cy="21" rx="3" ry="2" fill="#7B4F14"/>${sex==='female'?`<path d="M31 13 Q50 3 68 13 Q68 0 50 0 Q31 0 31 13z" fill="${hr}"/><path d="M31 13 Q28 29 30 40" fill="none" stroke="${hr}" stroke-width="5"/>`:`<path d="M31 11 Q50 3 68 11 Q68 1 50 1 Q31 1 31 11z" fill="${hr}"/>`}</g><g class="hs" onclick="pickPart('neck',this)"><rect class="ha" x="42" y="48" width="16" height="13" rx="4"/><rect x="43" y="49" width="14" height="11" rx="4" fill="${sk2}"/></g><g class="hs" onclick="pickPart('chest',this)"><rect class="ha" x="28" y="61" width="44" height="52" rx="6"/><rect x="30" y="62" width="40" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/>${sex==='female'?`<ellipse cx="60" cy="80" rx="9" ry="7" fill="${sk2}" opacity=".7"/>`:''}</g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="26" cy="67" rx="11" ry="9"/><ellipse cx="26" cy="66" rx="9" ry="8" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="12" y="75" width="16" height="52" rx="7"/><rect x="14" y="76" width="12" height="50" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('abdomen',this)"><rect class="ha" x="28" y="113" width="44" height="56" rx="5"/><rect x="30" y="114" width="40" height="54" rx="5" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="20" cy="134" rx="9" ry="7"/><ellipse cx="20" cy="133" rx="7" ry="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="28" y="170" width="36" height="52" rx="8"/><rect x="30" y="171" width="32" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="46" cy="225" rx="16" ry="10"/><ellipse cx="46" cy="224" rx="13" ry="8" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="30" y="234" width="30" height="44" rx="7"/><rect x="32" y="235" width="26" height="42" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><path class="ha" d="M30 278 Q30 288 38 292 Q56 296 70 292 Q76 288 72 278Z"/><path d="M32 278 Q32 286 39 290 Q56 294 68 290 Q74 286 70 278Z" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g></svg>`;}
+
+/* ══ SYMPTOM CHECKER ══ */
+function rSymptom(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('body')">←</div><div style="flex:1"><div class="bk-t">Chest Pain — Safety Check</div><div class="bk-s">Step 1 of 5</div></div><div class="badge bor">In Progress</div></div>
+  <div class="prog-bar"><div class="prog-fill" id="prg" style="width:20%"></div></div>
+  <div class="scb">
+    <div class="eb"><div class="ei">🚨</div><div><div class="et">Safety Screening First</div><div class="es">We check red-flag questions before any guidance. Your safety is priority.</div></div></div>
+    <div class="qcard">
+      <div class="qlbl">Red flag screening</div>
+      <div class="qtxt">Do you have any of these right now?</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${['Severe crushing chest pressure','Pain spreading to arm or jaw','Sudden difficulty breathing','Sweating and nausea together','Feeling faint'].map(s=>`<div class="sy-item" style="border-radius:9px;border:1.5px solid var(--g2);background:var(--g1)" onclick="toggleRF(this)"><div style="width:19px;height:19px;border-radius:5px;border:1.5px solid var(--g2);flex-shrink:0;background:#fff;display:flex;align-items:center;justify-content:center" class="rfb"></div><div class="sy-t"><strong style="font-size:12px">${s}</strong></div></div>`).join('')}
+        <div class="sy-item" style="border-radius:9px;border:1.5px solid var(--green);background:var(--gl)"><div style="width:19px;height:19px;border-radius:5px;border:1.5px solid var(--green);background:var(--green);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">✓</div><div class="sy-t"><strong style="font-size:12px;color:#1B5E20">None of the above</strong></div></div>
+      </div>
+    </div>
+    <div class="qcard"><div class="qlbl">Question 2</div><div class="qtxt">How would you describe it?</div><div class="ogrid">${['Sharp','Dull ache','Burning','Pressure','Squeezing'].map(o=>`<div class="opt" onclick="selO(this)">${o}</div>`).join('')}</div></div>
+    <div class="qcard"><div class="qlbl">Question 3</div><div class="qtxt">Pain severity (1–10)</div><div class="prow">${Array.from({length:10},(_,i)=>i+1).map(n=>{const c=n<=3?'#34A853':n<=6?'#F9AB00':n<=8?'#FA7B17':'#EA4335';return `<div class="pn" onclick="selP(this,${n},'${c}')">${n}</div>`;}).join('')}</div></div>
+    <div class="qcard"><div class="qlbl">Question 4</div><div class="qtxt">When did it start?</div><div class="ogrid">${['Just now','< 1 hour','Today','1–2 days','3+ days'].map(o=>`<div class="opt" onclick="selO(this)">${o}</div>`).join('')}</div></div>
+    <div class="qcard"><div class="qlbl">Question 5</div><div class="qtxt">Any triggers?</div><div class="ogrid">${['Deep breath','Movement','Eating','Stress','Nothing specific'].map(o=>`<div class="opt" onclick="selO(this)">${o}</div>`).join('')}</div></div>
+    <button class="btn" onclick="go('results')">View Possible Explanations →</button>
+    <button class="btn2" onclick="go('emergency')">⚠️ This feels like an emergency</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+function toggleRF(el){const b=el.querySelector('.rfb');const on=b.textContent!=='✓';b.style.background=on?'var(--blue)':'#fff';b.style.borderColor=on?'var(--blue)':'var(--g2)';b.textContent=on?'✓':'';b.style.color='#fff';b.style.fontSize='10px';b.style.fontWeight='700';}
+function selO(el){el.closest('.ogrid').querySelectorAll('.opt').forEach(c=>c.classList.remove('on'));el.classList.add('on');const p=$('prg');if(p){const w=parseInt(p.style.width||20);if(w<90)p.style.width=(w+16)+'%';}}
+function selP(el,n){el.closest('.prow').querySelectorAll('.pn').forEach((c,i)=>{const cl=i<3?'#34A853':i<6?'#F9AB00':i<8?'#FA7B17':'#EA4335';if(i<n){c.style.background=cl;c.style.color='#fff';c.style.borderColor=cl;}else{c.style.background='';c.style.color='';c.style.borderColor='';}});}
+
+/* ══ RESULTS — AI POWERED ══ */
+async function rResults(){
+  // Show loading state immediately
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('symptom')">←</div><div style="flex:1"><div class="bk-t">AI Health Analysis</div><div class="bk-s">Powered by GPT-4o · Educational only</div></div></div>
+  <div class="iban iby"><span>⚕️</span><span>Educational only — not a diagnosis. Consult a doctor for personal health decisions.</span></div>
+  <div class="p16" style="padding-top:16px">
+    <div style="background:var(--bl);border-radius:14px;padding:20px;text-align:center;margin-bottom:12px">
+      <div style="font-size:32px;margin-bottom:10px">🤖</div>
+      <div style="font-size:14px;font-weight:700;color:var(--bd);margin-bottom:6px">Analysing your symptoms with AI…</div>
+      <div style="display:flex;justify-content:center"><div class="typing"><span></span><span></span><span></span></div></div>
+      <div style="font-size:11px;color:var(--bm);margin-top:8px">GPT-4o is generating personalised guidance</div>
+    </div>
+  </div></div>`;
+
+  // Call GPT-4o
+  const bodyPart = selPart || 'chest';
+  const aiText = await getAISymptomAnalysis(bodyPart, 'sharp chest pain', '5', 'today');
+
+  if(aiText){
+    // Parse and display AI response
+    SCR.innerHTML=`<div class="sc">
+    <div class="brow"><div class="bk" onclick="go('symptom')">←</div><div style="flex:1"><div class="bk-t">AI Health Analysis</div><div class="bk-s">GPT-4o · ${bodyPart} · Chest pain</div></div></div>
+    <div class="iban iby"><span>⚕️</span><span>AI-generated educational guidance only. Not a diagnosis. Always consult a qualified doctor.</span></div>
+    <div class="p16" style="padding-top:14px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--g5)">AI Urgency assessment:</span>
+        <div class="badge by">🟡 See doctor this week</div>
+      </div>
+      <div class="rsec" style="border-left:3px solid var(--blue)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:18px">🤖</span>
+          <div class="rtitle" style="margin-bottom:0">GPT-4o Analysis</div>
+        </div>
+        <div style="font-size:13px;color:var(--g6);line-height:1.7;white-space:pre-wrap">${aiText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      </div>
+      <div class="rsec" style="border:1.5px solid #F7C1C1">
+        <div class="rtitle" style="color:#C5221F">⚠️ Emergency: go immediately if —</div>
+        <div class="cause"><div class="cdot" style="background:var(--red)"></div><div><strong style="color:var(--red)">Crushing pressure spreading to arm or jaw</strong></div></div>
+        <div class="cause"><div class="cdot" style="background:var(--red)"></div><div><strong style="color:var(--red)">Sudden severe breathlessness at rest</strong></div></div>
+        <div class="cause"><div class="cdot" style="background:var(--red)"></div><div><strong style="color:var(--red)">Feeling faint or sweating heavily</strong></div></div>
+      </div>
+      <div class="rsec" style="background:#F0F4FF;border:none">
+        <div style="font-size:11px;color:var(--g4);line-height:1.6">🔒 This analysis was generated by GPT-4o based on your symptoms and profile. It does not replace a clinical examination. Your profile data is sent only to OpenAI's API and is not stored by HealthVault.</div>
+      </div>
+      <button class="btn" onclick="go('chatbot')">💬 Ask AI follow-up questions</button>
+      <button class="btn" style="background:var(--green);margin-top:8px" onclick="go('vault')">💾 Save to Health Record</button>
+      <button class="btn2">📅 Book a Doctor</button>
+      <div class="pb"></div>
+    </div></div>`;
+  } else {
+    // Fallback if GPT fails
+    SCR.innerHTML=`<div class="sc">
+    <div class="brow"><div class="bk" onclick="go('symptom')">←</div><div style="flex:1"><div class="bk-t">Possible Explanations</div><div class="bk-s">Chest · Sharp pain · Moderate</div></div></div>
+    <div class="iban iby"><span>⚕️</span><span>Educational only — not a diagnosis. Consult a doctor for chest symptoms.</span></div>
+    <div class="p16">
+      <div style="display:flex;align-items:center;gap:9px;margin:14px 0 12px"><span style="font-size:13px;color:var(--g5)">Urgency:</span><div class="badge by">🟡 See doctor this week</div></div>
+      <div class="rsec"><div class="rtitle">Possible causes</div>
+        <div class="cause"><div class="cdot" style="background:var(--blue)"></div><div><strong>Musculoskeletal chest wall strain</strong><small>Worsens with deep breath or pressing on chest wall.</small></div></div>
+        <div class="cause"><div class="cdot" style="background:var(--blue)"></div><div><strong>Acid reflux / GERD</strong><small>Worse after meals, spicy food, or lying flat.</small></div></div>
+        <div class="cause"><div class="cdot" style="background:var(--blue)"></div><div><strong>Costochondritis</strong><small>Rib cartilage inflammation — sharp, tender to touch.</small></div></div>
+        <div class="cause"><div class="cdot" style="background:var(--blue)"></div><div><strong>Anxiety-related tightness</strong><small>Often with shallow breathing.</small></div></div>
+      </div>
+      <div class="rsec"><div class="rtitle">Self-care</div>
+        <div class="sci">🧘 Rest and avoid heavy lifting</div>
+        <div class="sci">🍵 Avoid large meals and spicy food</div>
+        <div class="sci">💧 Stay hydrated</div>
+      </div>
+      <div class="rsec" style="border:1.5px solid #F7C1C1"><div class="rtitle" style="color:#C5221F">⚠️ Emergency: go immediately if —</div>
+        <div class="cause"><div class="cdot" style="background:var(--red)"></div><div><strong style="color:var(--red)">Crushing pressure spreading to arm or jaw</strong></div></div>
+        <div class="cause"><div class="cdot" style="background:var(--red)"></div><div><strong style="color:var(--red)">Sudden severe breathlessness</strong></div></div>
+      </div>
+      <button class="btn" onclick="go('vault')">Save to Health Record</button>
+      <button class="btn2">📅 Book a Doctor</button>
+      <div class="pb"></div>
+    </div></div>`;
+  }
+}
+
+/* ══ SCANNER ══ */
+function rScan(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Prescription Scanner</div><div class="hdr-s">Upload for OCR analysis</div></div>
+  <div class="upz" onclick="go('ocr')"><div style="font-size:42px;margin-bottom:9px">📋</div><div style="font-size:15px;font-weight:700;color:var(--g6);margin-bottom:3px">Tap to upload prescription</div><div style="font-size:12px;color:var(--g4)">Supports handwritten and printed slips</div></div>
+  <div class="br2"><button class="bol" onclick="go('ocr')">📷 Camera</button><button class="bol" onclick="go('ocr')">🖼️ Gallery</button></div>
+  <div class="p16">
+    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default"><div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:7px">How it works</div><div style="font-size:11px;color:#185EA5;line-height:1.7">1 · Take a clear photo · 2 · AI reads medicines, doses & timing · 3 · Review and confirm · 4 · Reminders set automatically</div></div>
+    <div class="sec" style="padding:0;margin-top:14px">Past Prescriptions</div>
+    <div class="card" onclick="go('ocr')"><div class="crow"><div class="ic" style="background:var(--bl)">📋</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">Dr. Rajesh Kumar · Apr 18</div><div style="font-size:11px;color:var(--g4)">3 medicines · Apollo Hospital</div></div><div style="color:var(--g3);font-size:17px">›</div></div></div>
+    <div class="card"><div class="crow"><div class="ic" style="background:#E6F4EA">📋</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">Dr. Meera Nair · Mar 2</div><div style="font-size:11px;color:var(--g4)">2 medicines · City Clinic</div></div><div style="color:var(--g3);font-size:17px">›</div></div></div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ OCR ══ */
+function rOCR(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('scan')">←</div><div style="flex:1"><div class="bk-t">OCR Review</div><div class="bk-s">Confirm before saving</div></div><div class="badge bg">89% confidence</div></div>
+  <div class="iban iby"><span>✏️</span><span>Review all details carefully. Tap ✎ to correct any field.</span></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Doctor & Visit</div>
+    <div class="ocard"><div class="ocr-ch"><strong>Dr. Rajesh Kumar</strong><span>MBBS, MD · Apollo Hospitals · Apr 18, 2026</span></div><div class="ocf"><span class="ocfl">Diagnosis</span><span class="ocfv">Viral fever + URTI</span><span class="ocfe">✎</span></div></div>
+    <div class="sec" style="padding:0">Medicines Detected</div>
+    ${[{n:'Paracetamol',mg:'650mg',p:'1-0-1',ts:['🌅 Morning','🌙 Night'],d:'3 days',f:'After food',c:89},{n:'Cetirizine',mg:'10mg',p:'0-0-1',ts:['🌙 Night only'],d:'5 days',f:'After food',c:94},{n:'Vitamin D3',mg:'1000 IU',p:'0-1-0',ts:['☀️ Afternoon'],d:'30 days',f:'With food',c:97}].map(m=>`<div class="ocard"><div style="padding:11px 15px;border-bottom:.5px solid var(--g2);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:14px;font-weight:800;color:var(--g6)">${m.n}</div><div style="font-size:11px;color:var(--g4)">${m.mg} tablet</div></div><div class="badge bg">Recognised ✓</div></div><div class="ocf"><span class="ocfl">Timing</span><div>${m.ts.map(t=>`<span class="tc">${t}</span>`).join('')}</div></div><div class="ocf"><span class="ocfl">Pattern</span><span class="ocfv">${m.p}</span><span class="ocfe">✎</span></div><div class="ocf"><span class="ocfl">Duration</span><span class="ocfv">${m.d}</span><span class="ocfe">✎</span></div><div class="ocf"><span class="ocfl">Food</span><span class="ocfv">${m.f}</span><span class="ocfe">✎</span></div><div class="cbar"><div class="cfill" style="width:${m.c}%"></div></div><div style="padding:0 15px 9px;font-size:10px;color:var(--g4)">Confidence: ${m.c}%</div></div>`).join('')}
+    <div class="card" style="background:var(--ol);border:1.5px solid #FBCB8C;cursor:default"><div style="font-size:12px;font-weight:800;color:#B85000;margin-bottom:5px">⚠️ Safety Check</div><div style="font-size:11px;color:#B85000;line-height:1.5">No conflicts with allergy record. Cetirizine may cause drowsiness. Always follow prescribed doses.</div></div>
+    <button class="btn" style="margin-top:11px">✓ Confirm & Set Reminders</button>
+    <button class="btn2">✎ Edit Before Saving</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ LAB ══ */
+function rLab(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Lab Report Analyser</div><div class="hdr-s">CBC + Lipid Panel · Apr 18, 2026</div></div>
+  <div class="iban ibl"><span>ℹ️</span><span>Educational only. All lab values must be interpreted by a qualified doctor.</span></div>
+  <div class="lgrid"><div class="ls"><div class="lsv" style="color:var(--green)">18</div><div class="lsl">Normal</div></div><div class="ls"><div class="lsv" style="color:var(--red)">2</div><div class="lsl">Out of range</div></div><div class="ls"><div class="lsv" style="color:var(--blue)">CBC</div><div class="lsl">Panel type</div></div><div class="ls"><div class="lsv" style="color:#9C27B0">Lipid</div><div class="lsl">Also included</div></div></div>
+  <div style="padding:0 14px 6px;font-size:13px;font-weight:700;color:var(--red)">⚠️ Out of Range</div>
+  <div class="tcrd"><div class="tcrd-h"><div class="tcrd-n">LDL Cholesterol</div><div class="badge br">High</div></div><div class="trow"><div class="trn"><div style="font-weight:700">LDL</div><div style="font-size:10px;color:var(--g4)">Bad cholesterol</div></div><div style="text-align:right"><div class="trv vh" style="font-size:17px">148</div><div class="trr">mg/dL · &lt;130</div></div></div><div class="ib" style="background:var(--rl);color:#C5221F">Slightly elevated. May indicate cardiovascular risk. Discuss with your doctor.</div></div>
+  <div class="tcrd"><div class="tcrd-h"><div class="tcrd-n">Hemoglobin</div><div class="badge by">Low</div></div><div class="trow"><div class="trn"><div style="font-weight:700">Hb</div><div style="font-size:10px;color:var(--g4)">Oxygen-carrying</div></div><div style="text-align:right"><div class="trv vl" style="font-size:17px">10.8</div><div class="trr">g/dL · 12–16</div></div></div><div class="ib" style="background:var(--bl);color:var(--bd)">Below normal. Possible mild anemia. Discuss iron/B12 with doctor.</div></div>
+  <div style="padding:0 14px 6px;font-size:13px;font-weight:700;color:var(--green);margin-top:4px">✓ Normal Range</div>
+  <div class="tcrd"><div class="tcrd-h"><div class="tcrd-n">CBC</div><div class="badge bg">Normal</div></div>${[{n:'WBC',v:'7.2',r:'4–11 k/µL'},{n:'RBC',v:'4.1',r:'3.9–5.0'},{n:'Platelets',v:'230',r:'150–400'},{n:'MCV',v:'82',r:'80–100 fL'}].map(r=>`<div class="trow"><div class="trn">${r.n}</div><div class="trv vn">${r.v}</div><div class="trr">${r.r}</div></div>`).join('')}</div>
+  <div class="p16">
+    <div class="card" style="background:#E6F4EA;border:1px solid #A8D5B5;cursor:default"><div style="font-size:12px;font-weight:800;color:#1B5E20;margin-bottom:7px">📋 Questions for your doctor</div><div style="font-size:11px;color:#2D7A4F;line-height:1.7">• Is my LDL elevation diet-related or genetic?<br>• Should I start iron supplements?<br>• What dietary changes help most?<br>• When should I repeat the panel?</div></div>
+    <button class="btn" style="margin-top:11px">📥 Download Summary</button>
+    <button class="btn2">📈 View Trends</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ MORE MENU ══ */
+function rMore(){
+  const items=[
+    {i:'👨‍👩‍👧',t:'Family Profiles',s:'Manage child, spouse, parent',sc:'family',c:'#E8F0FE'},
+    {i:'⚗️',t:'Drug Interactions',s:'Check medicine safety',sc:'interactions',c:'var(--pl)'},
+    {i:'🤖',t:'AI Health Chat',s:'Ask health questions',sc:'chatbot',c:'var(--tl)'},
+    {i:'📍',t:'Nearby Care',s:'Hospitals, clinics, pharmacy',sc:'nearby',c:'var(--gl)'},
+    {i:'🏃',t:'Activity Tracker',s:'Steps and fitness',sc:'activity',c:'var(--ol)'},
+    {i:'🏦',t:'Insurance & Expenses',s:'Claims and bills',sc:'insurance',c:'var(--al)'},
+    {i:'📸',t:'Skin & Wound Tracker',s:'Photo progress log',sc:'skin',c:'var(--pkl)'},
+    {i:'🔒',t:'Document Locker',s:'Secure health docs',sc:'doclocker',c:'var(--g2)'},
+    {i:'💉',t:'Vaccination Tracker',s:'Immunisation schedule',sc:'vaccines',c:'#E8F0FE'},
+    {i:'🍽️',t:'Food & Medicine',s:'Dietary interactions',sc:'foodint',c:'var(--gl)'},
+    {i:'📊',t:'Health Vault',s:'Complete history',sc:'vault',c:'var(--pl)'},
+    {i:'🆘',t:'Emergency',s:'SOS and quick info',sc:'emergency',c:'var(--rl)'},
+  ];
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">More Features</div><div class="hdr-s">All tools and modules</div></div>
+  <div class="p16">
+    ${items.map(it=>`<div class="card" onclick="go('${it.sc}')"><div class="crow"><div class="ic" style="background:${it.c};font-size:20px">${it.i}</div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">${it.t}</div><div style="font-size:11px;color:var(--g4);margin-top:2px">${it.s}</div></div><div style="color:var(--g3);font-size:17px">›</div></div></div>`).join('')}
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ VAULT ══ */
+function rVault(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Health Vault</div><div class="hdr-s">Complete medical history</div></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Recent Activity</div>
+    ${[{i:'📋',t:'Prescription — Dr. Rajesh Kumar',s:'3 medicines · Viral fever',d:'Apr 18'},{i:'🧪',t:'CBC + Lipid Panel',s:'2 out of range · Apollo',d:'Apr 18'},{i:'🩺',t:'Chest pain check',s:'Urgency: See doctor this week',d:'Apr 15'},{i:'💊',t:'Medicine log updated',s:'Cetirizine course added',d:'Apr 14'},{i:'🧫',t:'Thyroid Profile',s:'All normal · LabCorp',d:'Mar 5'},{i:'💉',t:'Vaccine record',s:'COVID booster noted',d:'Jan 20'}].map(v=>`<div class="vitem"><div class="vico">${v.i}</div><div style="flex:1"><div class="vt">${v.t}</div><div class="vs">${v.s}</div></div><div class="vd">${v.d}<br>2026</div></div>`).join('')}
+    <div class="sec" style="padding:0">Allergies & Conditions</div>
+    <div class="card" style="cursor:default"><div style="display:flex;flex-wrap:wrap;gap:7px">${(U.allergies?U.allergies.split(',').map(a=>`<span class="badge br">⚠️ ${a.trim()}</span>`):[`<span class="badge br">⚠️ Penicillin</span>`]).join('')}<span class="badge bb">Seasonal rhinitis</span><span class="badge by">Mild iron deficiency</span></div></div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ PROFILE ══ */
+function rProfile(){
+  const nm=U.name||'User',ini=nm.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const g=U.gender==='female'?'Female':U.gender==='male'?'Male':'Other';
+  const bmi=(U.height&&U.weight)?(U.weight/((U.height/100)**2)).toFixed(1):'--';
+  SCR.innerHTML=`<div class="sc">
+  <div class="ph"><div class="pav">${ini||'U'}</div><div class="pnm">${nm}</div><div class="pmt">${g} · ${U.age||'--'} yrs · Blood ${U.blood||'--'}</div></div>
+  <div class="pgr"><div class="ps"><div class="psv">${U.height?U.height+' cm':'--'}</div><div class="psl">Height</div></div><div class="ps"><div class="psv">${U.weight?U.weight+' kg':'--'}</div><div class="psl">Weight</div></div><div class="ps"><div class="psv">${bmi}</div><div class="psl">BMI</div></div><div class="ps"><div class="psv">${U.country||'--'}</div><div class="psl">Region</div></div></div>
+  <div>
+    <div style="padding:12px 14px;font-size:10px;font-weight:700;color:var(--g4);text-transform:uppercase;letter-spacing:.5px">Account & Settings</div>
+    ${[{i:'👤',l:'Personal Info',v:nm},{i:'🔔',l:'Reminders',v:'3 active'},{i:'🔒',l:'Privacy & Data',v:'Encrypted'},{i:'👨‍👩‍👧',l:'Family Profiles',v:(U.members?.length||1)+' members'},{i:'🌐',l:'Language',v:U.language||'English'},{i:'⚕️',l:'Emergency Contact',v:U.ecName||'Not set'},{i:'📤',l:'Export Health Data',v:''},{i:'🗑️',l:'Delete Account',v:''}].map(s=>`<div class="sit"><div class="sii">${s.i}</div><div class="sil">${s.l}</div><div class="siv">${s.v}</div><div class="sia">›</div></div>`).join('')}
+    <div class="sit" onclick="showAPIKeyModal()"><div class="sii">🤖</div><div class="sil">AI / OpenAI API Key</div><div class="siv" style="color:${OPENAI_KEY&&OPENAI_KEY!=='YOUR_OPENAI_KEY_HERE'?'var(--green)':'var(--amber)'}">${OPENAI_KEY&&OPENAI_KEY!=='YOUR_OPENAI_KEY_HERE'?'Connected ✓':'Not set'}</div><div class="sia">›</div></div>
+  </div>
+  <div class="p16" style="padding-top:14px">
+    <button style="background:var(--rl);color:#C5221F;border:1.5px solid #F7C1C1;border-radius:12px;padding:12px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit" onclick="U={};go('splash')">Sign Out</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ EMERGENCY ══ */
+function rEmergency(){
+  const nm=U.name||'User',g=U.gender==='female'?'Female':U.gender==='male'?'Male':'Other',age=U.age||'--',blood=U.blood||'--',allergy=U.allergies||'None recorded',ec=U.ecName||'Not set',ecp=U.ecPhone||'--';
+  SCR.innerHTML=`<div class="sc">
+  <div class="emfh"><div class="emfp">⚠️ EMERGENCY ALERT</div><div class="emft">Seek Emergency Care Now</div><div class="emfs">Your symptoms may need immediate attention. Do not delay — call now or go to the nearest hospital.</div></div>
+  <div class="p16">
+    <button class="emb" style="margin-top:14px">📞 Call 108 / 112 — Emergency</button>
+    <button style="background:#fff;color:var(--red);border:2.5px solid var(--red);border-radius:14px;padding:13px;font-size:15px;font-weight:800;width:100%;cursor:pointer;margin-bottom:11px;font-family:inherit">🏥 Find Nearest Hospital</button>
+    <div class="card" style="border:1.5px solid #F7C1C1;background:#FFF8F8;cursor:default">
+      <div style="font-size:14px;font-weight:800;color:#C5221F;margin-bottom:11px">Your Emergency Medical Info</div>
+      <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--g6)">
+        <div><strong>Patient:</strong> ${nm} · ${g} · ${age} yrs · Blood ${blood}</div>
+        <div><strong>Medicines:</strong> Paracetamol 650mg, Cetirizine, Vitamin D3</div>
+        <div style="color:var(--red);font-weight:700">⚠️ Allergies: ${allergy}</div>
+        <div><strong>Emergency contact:</strong> ${ec} · ${ecp}</div>
+      </div>
+    </div>
+    <button class="btn2" onclick="go('home')">← Back to Home</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ DRUG INTERACTIONS ══ */
+function rInteractions(){
+  const meds=['Paracetamol 650mg','Cetirizine 10mg','Vitamin D3 1000IU'];
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('more')">←</div><div><div class="bk-t">Drug Interactions</div><div class="bk-s">Check medicine safety combinations</div></div></div>
+  <div class="iban iby"><span>⚠️</span><span>Educational reference only. Always consult your pharmacist or doctor before changing medicines.</span></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Your Current Medicines</div>
+    <div class="card" style="cursor:default">
+      <div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:9px">Tap to remove from check</div>
+      <div style="display:flex;flex-wrap:wrap">${meds.map(m=>`<span class="med-tag">${m}<span onclick="this.parentElement.remove()">×</span></span>`).join('')}</div>
+      <div style="margin-top:10px;display:flex;gap:8px"><input class="inp" id="med-add" placeholder="Add a medicine name…" style="flex:1;padding:9px 12px;font-size:12px"/><button class="btn-sm" style="background:var(--blue);color:#fff" onclick="addMedTag()">Add</button></div>
+    </div>
+    <div class="sec" style="padding:0">Interaction Check Results</div>
+    <div class="int-level int-mild"><div class="int-sev">✅</div><div><div class="int-t">Paracetamol + Vitamin D3</div><div class="int-s">No known interaction. Safe to take together. Standard timing applies.</div></div></div>
+    <div class="int-level int-mild"><div class="int-sev">✅</div><div><div class="int-t">Cetirizine + Vitamin D3</div><div class="int-s">No known interaction. Antihistamine and supplement are compatible.</div></div></div>
+    <div class="int-level int-mod"><div class="int-sev">⚠️</div><div><div class="int-t">Cetirizine + Alcohol</div><div class="int-s">Moderate — Cetirizine + alcohol increases sedation. Avoid alcohol while taking this medicine.</div></div></div>
+    <div class="sec" style="padding:0">Add New Medicine to Check</div>
+    ${[['Warfarin','Aspirin','Severe','⛔','Known serious bleeding risk — do not combine without specialist supervision'],['Metformin','Alcohol','Moderate','⚠️','Risk of lactic acidosis — avoid alcohol with Metformin'],['Ibuprofen','Paracetamol','Mild','ℹ️','Generally safe short-term. Avoid regular concurrent use without medical advice']].map(([a,b,level,ic,desc])=>`<div class="int-level ${level==='Severe'?'int-sev-c':level==='Moderate'?'int-mod':'int-mild'}"><div class="int-sev">${ic}</div><div><div class="int-t">${a} + ${b}</div><div class="int-s">${desc}</div></div></div>`).join('')}
+    <div class="card" style="background:#E6F4EA;border:1px solid #A8D5B5;cursor:default;margin-top:4px"><div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:5px">ℹ️ About this checker</div><div style="font-size:11px;color:#2D7A4F;line-height:1.5">Based on publicly reviewed drug interaction data. This is educational — not a substitute for pharmacist advice. Always disclose all medicines to your doctor and pharmacist.</div></div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+function addMedTag(){const inp=$('med-add');if(!inp||!inp.value.trim())return;const wrap=inp.closest('.card').querySelector('div[style*="flex-wrap"]');const tag=document.createElement('span');tag.className='med-tag';tag.innerHTML=inp.value.trim()+'<span onclick="this.parentElement.remove()">×</span>';wrap.appendChild(tag);inp.value='';}
+
+/* ══ AI CHATBOT — GPT-4o powered ══ */
+// OPENAI_KEY is managed via window getter below (set in Settings > AI Key)
+const AI_SYSTEM = `You are HealthVault AI, a safe and helpful health assistant embedded in a personal health app.
+Rules you MUST follow:
+1. Never diagnose. Use language like "this may be associated with", "possible causes include", "consider discussing with your doctor".
+2. Never recommend prescription medicines. For OTC, say "consult your pharmacist first".
+3. Always recommend professional consultation for anything beyond basic wellness.
+4. For emergencies (chest pain, stroke signs, severe bleeding, breathing difficulty) say CALL EMERGENCY NOW.
+5. Be warm, clear, and use plain language. Keep responses concise — 2-4 sentences per message.
+6. Always end health advice with "This is educational information — consult a qualified doctor for personal medical decisions."
+User profile: ${JSON.stringify({name:U.name,age:U.age,gender:U.gender,conditions:U.conditions,allergies:U.allergies})}`;
+
+// Backend proxy URL — set this to your deployed backend
+// e.g. 'https://healthvault-backend.onrender.com'
+const BACKEND_URL = window._BACKEND_URL || '';
+
+async function callGPT(messages, feature) {
+  try {
+    const key = window.OPENAI_KEY;
+    const hasKey = key && key !== 'YOUR_OPENAI_KEY_HERE';
+    const hasBackend = BACKEND_URL && BACKEND_URL.length > 0;
+
+    if (!hasKey && !hasBackend) {
+      return '⚙️ AI not configured. Go to Profile → AI / OpenAI API Key to connect.';
+    }
+
+    let res;
+    if (hasBackend) {
+      // Use secure backend proxy (recommended for production)
+      res = await fetch(BACKEND_URL + '/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: messages.filter(m=>m.role!=='system'), feature: feature||'chat' })
+      });
+      if (!res.ok) { const e=await res.json(); throw new Error(e.error||'Backend error'); }
+      const data = await res.json();
+      return data.reply;
+    } else {
+      // Direct OpenAI call (development only — key visible in browser)
+      res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({ model: 'gpt-4o', messages: messages, max_tokens: 350, temperature: 0.4 })
+      });
+      if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||'API error'); }
+      const data = await res.json();
+      return data.choices[0].message.content.trim();
+    }
+  } catch(e) {
+    console.error('GPT error:', e);
+    return null;
+  }
+}
+function rChatbot(){
+  if(!chatHistory.length){
+    chatHistory=[{role:'bot',text:"Hello! I'm your HealthVault AI assistant 👋\n\nI can help with general health questions, explain medical terms, and help you understand your lab results or medicines.\n\nRemember: I provide educational information only — not medical diagnosis. For personal health concerns, always consult a qualified doctor.",time:'9:41 AM'}];
+  }
+  SCR.innerHTML=`<div class="sc" style="height:100%;display:flex;flex-direction:column">
+  <div class="hdr" style="flex-shrink:0"><div class="hdr-t">AI Health Chat</div><div class="hdr-s">Educational guidance · Not medical advice</div></div>
+  <div class="iban ibl" style="flex-shrink:0"><span>🤖</span><span>AI provides general health education only. Always consult a qualified doctor for personal medical decisions.</span></div>
+  <div class="chat-suggest" style="flex-shrink:0">
+    ${['What causes fever?','Explain my LDL result','Is paracetamol safe?','Blood pressure tips','What is HbA1c?'].map(s=>`<button class="cs-btn" onclick="sendChat('${s}')">${s}</button>`).join('')}
+  </div>
+  <div class="chat-msgs" id="chat-msgs">
+    ${chatHistory.map(m=>msgHTML(m)).join('')}
+  </div>
+  <div class="chat-input-wrap" style="flex-shrink:0">
+    <textarea class="chat-inp" id="chat-inp" placeholder="Ask a health question…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+    <button class="chat-send" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg></button>
+  </div></div>`;
+}
+function msgHTML(m){
+  const isBot=m.role==='bot';
+  return `<div class="msg-row ${isBot?'msg-bot':'msg-user'}">
+    ${isBot?`<div class="msg-av" style="background:#E8F0FE;font-size:14px">🤖</div>`:''}
+    <div><div class="msg-bubble">${m.text.replace(/\n/g,'<br>')}</div><div class="msg-time">${m.time}</div></div>
+    ${!isBot?`<div class="msg-av" style="background:var(--bl);color:var(--bd);font-size:11px;font-weight:700">${(U.name||'U')[0].toUpperCase()}</div>`:''}
+  </div>`;
+}
+async function sendChat(preset){
+  const inp=$('chat-inp');
+  const msg=preset||(inp?inp.value.trim():'');
+  if(!msg||isChatLoading)return;
+  isChatLoading=true;
+  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  chatHistory.push({role:'user',text:msg,time:now});
+  if(inp)inp.value='';
+  // Show user msg + typing indicator
+  const msgs=$('chat-msgs');
+  if(msgs){
+    msgs.innerHTML=chatHistory.map(m=>msgHTML(m)).join('')+typingHTML();
+    msgs.scrollTop=msgs.scrollHeight;
+  }
+  // Build messages array for GPT
+  const gptMsgs=[{role:'system',content:AI_SYSTEM},...chatHistory.filter(m=>m.role!=='error').map(m=>({role:m.role==='bot'?'assistant':'user',content:m.text}))];
+  // Pop the last user message we just pushed (already in chatHistory)
+  const reply = await callGPT(gptMsgs);
+  if(reply){
+    chatHistory.push({role:'bot',text:reply,time:now});
+  } else {
+    chatHistory.push({role:'bot',text:'Sorry, I could not connect to the AI service right now. Please check your internet connection and try again.',time:now});
+  }
+  isChatLoading=false;
+  if(msgs){
+    msgs.innerHTML=chatHistory.map(m=>msgHTML(m)).join('');
+    msgs.scrollTop=msgs.scrollHeight;
+  }
+}
+function typingHTML(){
+  return '<div class="msg-row msg-bot"><div class="msg-av" style="background:#E8F0FE;font-size:14px">🤖</div><div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div></div>';
+}
+
+/* ══ NEARBY CARE ══ */
+function rNearby(){
+  const cats=['All','Hospitals','Clinics','Pharmacies','Labs'];
+  let catIdx=0;
+  const places=[
+    {i:'🏥',n:'Apollo Hospital',m:'Emergency · ICU · 24/7',dist:'1.2 km',open:true,type:'Hospitals',color:'#E8F0FE'},
+    {i:'🏥',n:'Fortis Healthcare',m:'Multi-speciality · 24/7',dist:'2.1 km',open:true,type:'Hospitals',color:'#E8F0FE'},
+    {i:'🏪',n:'MedPlus Pharmacy',m:'Open till 10 PM · Delivery',dist:'0.4 km',open:true,type:'Pharmacies',color:'#E6F4EA'},
+    {i:'🏪',n:'Apollo Pharmacy',m:'24/7 · Home delivery',dist:'0.8 km',open:true,type:'Pharmacies',color:'#E6F4EA'},
+    {i:'🩺',n:'Dr. Meera Nair Clinic',m:'GP · Mon–Sat 9AM–7PM',dist:'0.9 km',open:true,type:'Clinics',color:'#EDE7FE'},
+    {i:'🧪',n:'SRL Diagnostics',m:'Lab · Reports in 6h',dist:'1.5 km',open:false,type:'Labs',color:'var(--al)'},
+    {i:'🧪',n:'Thyrocare Lab',m:'Home collection available',dist:'2.4 km',open:true,type:'Labs',color:'var(--al)'},
+  ];
+  function render(filter){
+    const filtered=filter==='All'?places:places.filter(p=>p.type===filter);
+    $('nc-list').innerHTML=filtered.map(p=>`<div class="nc-item"><div class="nc-icon" style="background:${p.color}">${p.i}</div><div style="flex:1"><div class="nc-name">${p.n}</div><div class="nc-meta">${p.m}</div></div><div class="nc-dist">${p.dist}<span class="nc-open" style="color:${p.open?'var(--green)':'var(--red)'}">${p.open?'Open':'Closed'}</span></div></div>`).join('');
+  }
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Nearby Care</div><div class="hdr-s">Hospitals, clinics, pharmacies near you</div></div>
+  <div class="nc-map"><div style="text-align:center;z-index:1"><div style="font-size:13px;font-weight:700;color:#0D47A1;margin-bottom:10px">📍 Your location detected</div><div style="display:flex;gap:16px;justify-content:center">${['🏥','🏪','🩺','🧪'].map(e=>`<div style="font-size:24px">${e}</div>`).join('')}</div><div style="font-size:11px;color:var(--g5);margin-top:8px">Interactive map — tap to get directions</div></div></div>
+  <div style="display:flex;gap:7px;padding:0 14px 11px;overflow-x:auto" id="nc-cats">
+    ${cats.map((c,i)=>`<div class="dc ${i===0?'on':''}" onclick="ncFilter('${c}',this)">${c}</div>`).join('')}
+  </div>
+  <div class="p16" style="padding-top:0"><div id="nc-list"></div><div class="pb"></div></div></div>`;
+  render('All');
+  window.ncFilter=(cat,el)=>{document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on');render(cat);};
+}
+
+/* ══ ACTIVITY TRACKER ══ */
+function rActivity(){
+  const steps=6842,goal=10000,pct=Math.round(steps/goal*100);
+  const days=['M','T','W','T','F','S','S'],vals=[7200,8100,5400,9200,6842,0,0];
+  const maxV=Math.max(...vals);
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Activity Tracker</div><div class="hdr-s">Today · Wednesday Apr 23</div></div>
+  <div class="p16" style="padding-top:16px">
+    <div class="at-ring">
+      <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--g2)" stroke-width="10"/><circle cx="60" cy="60" r="52" fill="none" stroke="var(--blue)" stroke-width="10" stroke-dasharray="${Math.round(2*Math.PI*52*pct/100)} ${Math.round(2*Math.PI*52*(1-pct/100))}" stroke-dashoffset="${Math.round(2*Math.PI*52*0.25)}" stroke-linecap="round"/></svg>
+      <div class="at-ring-center"><div class="at-steps">${steps.toLocaleString()}</div><div class="at-goal">/ ${goal.toLocaleString()} steps</div><div style="font-size:11px;font-weight:700;color:var(--blue);margin-top:2px">${pct}%</div></div>
+    </div>
+    <div class="at-stats">
+      <div class="at-stat"><div class="at-sv">4.2</div><div class="at-sl">km walked</div></div>
+      <div class="at-stat"><div class="at-sv">210</div><div class="at-sl">cal burned</div></div>
+      <div class="at-stat"><div class="at-sv">38</div><div class="at-sl">active min</div></div>
+    </div>
+    <div class="sec" style="padding:0">This Week</div>
+    <div class="week-bars">
+      ${days.map((d,i)=>{const h=vals[i]?Math.round((vals[i]/maxV)*60):4;const c=vals[i]>=goal?'var(--green)':vals[i]>0?'var(--blue)':'var(--g2)';return `<div class="wbar-wrap"><div class="wbar" style="height:${h}px;background:${c}"></div><div class="wbar-lbl">${d}</div></div>`;}).join('')}
+    </div>
+    <div class="card" style="cursor:default">
+      <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:9px">Health Insights</div>
+      ${[{i:'🏆',t:'3-day streak!',s:'Keep going — you\'ve been active 3 days in a row',c:'var(--gl)'},{i:'⚠️',t:'Below goal today',s:'You need 3,158 more steps to reach your 10,000 goal',c:'var(--al)'},{i:'💡',t:'Tip for hypertension',s:'30 min brisk walk daily can lower systolic BP by 4–9 mmHg',c:'var(--bl)'}].map(x=>`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:.5px solid var(--g2)"><div style="font-size:20px">${x.i}</div><div><div style="font-size:12px;font-weight:700;color:var(--g6)">${x.t}</div><div style="font-size:11px;color:var(--g4);margin-top:2px;line-height:1.4">${x.s}</div></div></div>`).join('')}
+    </div>
+    <div class="sec" style="padding:0">Connect Devices</div>
+    <div class="card" style="cursor:default">
+      ${[{i:'⌚',n:'Apple Watch / Fitbit',s:'Sync steps, heart rate, sleep',connected:false},{i:'📱',n:'Google Fit',s:'Phone pedometer — connected',connected:true},{i:'❤️',n:'Heart Rate Monitor',s:'Pair via Bluetooth',connected:false}].map(d=>`<div class="crow" style="padding:7px 0;border-bottom:.5px solid var(--g2)"><div style="font-size:20px;flex-shrink:0">${d.i}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--g6)">${d.n}</div><div style="font-size:11px;color:var(--g4)">${d.s}</div></div><span class="badge ${d.connected?'bg':'by'}" style="flex-shrink:0">${d.connected?'Connected':'Connect'}</span></div>`).join('')}
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ INSURANCE & EXPENSES ══ */
+function rInsurance(){
+  const exps=[{i:'💊',n:'Apollo Pharmacy',d:'Apr 18',a:'₹ 380',s:'Paid',sc:'var(--gl)',st:'#1B5E20'},{i:'🧪',n:'SRL Diagnostics Lab',d:'Apr 18',a:'₹ 1,200',s:'Reimbursed',sc:'var(--bl)',st:'var(--bd)'},{i:'🩺',n:'Dr. Rajesh Kumar Consult',d:'Apr 15',a:'₹ 600',s:'Paid',sc:'var(--gl)',st:'#1B5E20'},{i:'🏥',n:'Apollo OP Registration',d:'Apr 15',a:'₹ 150',s:'Paid',sc:'var(--gl)',st:'#1B5E20'},{i:'💊',n:'MedPlus Pharmacy',d:'Mar 5',a:'₹ 240',s:'Pending',sc:'var(--al)',st:'#B06000'}];
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Insurance & Expenses</div><div class="hdr-s">Track claims, bills & reimbursements</div></div>
+  <div class="ins-card">
+    <div class="ins-name">Star Health Insurance</div>
+    <div class="ins-num">Policy: SHNI-2024-0087654</div>
+    <div class="ins-row">
+      <div><div class="ins-field">Sum insured</div><div class="ins-val">₹ 5,00,000</div></div>
+      <div><div class="ins-field">Used this year</div><div class="ins-val">₹ 18,400</div></div>
+      <div><div class="ins-field">Renews</div><div class="ins-val">Dec 2026</div></div>
+    </div>
+  </div>
+  <div class="p16">
+    <div class="lgrid" style="margin:0 0 14px">
+      <div class="ls"><div class="lsv" style="color:var(--g6)">₹ 2,570</div><div class="lsl">This month</div></div>
+      <div class="ls"><div class="lsv" style="color:var(--green)">₹ 1,200</div><div class="lsl">Reimbursed</div></div>
+      <div class="ls"><div class="lsv" style="color:var(--amber)">₹ 240</div><div class="lsl">Pending claim</div></div>
+      <div class="ls"><div class="lsv" style="color:var(--blue)">₹ 18,400</div><div class="lsl">Year total</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+      <div style="font-size:14px;font-weight:700;color:var(--g6)">Recent Expenses</div>
+      <button class="btn-sm" style="background:var(--blue);color:#fff;font-size:11px" onclick="">+ Add</button>
+    </div>
+    ${exps.map(e=>`<div class="exp-item"><div class="exp-cat" style="background:${e.sc}">${e.i}</div><div style="flex:1"><div class="exp-name">${e.n}</div><div class="exp-date">${e.d} · 2026</div></div><div><div class="exp-amt">${e.a}</div><span class="exp-stat" style="color:${e.st}">${e.s}</span></div></div>`).join('')}
+    <button class="btn" style="margin-top:10px">📥 Download Annual Summary</button>
+    <button class="btn2">📋 Submit New Claim</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ SKIN TRACKER ══ */
+function rSkin(){
+  const entries=[{date:'Apr 23',note:'Right forearm rash',change:'Slightly larger',delta:'+12%',cc:'var(--rl)',tc:'#C5221F',emoji:'🔴'},{date:'Apr 18',note:'Right forearm rash',change:'First photo',delta:'Baseline',cc:'var(--al)',tc:'#B06000',emoji:'🟡'},{date:'Apr 10',note:'Left ankle swelling',change:'Resolved',delta:'−100%',cc:'var(--gl)',tc:'#1B5E20',emoji:'🟢'}];
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Skin & Wound Tracker</div><div class="hdr-s">Photo progress log with AI size comparison</div></div>
+  <div class="iban iby"><span>ℹ️</span><span>Photos stored encrypted on your device. AI size comparison is indicative only — consult a dermatologist for diagnosis.</span></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Active Tracking</div>
+    <div class="skin-grid">
+      ${[{date:'Apr 18',emoji:'🔶',note:'Forearm rash',change:'Baseline',cc:'var(--al)',tc:'#B06000'},{date:'Apr 23',emoji:'🔴',note:'Forearm rash',change:'+12% larger',cc:'var(--rl)',tc:'#C5221F'}].map(p=>`<div class="skin-photo"><div class="skin-photo-img">${p.emoji}</div><div class="skin-photo-meta"><div class="skin-photo-date">${p.date} · 2026</div><div class="skin-photo-note">${p.note}</div><span class="skin-change" style="background:${p.cc};color:${p.tc}">${p.change}</span></div></div>`).join('')}
+    </div>
+    <div class="card" style="background:var(--rl);border:none;cursor:default">
+      <div style="font-size:13px;font-weight:700;color:#C5221F;margin-bottom:4px">⚠️ AI Alert</div>
+      <div style="font-size:12px;color:#C5221F;line-height:1.5">The tracked rash appears 12% larger than 5 days ago. Consider seeing a dermatologist if it continues to grow, spreads, or becomes painful/itchy.</div>
+    </div>
+    <div class="sec" style="padding:0">All Entries</div>
+    ${entries.map(e=>`<div class="vitem"><div class="vico" style="font-size:22px">${e.emoji}</div><div style="flex:1"><div class="vt">${e.note}</div><div class="vs">${e.date} · ${e.change}</div></div><span class="badge" style="background:${e.cc};color:${e.tc}">${e.delta}</span></div>`).join('')}
+    <button class="btn">📸 Add New Photo</button>
+    <button class="btn2">📊 Compare All Photos</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ DOCUMENT LOCKER ══ */
+function rDocLocker(){
+  const cats=['all','prescription','lab','discharge','insurance','vaccination','other'];
+  const docs=[{i:'📋',n:'Prescription — Dr. Rajesh Kumar',m:'Apr 18, 2026 · Apollo · PDF',sz:'128 KB',cat:'prescription',lock:'🔐'},{i:'🧪',n:'CBC + Lipid Panel Report',m:'Apr 18, 2026 · Apollo Diagnostics · Image',sz:'2.1 MB',cat:'lab',lock:'🔐'},{i:'🧫',n:'Thyroid Profile Report',m:'Mar 5, 2026 · LabCorp · PDF',sz:'340 KB',cat:'lab',lock:'🔐'},{i:'🏥',n:'Discharge Summary',m:'Feb 2025 · City Hospital · PDF',sz:'890 KB',cat:'discharge',lock:'🔐'},{i:'🪪',n:'Star Health Insurance Card',m:'Valid Dec 2026 · PDF',sz:'215 KB',cat:'insurance',lock:'🔐'},{i:'💉',n:'COVID Vaccination Certificate',m:'Covishield · Jan 2024 · PDF',sz:'180 KB',cat:'vaccination',lock:'🔐'},{i:'📑',n:'Blood Group Certificate',m:'Apollo · 2022 · PDF',sz:'95 KB',cat:'other',lock:'🔐'}];
+  let activeCat='all';
+  function render(c){$('dl-list').innerHTML=docs.filter(d=>c==='all'||d.cat===c).map(d=>`<div class="doc-item"><div class="doc-ico" style="background:var(--bl)">${d.i}</div><div style="flex:1"><div class="doc-nm">${d.n}</div><div class="doc-meta">${d.m}</div></div><div class="doc-sz">${d.sz}<span class="doc-lock">${d.lock}</span></div></div>`).join('');}
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Document Locker</div><div class="hdr-s">Secure encrypted health documents</div></div>
+  <div class="iban ibl"><span>🔐</span><span>All documents are encrypted with AES-256. Biometric authentication required to access.</span></div>
+  <div style="padding:11px 0 4px">
+    <div class="doc-cat">
+      ${cats.map(c=>`<div class="dc ${c==='all'?'on':''}" onclick="dlFilter('${c}',this)">${c==='all'?'All':c.charAt(0).toUpperCase()+c.slice(1)}</div>`).join('')}
+    </div>
+  </div>
+  <div class="p16" style="padding-top:0"><div id="dl-list"></div>
+    <div style="border:2px dashed var(--g3);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;background:var(--g1);margin-top:4px" onclick="">
+      <div style="font-size:32px;margin-bottom:7px">📎</div>
+      <div style="font-size:13px;font-weight:700;color:var(--g5)">Add Document</div>
+      <div style="font-size:11px;color:var(--g4);margin-top:3px">PDF, Image · Max 10MB · Encrypted immediately</div>
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+  render('all');
+  window.dlFilter=(cat,el)=>{document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on');render(cat);};
+}
+
+/* ══ VACCINATION TRACKER ══ */
+function rVaccines(){
+  const vacs=[
+    {i:'✅',n:'COVID-19 Booster',d:'Jan 15, 2024',due:'Jan 2025 (booster)',status:'done',clinic:'Apollo'},
+    {i:'✅',n:'Hepatitis B (complete)',d:'Mar 2022',due:'Lifetime immunity',status:'done',clinic:'City Clinic'},
+    {i:'✅',n:'Tetanus (TT)',d:'Aug 2021',due:'Aug 2031',status:'done',clinic:'PHC'},
+    {i:'⏰',n:'Influenza (Flu) Shot',d:'Not yet',due:'Annual — due now',status:'due',clinic:'—'},
+    {i:'⏰',n:'HPV Vaccine',d:'Not yet',due:'Recommended for 26–45',status:'due',clinic:'—'},
+    {i:'📅',n:'Typhoid',d:'Sep 2020',due:'Sep 2023 (overdue)',status:'overdue',clinic:'Travel clinic'},
+  ];
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Vaccination Tracker</div><div class="hdr-s">Immunisation record and schedule</div></div>
+  <div class="lgrid" style="margin:14px">
+    <div class="ls"><div class="lsv" style="color:var(--green)">3</div><div class="lsl">Up to date</div></div>
+    <div class="ls"><div class="lsv" style="color:var(--amber)">2</div><div class="lsl">Due soon</div></div>
+    <div class="ls"><div class="lsv" style="color:var(--red)">1</div><div class="lsl">Overdue</div></div>
+    <div class="ls"><div class="lsv" style="color:var(--blue)">6</div><div class="lsl">Total logged</div></div>
+  </div>
+  <div class="p16">
+    ${vacs.map(v=>`<div class="vac-item"><div class="vac-icon" style="background:${v.status==='done'?'var(--gl)':v.status==='overdue'?'var(--rl)':'var(--al)'}">${v.i}</div><div style="flex:1"><div class="vac-name">${v.n}</div><div class="vac-date">${v.d} · ${v.clinic}</div><div style="font-size:10px;color:var(--g4);margin-top:1px">Next: ${v.due}</div></div><span class="vac-status" style="background:${v.status==='done'?'var(--gl)':v.status==='overdue'?'var(--rl)':'var(--al)'};color:${v.status==='done'?'#1B5E20':v.status==='overdue'?'#C5221F':'#B06000'}">${v.status==='done'?'Done':v.status==='overdue'?'Overdue':'Due'}</span></div>`).join('')}
+    <button class="btn">+ Log a Vaccine</button>
+    <button class="btn2">📅 See Full Schedule</button>
+    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default;margin-top:4px"><div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">💡 Recommended for your profile</div><div style="font-size:11px;color:#185EA5;line-height:1.6">Female · 32 yrs · India: Annual flu shot, HPV vaccine (up to 45), Hepatitis A (if travelling), Pneumococcal at 50+.</div></div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+/* ══ FOOD & MEDICINE INTERACTIONS ══ */
+function rFoodInt(){
+  const ints=[
+    {med:'Cetirizine (antihistamine)',icon:'💊',foods:[
+      {f:'🍺 Alcohol',sev:'Avoid',sc:'var(--rl)',tc:'#C5221F',note:'Increases sedation and drowsiness significantly. Do not combine.'},
+      {f:'☕ Caffeine / Coffee',sev:'Mild',sc:'var(--al)',tc:'#B06000',note:'May slightly reduce sedation effect. Generally OK in moderate amounts.'},
+    ]},
+    {med:'Metformin (for diabetes)',icon:'💊',foods:[
+      {f:'🍺 Alcohol',sev:'Avoid',sc:'var(--rl)',tc:'#C5221F',note:'Risk of lactic acidosis — potentially dangerous. Avoid alcohol completely.'},
+      {f:'🥩 High-fat meals',sev:'Caution',sc:'var(--al)',tc:'#B06000',note:'May slow absorption. Take with meals to reduce stomach upset.'},
+    ]},
+    {med:'Warfarin (blood thinner)',icon:'💊',foods:[
+      {f:'🥬 Leafy greens (spinach, kale)',sev:'Caution',sc:'var(--al)',tc:'#B06000',note:'High vitamin K reduces warfarin effect. Keep consistent intake — don\'t avoid completely.'},
+      {f:'🍊 Grapefruit',sev:'Avoid',sc:'var(--rl)',tc:'#C5221F',note:'Grapefruit inhibits drug metabolism — can cause dangerous levels. Avoid entirely.'},
+      {f:'🧄 Garlic supplements',sev:'Caution',sc:'var(--al)',tc:'#B06000',note:'High-dose garlic supplements may increase bleeding risk with warfarin.'},
+    ]},
+    {med:'Statins (Atorvastatin etc.)',icon:'💊',foods:[
+      {f:'🍊 Grapefruit / Pomelo',sev:'Avoid',sc:'var(--rl)',tc:'#C5221F',note:'Grapefruit significantly increases statin levels — risk of muscle damage (myopathy).'},
+      {f:'🍺 Alcohol',sev:'Caution',sc:'var(--al)',tc:'#B06000',note:'Increases liver stress when combined with statins. Limit to occasional moderate use.'},
+    ]},
+  ];
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Food & Medicine</div><div class="hdr-s">Dietary interactions to watch for</div></div>
+  <div class="iban iby"><span>🍽️</span><span>These interactions are educational. Your pharmacist can advise on your specific medicines and diet.</span></div>
+  <div class="p16">
+    <div style="display:flex;gap:8px;margin:14px 0 12px;flex-wrap:wrap">
+      <span style="background:var(--rl);color:#C5221F;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700">⛔ Avoid</span>
+      <span style="background:var(--al);color:#B06000;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700">⚠️ Caution</span>
+      <span style="background:var(--gl);color:#1B5E20;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700">✅ OK with care</span>
+    </div>
+    ${ints.map(item=>`<div class="food-int-item">
+      <div class="food-int-hdr"><div class="food-int-hdr-ico">${item.icon}</div><div class="food-int-hdr-t">${item.med}</div></div>
+      <div class="food-int-body">
+        ${item.foods.map(f=>`<div class="food-avoid"><div class="food-avoid-ico">${f.f.split(' ')[0]}</div><div class="food-avoid-t">${f.f.substring(f.f.indexOf(' ')+1)}<small>${f.note}</small></div><span class="food-avoid-sev" style="background:${f.sc};color:${f.tc}">${f.sev}</span></div>`).join('')}
+      </div>
+    </div>`).join('')}
+    <div class="card" style="background:var(--gl);border:1px solid #A8D5B5;cursor:default"><div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:5px">💡 General food rules</div><div style="font-size:11px;color:#2D7A4F;line-height:1.7">• Always take medicines with a full glass of water<br>• "With food" means within 30 min of a meal<br>• "Empty stomach" means 1h before or 2h after a meal<br>• Never crush time-release (SR/XR) tablets without asking your pharmacist</div></div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+
+/* ══ API KEY MODAL ══ */
+function showAPIKeyModal(){
+  const existing = OPENAI_KEY !== 'YOUR_OPENAI_KEY_HERE' ? OPENAI_KEY : '';
+  const modal = document.createElement('div');
+  modal.id = 'api-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:999;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:375px;margin:0 auto">
+      <div style="width:36px;height:4px;background:#BDC1C6;border-radius:2px;margin:0 auto 18px"></div>
+      <div style="font-size:17px;font-weight:800;color:#202124;margin-bottom:4px">🤖 OpenAI API Key</div>
+      <div style="font-size:12px;color:#80868B;margin-bottom:16px;line-height:1.5">Enter your OpenAI API key to enable AI-powered symptom analysis and the health chatbot. Your key is stored only in your browser memory and never sent to our servers.</div>
+      <div style="background:#FEF7E0;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#B06000;line-height:1.5">⚠️ Production: enter your backend URL below instead of a key. Your key stays on your server and is never exposed to the browser.</div>
+      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">Backend URL (recommended)</div>
+      <input id="backend-url-inp" type="url" placeholder="https://your-backend.onrender.com" value="${window._BACKEND_URL||''}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:13px;color:#202124;outline:none;font-family:inherit;margin-bottom:10px"/>
+      <div style="font-size:12px;font-weight:700;color:#5F6368;margin-bottom:5px">— OR — Direct API Key (dev/testing only)</div>
+      <input id="api-key-inp" type="password" placeholder="sk-proj-..." value="${existing}" style="width:100%;background:#F8F9FA;border:1.5px solid #E8EAED;border-radius:11px;padding:12px 13px;font-size:14px;color:#202124;outline:none;font-family:inherit;margin-bottom:12px"/>
+      <button onclick="saveAPIKey()" style="background:#1A73E8;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:700;width:100%;cursor:pointer;font-family:inherit;margin-bottom:8px">Save & Connect</button>
+      <button onclick="document.getElementById('api-modal').remove()" style="background:#F8F9FA;color:#5F6368;border:.5px solid #E8EAED;border-radius:13px;padding:12px;font-size:13px;font-weight:600;width:100%;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  setTimeout(()=>document.getElementById('api-key-inp')?.focus(), 100);
+}
+
+function saveAPIKey(){
+  const keyInp = document.getElementById('api-key-inp');
+  const urlInp = document.getElementById('backend-url-inp');
+  const key = keyInp?.value.trim() || '';
+  const url = urlInp?.value.trim() || '';
+  const hasBackend = url.startsWith('http');
+  const hasKey = key.startsWith('sk-');
+  if(!hasBackend && !hasKey){
+    if(keyInp){ keyInp.style.borderColor='#EA4335'; keyInp.placeholder='Must start with sk-...'; }
+    if(urlInp){ urlInp.style.borderColor='#EA4335'; }
+    return;
+  }
+  if(hasBackend) window._BACKEND_URL = url;
+  if(hasKey) window._OPENAI_KEY = key;
+  document.getElementById('api-modal')?.remove();
+  go('profile');
+}
+
+// Override OPENAI_KEY getter to use saved key
+Object.defineProperty(window, 'OPENAI_KEY', {
+  get(){ return window._OPENAI_KEY || 'YOUR_OPENAI_KEY_HERE'; },
+  set(v){ window._OPENAI_KEY = v; },
+  configurable: true
+});
+
+go('splash');
+
+/* ── Hide fake status bar on real mobile devices ──────────────
+   .notch and .status are decorative "phone frame" UI for desktop
+   preview only. On a real device the OS already shows its own
+   status bar, so we hide ours.
+   Triggers when viewport ≤ 480px OR app is in standalone mode.  */
+(function hideStatusOnDevice(){
+  function check(){
+    const isNarrow     = window.innerWidth <= 480;
+    const isStandalone = window.navigator.standalone === true ||
+                         window.matchMedia('(display-mode:standalone)').matches;
+    if(isNarrow || isStandalone){
+      document.querySelectorAll('.notch,.status').forEach(function(el){
+        el.style.setProperty('display','none','important');
+      });
+      var scr = document.getElementById('SCR');
+      if(scr) scr.style.paddingTop = 'env(safe-area-inset-top,0px)';
+    }
+  }
+  check();
+  window.addEventListener('resize', check);
+})();
+</script>
+</body>
+</html>
