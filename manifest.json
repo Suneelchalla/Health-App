@@ -1,0 +1,24 @@
+{
+  "name": "HealthVault",
+  "short_name": "HealthVault",
+  "description": "Your complete personal health companion",
+  "start_url": "/Health-App/",
+  "display": "standalone",
+  "background_color": "#1A73E8",
+  "theme_color": "#1A73E8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/1A73E8/ffffff?text=HV",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/1A73E8/ffffff?text=HV",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
