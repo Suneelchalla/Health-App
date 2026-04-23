@@ -1,0 +1,62 @@
+name: Sign APK
+
+on:
+  workflow_dispatch:  # Run manually from GitHub Actions tab
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generate signing keystore
+        run: |
+          keytool -genkeypair \
+            -keystore healthvault.jks \
+            -alias healthvault \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass healthvault123 \
+            -keypass healthvault123 \
+            -dname "CN=HealthVault, OU=App, O=Suneelchalla, L=Hyderabad, S=Telangana, C=IN"
+
+      - name: Download unsigned APK from latest release or repo
+        run: |
+          # Copy the unsigned APK from the repo
+          cp HealthVault-unsigned.apk app-unsigned.apk
+
+      - name: Align APK
+        run: |
+          # Install build tools
+          sudo apt-get install -y zipalign
+          zipalign -v -p 4 app-unsigned.apk app-aligned.apk
+
+      - name: Sign APK
+        run: |
+          # Sign with apksigner (comes with Java/Android tools)
+          $JAVA_HOME/bin/jarsigner \
+            -verbose \
+            -sigalg SHA256withRSA \
+            -digestalg SHA-256 \
+            -keystore healthvault.jks \
+            -storepass healthvault123 \
+            -keypass healthvault123 \
+            app-unsigned.apk \
+            healthvault
+          mv app-unsigned.apk HealthVault-signed.apk
+
+      - name: Upload signed APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HealthVault-signed-APK
+          path: HealthVault-signed.apk
+          retention-days: 30
