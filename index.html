@@ -475,34 +475,37 @@ html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD)
 const $ = id => document.getElementById(id);
 const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
 
-// ── APPS SCRIPT BACKEND URL (used by saveUser + appsScriptPost) ──
+// ── APPS SCRIPT URL (single source of truth) ─────────
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3WUayX2KmNdRFrI2yhO6zwH-QHVhIpIwaS-Dpt-t8w5ZDcEYULqK9B44kKpWOqzzu/exec';
 
-// ── PERSISTENT STORAGE ──────────────────────────────
+// ── PERSISTENT STORAGE ───────────────────────────────
+// saveUser: writes to localStorage AND backs up to Google Sheets
 function saveUser(){
   try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-  // Also back up to Apps Script (Google Sheets) so session survives localStorage clears
   if(U && U.email && !U.isGuest){
     try{
-      fetch(APPS_SCRIPT_URL, {
-        method:'POST', headers:{'Content-Type':'text/plain'},
-        body: JSON.stringify({ action:'saveUser', email: U.email, userData: U }),
-        redirect:'follow'
-      }).catch(()=>{});
+      localStorage.setItem('hv_last_email', U.email);
     }catch(e){}
+    // Fire-and-forget cloud backup
+    fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveUser', email:U.email, userData:U }),
+      redirect:'follow'
+    }).catch(()=>{});
   }
 }
 function loadUser(){ try{ const s=localStorage.getItem('hv_user'); return s?JSON.parse(s):null; }catch(e){return null;} }
-// Fetch user session from Apps Script by email (returns Promise)
-async function loadUserFromCloud(email){
-  try{
-    const res = await fetch(APPS_SCRIPT_URL+'?action=getUser&email='+encodeURIComponent(email), { redirect:'follow' });
-    const data = await res.json();
-    return data && data.userData ? data.userData : null;
-  }catch(e){ return null; }
-}
 function saveKey(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function loadKey(k){ try{ return localStorage.getItem(k)||''; }catch(e){return '';} }
+// Fetch full user object from Google Sheets by email
+async function loadUserFromCloud(email){
+  try{
+    const res = await fetch(APPS_SCRIPT_URL+'?action=getUser&email='+encodeURIComponent(email),{redirect:'follow'});
+    const data = JSON.parse(await res.text());
+    return (data && data.userData) ? data.userData : null;
+  }catch(e){ return null; }
+}
 
 let U = loadUser() || {}, bodyView='front', bodySex='female', selPart=null, chatHistory=[], docFilter='all', isChatLoading=false;
 
@@ -535,35 +538,10 @@ function go(s) {
 
 /* ══ SPLASH ══ */
 function rSplash(){
-  // 1. Try localStorage first (instant)
-  const saved = loadUser();
-  if(saved && saved.name && saved.members){
-    U = saved;
-    setTimeout(()=>go('home'), 600);
-  } else {
-    // 2. Try to restore from cloud using last-known email
-    const lastEmail = loadKey('hv_last_email');
-    if(lastEmail){
-      SCR.innerHTML=`<div class="splash sc"><div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div><div class="sp-name">HealthVault</div><div class="sp-tag" style="margin-top:20px">Restoring your session…</div></div>`;
-      loadUserFromCloud(lastEmail).then(cloudUser => {
-        if(cloudUser && cloudUser.name && cloudUser.members){
-          U = cloudUser;
-          try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-          go('home');
-        } else {
-          renderSplashUI();
-        }
-      }).catch(()=>{ renderSplashUI(); });
-      return;
-    }
-  }
-  renderSplashUI();
-}
-function renderSplashUI(){
+  TB.style.display='none'; SN.style.display='none';
   SCR.innerHTML=`<div class="splash sc">
   <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
   <div class="sp-name">HealthVault</div>
-
   <div class="sp-tag">Your complete personal health companion<br>Safe · Private · Smart · Always with you</div>
   <div style="position:relative;z-index:1;margin-top:48px;width:100%">
     <button class="btn" style="background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);margin-top:0" onclick="go('login')">Get Started</button>
@@ -611,21 +589,51 @@ function renderLF(m){
 }
 function showE(m){const e=$('err-m');if(e){e.textContent=m;e.style.display='block';}}
 function hideE(){const e=$('err-m');if(e)e.style.display='none';}
-function doLogin(){const e=$('fe')?.value.trim(),p=$('fp')?.value;hideE();if(!e||!e.includes('@')){showE('Please enter a valid email address.');return;}if(!p||p.length<4){showE('Password must be at least 4 characters.');return;}
-  const btn=document.querySelector('#lf .btn');if(btn){btn.textContent='Signing in…';btn.disabled=true;}
-  loadUserFromCloud(e).then(cloudUser=>{
-    if(cloudUser&&cloudUser.name&&cloudUser.members){U=cloudUser;saveKey('hv_last_email',e);try{localStorage.setItem('hv_user',JSON.stringify(U));}catch(ex){}go('home');}
-    else{U.name=e.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());U.email=e;saveKey('hv_last_email',e);go('onboard');}
-  }).catch(()=>{U.name=e.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,c=>c.toUpperCase());U.email=e;saveKey('hv_last_email',e);go('onboard');});
+function doLogin(){
+  const e=$('fe')?.value.trim(), p=$('fp')?.value;
+  hideE();
+  if(!e||!e.includes('@')){showE('Please enter a valid email address.');return;}
+  if(!p||p.length<4){showE('Password must be at least 4 characters.');return;}
+  const btn=document.querySelector('#lf .btn');
+  if(btn){btn.textContent='Signing in…';btn.disabled=true;}
+  // Try to restore existing cloud session for this email
+  loadUserFromCloud(e).then(function(cloudUser){
+    if(cloudUser && cloudUser.name && cloudUser.members){
+      U = cloudUser;
+      try{ localStorage.setItem('hv_user', JSON.stringify(U)); localStorage.setItem('hv_last_email', e); }catch(ex){}
+      go('home');
+    } else {
+      U.name = e.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+      U.email = e;
+      try{ localStorage.setItem('hv_last_email', e); }catch(ex){}
+      go('onboard');
+    }
+  }).catch(function(){
+    U.name = e.split('@')[0].replace(/\./g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+    U.email = e;
+    try{ localStorage.setItem('hv_last_email', e); }catch(ex){}
+    go('onboard');
+  });
 }
-function doSignup(){const n=$('fn')?.value.trim(),e=$('fe')?.value.trim(),p=$('fp')?.value,p2=$('fp2')?.value,c=$('fc')?.checked;hideE();if(!n){showE('Please enter your full name.');return;}if(!e||!e.includes('@')){showE('Please enter a valid email.');return;}if(!p||p.length<6){showE('Password must be at least 6 characters.');return;}if(p!==p2){showE('Passwords do not match.');return;}if(!c){showE('Please accept the Terms to continue.');return;}U.name=n;U.email=e;saveKey('hv_last_email',e);go('onboard');}
-function doGoogle(){U.name='New User';U.email='user@gmail.com';saveKey('hv_last_email','user@gmail.com');go('onboard');}
+function doSignup(){
+  const n=$('fn')?.value.trim(),e=$('fe')?.value.trim(),p=$('fp')?.value,p2=$('fp2')?.value,c=$('fc')?.checked;
+  hideE();
+  if(!n){showE('Please enter your full name.');return;}
+  if(!e||!e.includes('@')){showE('Please enter a valid email.');return;}
+  if(!p||p.length<6){showE('Password must be at least 6 characters.');return;}
+  if(p!==p2){showE('Passwords do not match.');return;}
+  if(!c){showE('Please accept the Terms to continue.');return;}
+  U.name=n; U.email=e;
+  try{ localStorage.setItem('hv_last_email', e); }catch(ex){}
+  go('onboard');
+}
+function doGoogle(){U.name='New User';U.email='user@gmail.com';try{localStorage.setItem('hv_last_email','user@gmail.com');}catch(e){}go('onboard');}
 function doGuest(){U.name='Guest';U.isGuest=true;go('onboard');}
 function doLogout(){
   if(!confirm('Sign out of HealthVault?')) return;
-  try{localStorage.removeItem('hv_user');}catch(e){}
-  try{localStorage.removeItem('hv_last_email');}catch(e){}
-  U={};go('splash');
+  try{ localStorage.removeItem('hv_user'); localStorage.removeItem('hv_last_email'); }catch(e){}
+  U={};
+  go('splash');
 }
 
 /* ══ ONBOARDING ══ */
@@ -1172,7 +1180,7 @@ Rules you MUST follow:
 6. Always end health advice with "This is educational information — consult a qualified doctor for personal medical decisions."
 User profile: ${JSON.stringify({name:U.name,age:U.age,gender:U.gender,conditions:U.conditions,allergies:U.allergies})}`;
 
-// Helper: POST to Apps Script backend (hardcoded URL — users never configure this)
+// Helper: POST to Apps Script backend
 async function appsScriptPost(action, payload) {
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
@@ -1715,8 +1723,42 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   configurable: true
 });
 
-// Launch app — rSplash handles both localStorage restore and cloud fallback
-go('splash');
+// ── APP STARTUP ──────────────────────────────────────
+// Strategy:
+//   1. localStorage has valid session → go Home immediately (no splash at all)
+//   2. localStorage empty but hv_last_email exists → show "Restoring…" then fetch from cloud
+//   3. Nothing → show Splash / Get Started
+(function startApp(){
+  const saved = loadUser();
+  if(saved && saved.name && saved.members){
+    // Fully logged-in — skip splash entirely
+    U = saved;
+    go('home');
+    return;
+  }
+  const lastEmail = loadKey('hv_last_email');
+  if(lastEmail){
+    // Show a minimal "restoring" splash while we fetch from cloud
+    TB.style.display='none'; SN.style.display='none';
+    SCR.innerHTML=`<div class="splash">
+      <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
+      <div class="sp-name">HealthVault</div>
+      <div class="sp-tag" style="margin-top:24px;font-size:13px">Restoring your session…</div>
+    </div>`;
+    loadUserFromCloud(lastEmail).then(function(cloudUser){
+      if(cloudUser && cloudUser.name && cloudUser.members){
+        U = cloudUser;
+        try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+        go('home');
+      } else {
+        go('splash');
+      }
+    }).catch(function(){ go('splash'); });
+    return;
+  }
+  // No session anywhere — show splash
+  go('splash');
+})();
 
 /* ── Hide fake status bar on real mobile devices ──────────────
    .notch and .status are decorative "phone frame" UI for desktop
