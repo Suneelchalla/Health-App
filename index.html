@@ -63,6 +63,27 @@ html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD)
 }
 @media(max-width:360px){.tab span{font-size:9px}.tab svg{width:19px;height:19px}}
 
+/* DARK MODE */
+body.dark{background:#121212!important}
+body.dark .phone{background:#1E1E1E}
+body.dark .screen{background:#1E1E1E;color:#E0E0E0}
+body.dark .card{background:#2C2C2C;border-color:#3A3A3A;color:#E0E0E0}
+body.dark .card:active{background:#363636}
+body.dark .hdr,.dark .brow{background:#2C2C2C;border-color:#3A3A3A}
+body.dark .hdr-t,.dark .bk-t{color:#E0E0E0}
+body.dark .hdr-s,.dark .bk-s,.dark .vt,.dark .vs{color:#AAAAAA}
+body.dark .tabbar{background:rgba(30,30,30,.96);border-color:#3A3A3A}
+body.dark .tab:not(.on) svg{stroke:#888}
+body.dark .tab:not(.on) span{color:#888}
+body.dark .inp,.dark .sel{background:#2C2C2C;border-color:#3A3A3A;color:#E0E0E0}
+body.dark .g1-bg,.dark .qa,.dark .at-stat,.dark .ps,.dark .ls,.dark .vitem{background:#2C2C2C;border-color:#3A3A3A}
+body.dark .sec{color:#CCCCCC}
+body.dark .sit{border-color:#3A3A3A}
+body.dark .sit:active{background:#363636}
+body.dark .sil{color:#E0E0E0}
+body.dark .qa{background:#2C2C2C;border-color:#3A3A3A}
+body.dark .qa .ql{color:#E0E0E0}
+
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:126px;height:34px;background:#fff;border-radius:0 0 20px 20px;z-index:20}
 .status{height:50px;background:var(--w);display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 8px;font-size:12px;font-weight:700;color:var(--g6);flex-shrink:0;z-index:10;position:relative}
 
@@ -456,6 +477,7 @@ html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD)
       <div class="tab" id="T-scan" onclick="go('scan')"><div class="tdot"></div><svg viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="4" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/><path d="M7 14v3a5 5 0 0 0 10 0v-3"/></svg><span>Medicines</span></div>
       <div class="tab" id="T-lab" onclick="go('lab')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M9 3h6v8l3 9H6l3-9V3z"/><path d="M6 9h12"/></svg><span>Lab</span></div>
       <div class="tab" id="T-more" onclick="go('more')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></div>
+      <div class="tab" id="T-search" onclick="go('search')"><div class="tdot"></div><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><span>Search</span></div>
       <div class="tab" id="T-profile" onclick="go('profile')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
     </div>
   </div>
@@ -536,7 +558,7 @@ function go(s) {
   const isAuth = AUTH.includes(s);
   TB.style.display = isAuth ? 'none' : 'flex';
   SN.style.display = isAuth ? 'none' : 'flex';
-  ['home','body','scan','lab','more','profile'].forEach(t => {
+  ['home','body','scan','lab','more','search','profile'].forEach(t => {
     const e = $('T-'+t); if(e) e.className = 'tab'+(t===s?' on':'');
   });
   SCR.scrollTop = 0;
@@ -548,7 +570,8 @@ function go(s) {
     vault:rVault, interactions:rInteractions, chatbot:rChatbot,
     nearby:rNearby, activity:rActivity, insurance:rInsurance,
     skin:rSkin, doclocker:rDocLocker, vaccines:rVaccines, foodint:rFoodInt,
-    pediatric:rPediatric, elderly:rElderly
+    pediatric:rPediatric, elderly:rElderly,
+    vitals:rVitals, search:rSearch, healthscore:rHealthScore
   };
   if(map[s]) map[s]();
 }
@@ -920,7 +943,7 @@ function rHome(){
   SCR.innerHTML=`<div class="sc">
   ${U.members?.length>1?`<div style="padding:12px 14px 0"><div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:8px">VIEWING PROFILE FOR</div></div>${familyScrollBar(true)}`:''}
   <div class="hh">
-    <div class="hgreet">Good morning 👋</div>
+    <div class="hgreet">${(function(){const h=new Date().getHours();return h<12?'Good morning 🌅':h<17?'Good afternoon ☀️':h<21?'Good evening 🌇':'Good night 🌙';})()}</div>
     <div class="hname">Hello, ${first}</div>
     <button class="sos" onclick="go('emergency')">🆘 SOS</button>
     <div class="hstats">
@@ -936,7 +959,7 @@ function rHome(){
       <div class="qa" onclick="go('symptom')"><div class="qi">✅</div><div class="ql">Symptom Checker</div><div class="qs">Local analysis</div></div>
       <div class="qa" onclick="go('scan')"><div class="qi">💊</div><div class="ql">Add Medicine</div><div class="qs">Manual or photo</div></div>
       <div class="qa" onclick="go('lab')"><div class="qi">🧪</div><div class="ql">Lab Reports</div><div class="qs">Add & track results</div></div>
-      <div class="qa" onclick="go('interactions')"><div class="qi">⚗️</div><div class="ql">Drug Interactions</div><div class="qs">Check safety</div></div>
+      <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Log Vitals</div><div class="qs">BP, sugar, SpO2</div></div>
       <div class="qa" onclick="go('nearby')"><div class="qi">📍</div><div class="ql">Nearby Care</div><div class="qs">Hospital, clinic</div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 0 0">
@@ -963,9 +986,11 @@ function rHome(){
     <div class="qa-grid">
       <div class="qa" onclick="go('family')"><div class="qi">👨‍👩‍👧</div><div class="ql">Family</div><div class="qs">All members</div></div>
       <div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity</div><div class="qs">Steps & fitness</div></div>
-      <div class="qa" onclick="go('vault')"><div class="qi">📊</div><div class="ql">Health Vault</div><div class="qs">Full history</div></div>
+      <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, weight</div></div>
+      <div class="qa" onclick="go('healthscore')"><div class="qi">🏆</div><div class="ql">Health Score</div><div class="qs">Your score</div></div>
       <div class="qa" onclick="go('vaccines')"><div class="qi">💉</div><div class="ql">Vaccines</div><div class="qs">Immunisation</div></div>
-      <div class="qa" onclick="go('insurance')"><div class="qi">🏦</div><div class="ql">Insurance</div><div class="qs">Claims & bills</div></div>
+      <div class="qa" onclick="go('vault')"><div class="qi">📋</div><div class="ql">Vault</div><div class="qs">Full history</div></div>
+      <div class="qa" onclick="go('search')"><div class="qi">🔍</div><div class="ql">Search</div><div class="qs">Find anything</div></div>
       <div class="qa" onclick="go('emergency')"><div class="qi">🆘</div><div class="ql">Emergency</div><div class="qs">SOS & info</div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1688,6 +1713,17 @@ function rInteractions(){
     <div class="pb"></div>
   </div></div>`;
 }
+function addMedTag(){
+  const inp=document.getElementById('med-add');
+  if(!inp||!inp.value.trim()) return;
+  const wrap=document.getElementById('int-tags');
+  if(!wrap) return;
+  const tag=document.createElement('span');
+  tag.className='med-tag';
+  tag.innerHTML=inp.value.trim()+'<span onclick="this.parentElement.remove()" style="margin-left:4px;font-size:14px;cursor:pointer">×</span>';
+  wrap.appendChild(tag);
+  inp.value='';
+}
 
 /* ══ CHATBOT — local FAQ engine (no API) ══ */
 const LOCAL_FAQ = [
@@ -1773,6 +1809,10 @@ function rProfile(){
     <div class="ps"><div class="psv">${bmi}</div><div class="psl">BMI</div></div>
     <div class="ps"><div class="psv">${meds}</div><div class="psl">Medicines</div></div>
   </div>
+  <div class="pgr" style="margin-top:0">
+    <div class="ps" onclick="go('vitals')" style="cursor:pointer"><div class="psv" style="color:var(--red)">${getVitals().length}</div><div class="psl">Vitals</div></div>
+    <div class="ps" onclick="go('healthscore')" style="cursor:pointer"><div class="psv" style="color:var(--amber)">${Math.min(getMeds().length*10+getReports().length*10+getVitals().length*5,100)}</div><div class="psl">Health Score</div></div>
+  </div>
   <div>
     <div style="padding:12px 14px;font-size:10px;font-weight:700;color:var(--g4);text-transform:uppercase;letter-spacing:.5px">Health Summary</div>
     ${[
@@ -1782,9 +1822,18 @@ function rProfile(){
       {i:'👨‍👩‍👧',l:'Family Profiles',v:(U.members?.length||1)+' members',fn:"go('family')"},
       {i:'💉',l:'Vaccination Tracker',v:'View schedule',fn:"go('vaccines')"},
       {i:'🆘',l:'Emergency Contact',v:U.ecName||'Not set',fn:"go('emergency')"},
+      {i:'📊',l:'Vitals Tracker',v:getVitals().length+' readings',fn:"go('vitals')"},
+      {i:'🏆',l:'Health Score',v:'View score',fn:"go('healthscore')"},
+      {i:'🔍',l:'Search',v:'Find anything',fn:"go('search')"},
       {i:'🌐',l:'Language',v:U.language||'English',fn:''},
-      {i:'📤',l:'Export Health Data',v:'',fn:'exportData()'},
+      {i:'📤',l:'Export Health Data',v:'Download JSON',fn:'exportData()'},
     ].map(s=>`<div class="sit" ${s.fn?`onclick="${s.fn}"`:''} style="${!s.fn?'cursor:default':''}"><div class="sii">${s.i}</div><div class="sil">${s.l}</div><div class="siv">${s.v}</div>${s.fn?'<div class="sia">›</div>':''}</div>`).join('')}
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-top:.5px solid var(--g2);border-bottom:.5px solid var(--g2)">
+    <div style="display:flex;align-items:center;gap:11px"><div class="sii">🌙</div><div class="sil" style="font-size:14px;color:var(--g6);font-weight:500">Dark Mode</div></div>
+    <div onclick="toggleDark(this)" style="width:46px;height:26px;background:${loadKey('hv_dark')==='1'?'var(--blue)':'var(--g2)'};border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0">
+      <div style="position:absolute;top:3px;${loadKey('hv_dark')==='1'?'right:3px':'left:3px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>
+    </div>
   </div>
   <div class="p16" style="padding-top:14px">
     <div class="card" style="background:var(--gl);cursor:default;margin-bottom:12px">
@@ -1796,10 +1845,38 @@ function rProfile(){
   </div></div>`;
 }
 
+function toggleDark(el){
+  const isDark = loadKey('hv_dark')==='1';
+  if(isDark){
+    saveKey('hv_dark','0');
+    document.body.classList.remove('dark');
+    el.style.background='var(--g2)';
+    el.querySelector('div').style.left='2px';
+    el.querySelector('div').style.right='auto';
+  } else {
+    saveKey('hv_dark','1');
+    document.body.classList.add('dark');
+    el.style.background='var(--blue)';
+    el.querySelector('div').style.right='2px';
+    el.querySelector('div').style.left='auto';
+  }
+}
+
 function exportData(){
   const data={ user:U, medicines:getMeds(), reports:getReports(), vault:getVaultItems(), vaccines:getVaccines(), expenses:getExpenses(), exported: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='healthvault-export.json'; a.click();
+}
+
+function exportInsuranceData(){
+  const exps = getExpenses();
+  if(!exps.length){ alert('No expenses to export yet.'); return; }
+  const total = exps.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  let csv = 'Date,Description,Amount (INR),Status\n';
+  exps.forEach(function(e){ csv += fmtDate(e.date)+','+e.name+','+e.amount+','+e.status+'\n'; });
+  csv += '\nTotal,,'+total+',\n';
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='healthvault-expenses.csv'; a.click();
 }
 
 /* ══ INSURANCE — real localStorage ══ */
@@ -2086,7 +2163,10 @@ function rMore(){
     {i:'🔒',t:'Document Locker',s:'Secure health docs',sc:'doclocker',c:'var(--g2)'},
     {i:'💉',t:'Vaccination Tracker',s:'Immunisation schedule',sc:'vaccines',c:'#E8F0FE'},
     {i:'🍽️',t:'Food & Medicine',s:'Dietary interactions',sc:'foodint',c:'var(--gl)'},
-    {i:'📊',t:'Health Vault',s:'Complete history & edit/delete',sc:'vault',c:'var(--pl)'},
+    {i:'📊',t:'Vitals Tracker',s:'BP, sugar, weight, SpO2',sc:'vitals',c:'var(--rl)'},
+    {i:'🏆',t:'Health Score',s:'Track your data completeness',sc:'healthscore',c:'var(--al)'},
+    {i:'🔍',t:'Search',s:'Find medicines, reports, vault',sc:'search',c:'var(--gl)'},
+    {i:'📋',t:'Health Vault',s:'Complete history & edit/delete',sc:'vault',c:'var(--pl)'},
     {i:'🆘',t:'Emergency',s:'SOS and quick info',sc:'emergency',c:'var(--rl)'},
   ];
   SCR.innerHTML=`<div class="sc">
@@ -2211,8 +2291,9 @@ function rSkin(){
   <div class="p16" style="padding-top:14px">
     <input type="file" id="skin-photo-inp" accept="image/*" capture="environment" style="display:none" onchange="addSkinPhoto(this)"/>
     <div style="display:flex;gap:8px;margin-bottom:14px">
-      <button class="btn" style="margin-top:0;flex:1" onclick="document.getElementById('skin-photo-inp').click()">📷 Take Photo</button>
-      <button class="btn2" style="margin-top:0;flex:1" onclick="document.getElementById('skin-photo-inp').click()">🖼️ Upload</button>
+      <input type="file" id="skin-photo-gal" accept="image/*" style="display:none" onchange="addSkinPhoto(this)"/>
+    <button class="btn" style="margin-top:0;flex:1" onclick="document.getElementById('skin-photo-inp').click()">📷 Take Photo</button>
+      <button class="btn2" style="margin-top:0;flex:1" onclick="document.getElementById('skin-photo-gal').click()">🖼️ Gallery</button>
     </div>
     <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">📸 All Photos (${photos.length})</div>
     ${photos.length===0
@@ -2418,6 +2499,296 @@ function addDocPhoto(input){
 }
 
 
+
+// ── VITALS helpers ──────────────────────────────────
+function getVitals(){ try{ return JSON.parse(localStorage.getItem('hv_vitals')||'[]'); }catch(e){ return []; } }
+function saveVitals(arr){ try{ localStorage.setItem('hv_vitals', JSON.stringify(arr)); }catch(e){} }
+
+/* ══ VITALS TRACKER ══ */
+function rVitals(){
+  const vitals = getVitals();
+  const types = [
+    {key:'bp',     icon:'❤️',  label:'Blood Pressure', unit:'mmHg',   placeholder:'e.g. 120/80',  color:'var(--red)'},
+    {key:'sugar',  icon:'🩸',  label:'Blood Sugar',    unit:'mg/dL',  placeholder:'e.g. 95',      color:'var(--amber)'},
+    {key:'weight', icon:'⚖️',  label:'Weight',         unit:'kg',     placeholder:'e.g. 68',      color:'var(--blue)'},
+    {key:'temp',   icon:'🌡️',  label:'Temperature',    unit:'°C',     placeholder:'e.g. 98.6',    color:'var(--orange)'},
+    {key:'spo2',   icon:'💨',  label:'SpO2 / Oxygen',  unit:'%',      placeholder:'e.g. 98',      color:'var(--teal)'},
+    {key:'pulse',  icon:'💓',  label:'Heart Rate',     unit:'bpm',    placeholder:'e.g. 72',      color:'var(--pink)'},
+  ];
+
+  // Get latest reading per type
+  const latest = {};
+  vitals.forEach(function(v){ if(!latest[v.type] || v.date > latest[v.type].date) latest[v.type]=v; });
+
+  // Normal ranges for each type
+  const ranges = {
+    bp:    { check: function(v){ const p=v.split('/'); const s=parseInt(p[0]),d=parseInt(p[1]); if(s>140||d>90) return 'HIGH'; if(s<90||d<60) return 'LOW'; return 'NORMAL'; }},
+    sugar: { check: function(v){ const n=parseFloat(v); if(n>140) return 'HIGH'; if(n<70) return 'LOW'; return 'NORMAL'; }},
+    weight:{ check: function(v){ return 'NORMAL'; }},
+    temp:  { check: function(v){ const n=parseFloat(v); if(n>37.5) return 'HIGH'; if(n<36.0) return 'LOW'; return 'NORMAL'; }},
+    spo2:  { check: function(v){ const n=parseFloat(v); if(n<95) return 'LOW'; return 'NORMAL'; }},
+    pulse: { check: function(v){ const n=parseFloat(v); if(n>100) return 'HIGH'; if(n<60) return 'LOW'; return 'NORMAL'; }},
+  };
+
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Vitals Tracker</div><div class="hdr-s">Log and monitor your health readings</div></div>
+  <div class="p16" style="padding-top:14px">
+
+    <!-- Quick log cards -->
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">📊 Latest Readings</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px">
+      ${types.map(function(t){
+        const l = latest[t.key];
+        const status = l ? ranges[t.key].check(l.value) : null;
+        const statusColor = status==='HIGH'?'var(--red)':status==='LOW'?'var(--amber)':'var(--green)';
+        return `<div style="background:#fff;border-radius:12px;padding:12px;border:.5px solid var(--g2);cursor:pointer" onclick="showLogVital('${t.key}','${t.label}','${t.unit}','${t.placeholder}','${t.color}')">
+          <div style="font-size:20px;margin-bottom:5px">${t.icon}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--g5);margin-bottom:4px">${t.label}</div>
+          ${l
+            ? `<div style="font-size:16px;font-weight:800;color:${statusColor}">${l.value}</div>
+               <div style="font-size:10px;color:var(--g4)">${t.unit} · ${fmtDate(l.date)}</div>
+               <div style="font-size:10px;font-weight:700;color:${statusColor};margin-top:2px">${status}</div>`
+            : `<div style="font-size:13px;color:var(--g4)">— Tap to log</div>`}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Recent history -->
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">📋 Recent History</div>
+    ${vitals.length===0
+      ? '<div style="text-align:center;padding:20px;color:var(--g4);background:var(--g1);border-radius:12px;font-size:13px">No readings yet. Tap any card above to log a reading.</div>'
+      : vitals.slice().reverse().slice(0,20).map(function(v){
+          const t = types.find(function(x){ return x.key===v.type; }) || {icon:'📊',label:v.type,unit:'',color:'var(--blue)'};
+          const status = ranges[v.type] ? ranges[v.type].check(v.value) : 'NORMAL';
+          const sc = status==='HIGH'?'var(--rl)':status==='LOW'?'var(--al)':'var(--gl)';
+          const tc = status==='HIGH'?'#C5221F':status==='LOW'?'#B06000':'#1B5E20';
+          return `<div class="vitem" style="position:relative">
+            <div class="vico">${t.icon}</div>
+            <div style="flex:1">
+              <div class="vt">${t.label}: <strong style="color:${tc}">${v.value} ${t.unit}</strong></div>
+              <div class="vs">${v.note||''} · ${fmtDate(v.date)}</div>
+            </div>
+            <span class="badge" style="background:${sc};color:${tc};margin-right:6px">${status}</span>
+            <button onclick="deleteVital('${v.id}')" style="background:var(--rl);border:none;border-radius:7px;padding:4px 7px;font-size:11px;cursor:pointer;color:#C5221F">🗑️</button>
+          </div>`;
+        }).join('')
+    }
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+function showLogVital(key, label, unit, placeholder, color){
+  const overlay = document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
+    <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
+    <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">Log ${label}</div>
+    <div class="fld">
+      <div class="flbl">Reading (${unit})</div>
+      <input class="inp" id="vital-val" placeholder="${placeholder}" type="text" inputmode="decimal" style="font-size:20px;font-weight:700;text-align:center"/>
+    </div>
+    <div class="fld">
+      <div class="flbl">Date</div>
+      <input class="inp" id="vital-date" type="date" value="${today()}"/>
+    </div>
+    <div class="fld">
+      <div class="flbl">Note (optional)</div>
+      <input class="inp" id="vital-note" placeholder="e.g. After meal, Fasting, Morning…"/>
+    </div>
+    <button class="btn" onclick="saveVital('${key}','${label}')">✅ Save Reading</button>
+    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  overlay.addEventListener('click',function(e){ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(function(){ document.getElementById('vital-val')?.focus(); },100);
+}
+
+function saveVital(key, label){
+  const val = (document.getElementById('vital-val')?.value||'').trim();
+  if(!val){ alert('Please enter a reading.'); return; }
+  const vitals = getVitals();
+  const entry = {
+    id: 'vt'+Date.now(), type:key, label:label,
+    value:val, date:document.getElementById('vital-date')?.value||today(),
+    note:document.getElementById('vital-note')?.value||''
+  };
+  vitals.push(entry);
+  saveVitals(vitals);
+  // Add to vault log
+  const vault=getVaultItems();
+  vault.unshift({ id:'v'+Date.now(), type:'vital', icon:'📊', title:`${label}: ${val}`, subtitle:entry.note||'Vital reading logged', date:entry.date });
+  saveVaultItems(vault);
+  document.querySelector('[style*="position:fixed"]')?.remove();
+  rVitals();
+}
+
+function deleteVital(id){
+  if(!confirm('Delete this reading?')) return;
+  saveVitals(getVitals().filter(function(v){ return v.id!==id; }));
+  rVitals();
+}
+
+/* ══ SEARCH ══ */
+function rSearch(){
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Search</div><div class="hdr-s">Search medicines, reports, vault entries</div></div>
+  <div style="padding:12px 14px">
+    <div class="srch" style="margin:0 0 14px">
+      <svg width="16" height="16" fill="none" stroke="var(--g4)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="search-inp" class="inp" placeholder="Search medicines, reports, vault…" style="border:none;background:transparent;padding:0;font-size:14px" oninput="runSearch(this.value)" autofocus/>
+    </div>
+    <div id="search-results">
+      <div style="text-align:center;padding:30px;color:var(--g4)">
+        <div style="font-size:32px;margin-bottom:8px">🔍</div>
+        <div style="font-size:13px">Type to search across all your health data</div>
+      </div>
+    </div>
+  </div></div>`;
+  setTimeout(function(){ document.getElementById('search-inp')?.focus(); },100);
+}
+
+function runSearch(q){
+  const res = document.getElementById('search-results');
+  if(!res) return;
+  q = (q||'').toLowerCase().trim();
+  if(!q){
+    res.innerHTML='<div style="text-align:center;padding:20px;color:var(--g4);font-size:13px">Type to search…</div>';
+    return;
+  }
+  const results = [];
+
+  // Search medicines
+  getMeds().forEach(function(m){
+    if((m.name+' '+m.dosage+' '+m.notes+' '+m.doctor).toLowerCase().includes(q)){
+      results.push({ icon:'💊', title:m.name+' '+m.dosage, subtitle:m.food+' · '+m.duration, action:"go('scan')", cat:'Medicine' });
+    }
+  });
+
+  // Search reports
+  getReports().forEach(function(r){
+    if((r.name+' '+r.lab).toLowerCase().includes(q)){
+      results.push({ icon:'🧪', title:r.name, subtitle:fmtDate(r.date)+' · '+r.lab, action:"go('lab')", cat:'Lab Report' });
+    }
+    (r.results||[]).forEach(function(t){
+      if(t.name.toLowerCase().includes(q)){
+        results.push({ icon:'🔬', title:t.name+': '+t.value+' '+t.unit, subtitle:r.name+' · '+t.status, action:"go('lab')", cat:'Lab Result' });
+      }
+    });
+  });
+
+  // Search vitals
+  getVitals().forEach(function(v){
+    if((v.label+' '+v.value+' '+v.note).toLowerCase().includes(q)){
+      results.push({ icon:'📊', title:v.label+': '+v.value, subtitle:fmtDate(v.date)+' · '+(v.note||''), action:"go('vitals')", cat:'Vital' });
+    }
+  });
+
+  // Search vault
+  getVaultItems().forEach(function(v){
+    if((v.title+' '+(v.subtitle||'')).toLowerCase().includes(q)){
+      results.push({ icon:v.icon||'📋', title:v.title, subtitle:v.subtitle||'', action:"go('vault')", cat:'Vault' });
+    }
+  });
+
+  // Search vaccines
+  getVaccines().forEach(function(v){
+    if((v.name+' '+v.clinic).toLowerCase().includes(q)){
+      results.push({ icon:'💉', title:v.name, subtitle:fmtDate(v.date)+' · '+v.clinic, action:"go('vaccines')", cat:'Vaccine' });
+    }
+  });
+
+  if(!results.length){
+    res.innerHTML='<div style="text-align:center;padding:24px;color:var(--g4)"><div style="font-size:28px;margin-bottom:8px">😕</div><div style="font-size:13px">No results found for "<b>'+q+'</b>"</div></div>';
+    return;
+  }
+
+  res.innerHTML='<div style="font-size:11px;color:var(--g4);margin-bottom:10px;font-weight:700">'+results.length+' results</div>'+
+    results.map(function(r){
+      return `<div class="vitem" onclick="${r.action}" style="cursor:pointer">
+        <div class="vico">${r.icon}</div>
+        <div style="flex:1"><div class="vt">${r.title}</div><div class="vs">${r.subtitle}</div></div>
+        <div style="font-size:10px;color:var(--g4);background:var(--g1);padding:3px 8px;border-radius:10px;white-space:nowrap">${r.cat}</div>
+      </div>`;
+    }).join('');
+}
+
+/* ══ HEALTH SCORE ══ */
+function rHealthScore(){
+  const meds = getMeds();
+  const reports = getReports();
+  const vitals = getVitals();
+  const vaccines = getVaccines();
+  const walks = JSON.parse(localStorage.getItem('hv_walks')||'[]');
+
+  // Calculate score components
+  const medScore   = Math.min(meds.length * 10, 25);  // up to 25pts for logging meds
+  const reportScore= Math.min(reports.length * 10, 20); // up to 20pts
+  const vitalScore = Math.min(vitals.length * 5, 20);  // up to 20pts
+  const walkScore  = Math.min(walks.length * 3, 15);   // up to 15pts
+  const vaccScore  = Math.min(vaccines.filter(function(v){ return v.status==='done'; }).length * 2, 10); // up to 10pts
+  const profileScore = (U.name&&U.age&&U.blood&&U.allergies) ? 10 : 5; // up to 10pts
+
+  const total = medScore + reportScore + vitalScore + walkScore + vaccScore + profileScore;
+  const grade = total>=80?'A':total>=60?'B':total>=40?'C':'D';
+  const gradeColor = total>=80?'var(--green)':total>=60?'var(--blue)':total>=40?'var(--amber)':'var(--red)';
+  const gradeMsg = total>=80?'Excellent — you are actively managing your health!':
+                   total>=60?'Good — a few more logs will improve your score':
+                   total>=40?'Fair — try logging vitals and medicines regularly':
+                   'Getting started — add medicines, vitals and reports to improve';
+
+  const components = [
+    { label:'Medicines logged',   score:medScore,    max:25, icon:'💊', tip:'Add your current medicines in Medicines tab' },
+    { label:'Lab reports logged', score:reportScore, max:20, icon:'🧪', tip:'Upload your lab reports in Lab tab' },
+    { label:'Vitals recorded',    score:vitalScore,  max:20, icon:'📊', tip:'Log BP, sugar, weight in Vitals Tracker' },
+    { label:'Walks tracked',      score:walkScore,   max:15, icon:'🏃', tip:'Track your walks in Activity Tracker' },
+    { label:'Vaccines logged',    score:vaccScore,   max:10, icon:'💉', tip:'Log vaccinations in Vaccines tab' },
+    { label:'Profile complete',   score:profileScore,max:10, icon:'👤', tip:'Complete your profile with age, blood group and allergies' },
+  ];
+
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Health Score</div><div class="hdr-s">Your health data completeness score</div></div>
+  <div class="p16" style="padding-top:20px">
+
+    <!-- Big score circle -->
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:130px;height:130px;border-radius:50%;background:${gradeColor};display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.15)">
+        <div style="font-size:40px;font-weight:900;color:#fff;line-height:1">${total}</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.85);font-weight:700">/100</div>
+      </div>
+      <div style="font-size:28px;font-weight:900;color:${gradeColor};margin-top:12px">Grade ${grade}</div>
+      <div style="font-size:13px;color:var(--g5);margin-top:6px;line-height:1.5;max-width:280px;margin-left:auto;margin-right:auto">${gradeMsg}</div>
+    </div>
+
+    <!-- Score breakdown -->
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:12px">Score Breakdown</div>
+    ${components.map(function(c){
+      const pct = Math.round((c.score/c.max)*100);
+      const barColor = pct>=80?'var(--green)':pct>=50?'var(--blue)':'var(--amber)';
+      return `<div style="background:#fff;border-radius:12px;padding:13px;margin-bottom:9px;border:.5px solid var(--g2)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">${c.icon}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--g6)">${c.label}</span>
+          </div>
+          <span style="font-size:13px;font-weight:800;color:${barColor}">${c.score}/${c.max}</span>
+        </div>
+        <div style="height:6px;background:var(--g2);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .5s"></div>
+        </div>
+        ${c.score<c.max?`<div style="font-size:11px;color:var(--g4);margin-top:6px">💡 ${c.tip}</div>`:'<div style="font-size:11px;color:var(--green);margin-top:6px">✅ Well done!</div>'}
+      </div>`;
+    }).join('')}
+
+    <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default">
+      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">ℹ️ About this score</div>
+      <div style="font-size:11px;color:#185EA5;line-height:1.6">This score measures how well you are tracking your health data in HealthVault. It is not a medical assessment of your actual health status.</div>
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+
+
+
 /* ══ FOOD & MEDICINE INTERACTIONS ══ */
 function rFoodInt(){
   const ints=[
@@ -2473,6 +2844,11 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 //   1. localStorage has valid session → go Home immediately (no splash at all)
 //   2. localStorage empty but hv_last_email exists → show "Restoring…" then fetch from cloud
 //   3. Nothing → show Splash / Get Started
+// Apply dark mode on load
+(function applyDarkMode(){
+  if(loadKey('hv_dark')==='1') document.body.classList.add('dark');
+})();
+
 (function startApp(){
   const saved = loadUser();
   if(saved && saved.name && saved.members){
