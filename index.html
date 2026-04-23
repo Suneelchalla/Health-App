@@ -523,7 +523,7 @@ async function loadUserFromCloud(email){
   }
 }
 
-let U = loadUser() || {}, bodyView='front', bodySex='female', selPart=null, chatHistory=[], docFilter='all', isChatLoading=false;
+let U = loadUser() || {}, bodyView='front', bodySex='female', selPart=null, chatHistory=[], docFilterCat='all', isChatLoading=false;
 
 // Restore saved AI URLs
 if(loadKey('hv_as_url')) window._APPS_SCRIPT_URL = loadKey('hv_as_url');
@@ -2232,15 +2232,38 @@ function rSkin(){
 
 function addSkinPhoto(input){
   const file=input.files[0]; if(!file) return;
-  const label=prompt('Label this photo (e.g. "Right forearm rash"):','Skin photo') || 'Skin photo';
   const reader=new FileReader();
   reader.onload=function(e){
-    const photos=getPhotos();
-    photos.push({ id:'ph'+Date.now(), cat:'skin', data:e.target.result, label, date:today() });
-    savePhotos(photos);
-    rSkin();
+    // Show label modal instead of prompt()
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML=`<div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px">
+      <div style="font-size:16px;font-weight:800;color:var(--g6);margin-bottom:14px">📸 Label this photo</div>
+      <img src="${e.target.result}" style="width:100%;border-radius:10px;max-height:160px;object-fit:cover;margin-bottom:14px"/>
+      <input class="inp" id="skin-lbl-inp" placeholder="e.g. Right forearm rash, Left knee swelling…" value="Skin photo"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:12px;background:var(--g1);border:1px solid var(--g2);border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+        <button onclick="confirmSkinPhoto('${e.target.result.replace(/'/g,'').substring(0,10)}')" id="skin-save-btn" style="padding:12px;background:var(--blue);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Save Photo</button>
+      </div>
+    </div>`;
+    // Store data for saving
+    window._skinPhotoTemp = e.target.result;
+    document.body.appendChild(overlay);
+    setTimeout(function(){ document.getElementById('skin-lbl-inp')?.focus(); }, 100);
   };
   reader.readAsDataURL(file);
+}
+
+function confirmSkinPhoto(dummy){
+  const label = (document.getElementById('skin-lbl-inp')?.value||'').trim() || 'Skin photo';
+  const data = window._skinPhotoTemp;
+  if(!data) return;
+  const photos=getPhotos();
+  photos.push({ id:'ph'+Date.now(), cat:'skin', data:data, label:label, date:today() });
+  savePhotos(photos);
+  window._skinPhotoTemp=null;
+  document.querySelector('[style*="position:fixed"]')?.remove();
+  rSkin();
 }
 
 function viewPhoto(id){
@@ -2266,63 +2289,132 @@ function viewPhoto(id){
 function getDocPhotos(){ return getPhotos().filter(p=>p.cat==='doc'); }
 
 function rDocLocker(){
-  const docs = getDocPhotos();
-  const cats=['All','Prescription','Lab Report','Insurance','Discharge','Certificate','Other'];
-  let activeDocCat='All';
-  function filteredDocs(cat){ return cat==='All'?docs:docs.filter(d=>d.docCat===cat); }
+  const allDocCats=['All','Prescription','Lab Report','Insurance','Discharge','Certificate','Other'];
   SCR.innerHTML=`<div class="sc">
   <div class="hdr"><div class="hdr-t">Document Locker</div><div class="hdr-s">Photos stored permanently — never auto-deleted</div></div>
-  <div class="iban ibl"><span>🔐</span><span>All document photos are stored permanently on this device in localStorage. They are never deleted unless you clear the app data.</span></div>
+  <div class="iban ibl"><span>🔐</span><span>All photos stored permanently on this device. Never deleted automatically.</span></div>
   <div class="p16" style="padding-top:14px">
-    <input type="file" id="doc-photo-inp" accept="image/*,application/pdf" style="display:none" onchange="addDocPhoto(this)"/>
-    <button class="btn" style="margin-top:0;margin-bottom:12px" onclick="document.getElementById('doc-photo-inp').click()">📎 Add Document / Photo</button>
-    <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px" id="doc-cat-bar">
-      ${cats.map((c,i)=>`<div class="dc ${i===0?'on':''}" onclick="filterDocCat('${c}',this)" style="flex-shrink:0">${c}</div>`).join('')}
+    <button class="btn" style="margin-top:0;margin-bottom:12px" onclick="showAddDocModal()">📎 Add Document / Photo</button>
+    <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px">
+      ${allDocCats.map((c,i)=>`<div class="dc ${i===0?'on':''}" onclick="filterDocsByCategory('${c}',this)" style="flex-shrink:0">${c}</div>`).join('')}
     </div>
-    <div id="doc-grid">
-      ${renderDocGrid(docs)}
-    </div>
+    <div id="doc-grid">${renderDocGrid(getDocPhotos())}</div>
     <div class="pb"></div>
   </div></div>`;
-  window.filterDocCat=function(cat,el){
-    document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));
-    el.classList.add('on');
-    const grid=document.getElementById('doc-grid');
-    if(grid) grid.innerHTML=renderDocGrid(filteredDocs(cat));
-  };
+}
+
+function filterDocsByCategory(cat, el){
+  document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));
+  el.classList.add('on');
+  const docs = getDocPhotos();
+  const filtered = cat==='All' ? docs : docs.filter(d=>d.docCat===cat);
+  const grid = document.getElementById('doc-grid');
+  if(grid) grid.innerHTML = renderDocGrid(filtered);
 }
 
 function renderDocGrid(docs){
-  if(!docs.length) return '<div style="text-align:center;padding:20px;color:var(--g4);font-size:13px;background:var(--g1);border-radius:12px">No documents yet. Tap Add to upload.</div>';
+  if(!docs.length) return '<div style="text-align:center;padding:24px;color:var(--g4);font-size:13px;background:var(--g1);border-radius:12px">No documents yet. Tap <b>Add Document</b> above to upload.</div>';
   return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
     docs.slice().reverse().map(p=>`
       <div style="border-radius:11px;overflow:hidden;border:.5px solid var(--g2);cursor:pointer" onclick="viewPhoto('${p.id}')">
-        <div style="height:100px;background:${p.data&&p.data.startsWith('data:image')?'transparent':'var(--bl)'};display:flex;align-items:center;justify-content:center;overflow:hidden">
-          ${p.data&&p.data.startsWith('data:image')?`<img src="${p.data}" style="width:100%;height:100%;object-fit:cover"/>`:
-            '<div style="font-size:36px">📄</div>'}
+        <div style="height:110px;background:var(--bl);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          ${p.data&&p.data.startsWith('data:image')
+            ? `<img src="${p.data}" style="width:100%;height:100%;object-fit:cover"/>`
+            : '<div style="font-size:40px">📄</div>'}
         </div>
-        <div style="padding:7px 9px;background:#fff">
-          <div style="font-size:11px;font-weight:700;color:var(--g6)">${p.label||'Document'}</div>
-          <div style="font-size:10px;color:var(--g4)">${p.docCat||'Doc'} · ${fmtDate(p.date)}</div>
+        <div style="padding:8px 9px;background:#fff">
+          <div style="font-size:11px;font-weight:700;color:var(--g6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.label||'Document'}</div>
+          <div style="font-size:10px;color:var(--g4);margin-top:2px">${p.docCat||''} · ${fmtDate(p.date)}</div>
         </div>
       </div>`).join('')+
   '</div>';
 }
 
-function addDocPhoto(input){
-  const file=input.files[0]; if(!file) return;
-  const catChoice=prompt('Category:\n1=Prescription\n2=Lab Report\n3=Insurance\n4=Discharge\n5=Certificate\n6=Other\n\nEnter number:','1');
-  const cats=['Prescription','Lab Report','Insurance','Discharge','Certificate','Other'];
-  const docCat=cats[(parseInt(catChoice)||1)-1]||'Other';
-  const label=prompt('Document label (e.g. "Apollo CBC Report Apr 2026"):',docCat)||docCat;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const photos=getPhotos();
-    photos.push({ id:'ph'+Date.now(), cat:'doc', docCat, data:e.target.result, label, date:today() });
-    savePhotos(photos);
-    rDocLocker();
+function showAddDocModal(){
+  const overlay = document.createElement('div');
+  overlay.id = 'doc-add-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-shadow:0 -8px 40px rgba(0,0,0,.2)">
+      <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 20px"></div>
+      <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">📎 Add Document</div>
+
+      <div class="fld">
+        <div class="flbl">Document Label</div>
+        <input class="inp" id="dlabel" placeholder="e.g. Apollo CBC Report Apr 2026"/>
+      </div>
+
+      <div class="fld">
+        <div class="flbl">Category</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="dcat-grid">
+          ${['Prescription','Lab Report','Insurance','Discharge','Certificate','Other'].map((c,i)=>`
+            <div onclick="selectDocCat('${c}',this)" style="padding:10px;border-radius:10px;border:1.5px solid var(--g2);cursor:pointer;text-align:center;font-size:12px;font-weight:700;color:var(--g5);background:var(--g1);${i===0?'border-color:var(--blue);color:var(--blue);background:var(--bl)':''}" data-cat="${c}">${c}</div>`).join('')}
+        </div>
+      </div>
+
+      <input type="file" id="doc-file-inp" accept="image/*,image/jpeg,image/png,image/jpg" capture="environment" style="display:none" onchange="handleDocFile(this)"/>
+      <input type="file" id="doc-file-gal" accept="image/*,image/jpeg,image/png,image/jpg" style="display:none" onchange="handleDocFile(this)"/>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <button onclick="document.getElementById('doc-file-inp').click()" style="padding:13px;background:var(--blue);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📷 Camera</button>
+        <button onclick="document.getElementById('doc-file-gal').click()" style="padding:13px;background:var(--g1);color:var(--g6);border:1px solid var(--g2);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🖼️ Gallery</button>
+      </div>
+
+      <div id="doc-preview" style="margin-bottom:12px"></div>
+      <div id="doc-save-btn"></div>
+
+      <button onclick="document.getElementById('doc-add-overlay').remove()" style="width:100%;background:var(--g1);color:var(--g5);border:1px solid var(--g2);border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>`;
+
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+
+  window._docSelectedCat = 'Prescription';
+  window._docFileData = null;
+}
+
+function selectDocCat(cat, el){
+  window._docSelectedCat = cat;
+  document.querySelectorAll('#dcat-grid [data-cat]').forEach(function(d){
+    d.style.borderColor='var(--g2)'; d.style.color='var(--g5)'; d.style.background='var(--g1)';
+  });
+  el.style.borderColor='var(--blue)'; el.style.color='var(--blue)'; el.style.background='var(--bl)';
+}
+
+function handleDocFile(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    window._docFileData = e.target.result;
+    const preview = document.getElementById('doc-preview');
+    if(preview){
+      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover;border:.5px solid var(--g2)"/>
+        <div style="font-size:11px;color:var(--green);font-weight:700;margin-top:6px;text-align:center">✅ Photo ready — tap Save below</div>`;
+    }
+    const saveBtn = document.getElementById('doc-save-btn');
+    if(saveBtn){
+      saveBtn.innerHTML = `<button onclick="saveDocPhoto()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px">✅ Save Document</button>`;
+    }
   };
   reader.readAsDataURL(file);
+}
+
+function saveDocPhoto(){
+  const fileData = window._docFileData;
+  if(!fileData){ alert('Please take or choose a photo first.'); return; }
+  const label = (document.getElementById('dlabel')?.value||'').trim() || (window._docSelectedCat||'Document');
+  const docCat = window._docSelectedCat || 'Other';
+  const photos = getPhotos();
+  photos.push({ id:'ph'+Date.now(), cat:'doc', docCat, data:fileData, label, date:today() });
+  savePhotos(photos);
+  window._docFileData = null;
+  document.getElementById('doc-add-overlay')?.remove();
+  rDocLocker();
+}
+
+function addDocPhoto(input){
+  // Legacy — redirect to modal
+  showAddDocModal();
 }
 
 
