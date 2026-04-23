@@ -477,7 +477,7 @@ const $ = id => document.getElementById(id);
 const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
 
 // ── APPS SCRIPT URL (single source of truth) ─────────
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3WUayX2KmNdRFrI2yhO6zwH-QHVhIpIwaS-Dpt-t8w5ZDcEYULqK9B44kKpWOqzzu/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNyhQinDNM4vF7vdrcDN9UuQUIn8jq8M1wT6vMJhFbd071i0ONJ_mAh-JkJQwvMMj7/exec';
 
 // ── PERSISTENT STORAGE ───────────────────────────────
 // saveUser: writes to localStorage AND backs up to Google Sheets
@@ -491,7 +491,10 @@ function saveUser(){
       if(accounts[U.email]){ accounts[U.email].userData=U; saveAccounts(); }
     }catch(e){}
     // Fire-and-forget: push session to Sessions sheet in Google Sheets
-    appsScriptPost('saveUser', { email:U.email, userData:U }).catch(()=>{});
+    const logoutPwd = loadAccounts()[U.email]?.pwd || '';
+    const logoutData = Object.assign({}, U);
+    if(logoutPwd) logoutData._pwdHash = logoutPwd;
+    appsScriptPost('saveUser', { email:U.email, userData:logoutData }).catch(()=>{});
   }
 }
 function loadUser(){ try{ const s=localStorage.getItem('hv_user'); return s?JSON.parse(s):null; }catch(e){return null;} }
@@ -610,42 +613,59 @@ function doLogin(){
   hideE();
   if(!e||!e.includes('@')){showE('Please enter a valid email address.');return;}
   if(!p||p.length<4){showE('Password must be at least 4 characters.');return;}
-  const accounts=loadAccounts();
   const btn=document.querySelector('#lf .btn');
   if(btn){btn.textContent='Signing in…';btn.disabled=true;}
-  // Check local account registry first
+
+  const accounts=loadAccounts();
+  const pwdHash=hashPwd(p);
+
+  // ── Step 1: Check local registry (works offline / same device) ──
   if(accounts[e]){
-    if(accounts[e].pwd !== hashPwd(p)){
+    if(accounts[e].pwd !== pwdHash){
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       showE('Incorrect password. Please try again.');
       return;
     }
-    // Password matches — restore saved user data
-    const saved = accounts[e].userData;
+    const saved=accounts[e].userData;
     if(saved && saved.name && saved.members){
-      U = saved;
-      try{ localStorage.setItem('hv_user', JSON.stringify(U)); localStorage.setItem('hv_last_email', e); }catch(ex){}
+      U=saved;
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);}catch(ex){}
+      if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
       return;
     }
   }
-  // No local account found — try cloud restore, else treat as new registration
+
+  // ── Step 2: Not in local registry → try cloud (cross-device login) ──
+  if(btn){btn.textContent='Checking cloud…';btn.disabled=true;} 
   loadUserFromCloud(e).then(function(cloudUser){
+    if(btn){btn.textContent='Signing in…';}
     if(cloudUser && cloudUser.name && cloudUser.members){
-      U = cloudUser;
-      // Save to local registry with this password going forward
-      accounts[e] = { pwd: hashPwd(p), userData: U };
+      // Cloud account found — verify password
+      // If cloud has stored pwd hash, verify it; otherwise accept (first cross-device login)
+      const cloudPwd = cloudUser._pwdHash;
+      if(cloudPwd && cloudPwd !== pwdHash){
+        if(btn){btn.textContent='Sign In';btn.disabled=false;}
+        showE('Incorrect password. Please try again.');
+        return;
+      }
+      // ✅ Login successful from cloud
+      U=cloudUser;
+      delete U._pwdHash; // don't keep pwd hash in active session
+      accounts[e]={pwd:pwdHash, userData:U};
       saveAccounts();
-      try{ localStorage.setItem('hv_user', JSON.stringify(U)); localStorage.setItem('hv_last_email', e); }catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
     } else {
+      // ── Step 3: Cloud also has no record ──
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
-      showE('No account found for this email. Please create an account first.');
+      showE('No account found for this email on this device or cloud. Please create a new account, or open the app on your original device first to sync.');
     }
-  }).catch(function(){
+  }).catch(function(err){
     if(btn){btn.textContent='Sign In';btn.disabled=false;}
-    showE('No account found for this email. Please create an account first.');
+    // Cloud unreachable — be helpful instead of blocking
+    showE('Could not reach cloud to verify your account. Check your internet connection and try again. If this is a new device, open the app on your original device first.');
   });
 }
 function doSignup(){
@@ -675,7 +695,10 @@ async function manualCloudSync(){
   btn.disabled = true;
   try {
     // Save full session to Sessions sheet
-    const r2 = await appsScriptPost('saveUser', { email: U.email, userData: U });
+    const syncPwd = loadAccounts()[U.email]?.pwd || '';
+    const syncData = Object.assign({}, U);
+    if(syncPwd) syncData._pwdHash = syncPwd;
+    const r2 = await appsScriptPost('saveUser', { email: U.email, userData: syncData });
     // Save profile summary to UserProfiles sheet
     const r1 = await appsScriptPost('saveData', {
       email: U.email,
@@ -789,17 +812,27 @@ function finishOB(){
   }
   // 2. Save session to localStorage
   saveUser();
-  // 3. Push full profile + session to Google Sheets
-  saveAllToSheets();
+  // 3. Push full profile + session (with pwd hash) to Google Sheets
+  const storedPwd = loadAccounts()[U.email]?.pwd || '';
+  saveAllToSheets(storedPwd);
   go('home');
 }
 
-async function saveAllToSheets(){
+async function saveAllToSheets(pwdHash){
   if(!U.email || U.isGuest) return;
-  // Fire both saves in parallel, silently — don't block the UI
-  appsScriptPost('saveUser', { email: U.email, userData: U })
-    .then(r=>{ if(r.error) console.warn('Sessions save error:', r.error); })
+  // Include pwd hash in cloud backup so cross-device login can verify password
+  const cloudUserData = Object.assign({}, U);
+  if(pwdHash) cloudUserData._pwdHash = pwdHash;
+
+  // Save session (with optional pwd hash) to Sessions sheet
+  appsScriptPost('saveUser', { email: U.email, userData: cloudUserData })
+    .then(r=>{ 
+      if(r.error) console.warn('Sessions save error:', r.error);
+      else console.log('Sessions saved OK');
+    })
     .catch(e=>{ console.warn('Sessions save failed:', e.message); });
+
+  // Save profile summary to UserProfiles sheet
   appsScriptPost('saveData', {
     email: U.email,
     userProfile: {
