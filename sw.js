@@ -1,4 +1,4 @@
-const CACHE_NAME = 'healthvault-v2';
+const CACHE_NAME = 'healthvault-v3';
 const ASSETS = [
   '/Health-App/',
   '/Health-App/index.html',
