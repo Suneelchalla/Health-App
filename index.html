@@ -1115,7 +1115,7 @@ function renderMedListInline(){
     <div style="font-size:18px">💊</div>
     <div style="flex:1">
       <div style="font-size:13px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage||''}</div>
-      <div style="font-size:10px;color:var(--g4)">${m.food||''} · ${m.duration||''} · ${[m.morning?'🌅':'',m.afternoon?'☀️':'',m.night?'🌙':''].filter(Boolean).join(' ')||'As directed'}</div>
+      <div style="font-size:10px;color:var(--g4)">${m.use?'<span style="color:var(--teal);font-weight:600">'+m.use+'</span> · ':''}${m.food||''} · ${m.duration||''} · ${[m.morning?'🌅':'',m.afternoon?'☀️':'',m.night?'🌙':''].filter(Boolean).join(' ')||'As directed'}</div>
     </div>
     <button onclick="deleteMedInline('${m.id}')" style="background:var(--rl);border:none;border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer;color:#C5221F">🗑️</button>
   </div>`).join('') + '<div class="pb"></div>';
@@ -1135,7 +1135,17 @@ function showScanTab(tab){
   if(tab==='manual'){
     c.innerHTML=`
     <div class="p16" style="padding-top:14px">
-      <div class="fld"><div class="flbl">Medicine Name *</div><input class="inp" id="med-name" placeholder="e.g. Paracetamol, Amoxicillin"/></div>
+      <div class="fld">
+        <div class="flbl">Medicine Name *</div>
+        <input class="inp" id="med-name" placeholder="e.g. Paracetamol, Amoxicillin" oninput="clearMedUse()" onblur="autoLookupMedUse(this.value)"/>
+      </div>
+      <div class="fld" id="med-use-fld">
+        <div class="flbl" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Purpose / Use <span style="font-weight:400;color:var(--g4)">(optional)</span></span>
+          <span id="med-use-status" style="font-size:10px;color:var(--g4)"></span>
+        </div>
+        <input class="inp" id="med-use" placeholder="e.g. Pain relief, Antibiotic, Antacid"/>
+      </div>
       <div class="fld"><div class="flbl">Dosage / Strength</div><input class="inp" id="med-dose" placeholder="e.g. 500mg, 10ml, 1 tablet"/></div>
       <div class="fld"><div class="flbl">Timing</div>
         <div style="display:flex;gap:10px;margin-top:6px">
@@ -1172,8 +1182,9 @@ function showScanTab(tab){
     <div class="p16" style="padding-top:14px">
       <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default;margin-bottom:12px">
         <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">📋 How prescription scanning works</div>
-        <div style="font-size:11px;color:#185EA5;line-height:1.7">① Take or upload a clear photo of your prescription<br>② App reads and extracts all visible text automatically<br>③ Extracted text is shown exactly as read from the photo<br>④ Copy or save the text, then add medicine details below</div>
+        <div style="font-size:11px;color:#185EA5;line-height:1.7">① Take or upload a clear photo of your prescription<br>② App reads handwritten &amp; printed text using AI<br>③ Detected medicines appear as one-tap "Add" buttons<br>④ Review extracted text and correct if needed</div>
       </div>
+      ${!loadKey('hv_gemini_key') ? `<div style="background:var(--al);border-radius:10px;padding:11px;border:1px solid var(--amber);margin-bottom:12px;font-size:11px;color:#B06000;line-height:1.6"><b>💡 Tip:</b> Add your free Gemini API key in <b>Profile → Settings</b> for much better prescription reading (especially handwriting). Without it, basic OCR is used which may not read handwriting accurately.</div>` : `<div style="background:var(--gl);border-radius:10px;padding:9px;border:1px solid #A8D5B5;margin-bottom:12px;font-size:11px;color:#1B5E20;font-weight:700">✅ Gemini AI Vision active — excellent handwriting recognition</div>`}
       <input type="file" id="rx-cam" accept="image/*" capture="environment" style="display:none" onchange="extractTextFromRx(this)"/>
       <input type="file" id="rx-gal" accept="image/*" style="display:none" onchange="extractTextFromRx(this)"/>
       <div onclick="document.getElementById('rx-cam').click()" style="border:2px dashed var(--blue);border-radius:14px;padding:28px 18px;text-align:center;cursor:pointer;background:#F0F4FF;margin-bottom:10px">
@@ -1192,27 +1203,84 @@ function extractTextFromRx(input){
   const area = document.getElementById('rx-extract-area');
   if(area) area.innerHTML=`<div style="text-align:center;padding:24px;margin-top:14px;background:var(--g1);border-radius:12px">
     <div style="font-size:36px;margin-bottom:10px">🔍</div>
-    <div style="font-size:14px;font-weight:700;color:var(--bd)">Reading prescription text...</div>
-    <div style="font-size:12px;color:var(--g4);margin-top:6px">This takes 10-20 seconds — please wait</div>
+    <div style="font-size:14px;font-weight:700;color:var(--bd)">Reading prescription…</div>
+    <div style="font-size:12px;color:var(--g4);margin-top:6px">Using AI vision to read handwriting & printed text</div>
     <div style="margin-top:12px;background:var(--g2);border-radius:6px;height:6px;overflow:hidden">
-      <div id="ocr-bar" style="height:100%;background:var(--blue);border-radius:6px;width:5%;transition:width .3s"></div>
+      <div id="ocr-bar" style="height:100%;background:var(--blue);border-radius:6px;width:10%;transition:width .4s"></div>
     </div>
-    <div id="ocr-pct" style="font-size:11px;color:var(--g4);margin-top:6px">Loading OCR engine...</div>
+    <div id="ocr-pct" style="font-size:11px;color:var(--g4);margin-top:6px">Processing image…</div>
   </div>`;
   const reader = new FileReader();
   reader.onload = function(e){
     window._rxPhotoData = e.target.result;
-    if(!window.Tesseract){
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
-      s.onload = function(){ runTesseract(e.target.result, area); };
-      s.onerror = function(){ showRxFallback(e.target.result, area, 'OCR library could not load. Check internet connection.'); };
-      document.head.appendChild(s);
+    const base64 = e.target.result.split(',')[1];
+    const geminiKey = loadKey('hv_gemini_key') || loadKey('gemini_key') || '';
+    if(geminiKey){
+      runGeminiOCR(base64, e.target.result, area, geminiKey);
     } else {
-      runTesseract(e.target.result, area);
+      // Fall back to Tesseract with a prompt to set Gemini key
+      const bar=document.getElementById('ocr-bar'); if(bar) bar.style.width='30%';
+      const pct=document.getElementById('ocr-pct'); if(pct) pct.textContent='Using basic OCR (add Gemini key in Profile for better results)…';
+      loadAndRunTesseract(e.target.result, area);
     }
   };
   reader.readAsDataURL(file);
+}
+
+async function runGeminiOCR(base64, dataUrl, area, apiKey){
+  const bar=document.getElementById('ocr-bar'); const pct=document.getElementById('ocr-pct');
+  if(bar) bar.style.width='40%';
+  if(pct) pct.textContent='Analysing prescription with Gemini AI…';
+  try{
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[
+          {inline_data:{mime_type:'image/jpeg',data:base64}},
+          {text:`You are a medical prescription reader. Carefully read this prescription image (which may have handwritten and printed text) and extract ALL text you can see.
+
+Return the information in this EXACT format:
+PATIENT: [patient name]
+DATE: [date if visible]
+DOCTOR: [doctor name and clinic]
+MEDICINES:
+- [Medicine 1 name] [dosage] - [timing e.g. 1-0-1 or 1 tab twice daily] - [duration if written]
+- [Medicine 2 name] [dosage] - [timing] - [duration]
+(list all medicines)
+DIAGNOSIS/COMPLAINT: [chief complaint or diagnosis if written]
+OTHER NOTES: [any other instructions or notes]
+RAW TEXT: [all other readable text from the prescription]
+
+Be very careful with medicine names — read them character by character. Common medicines in India include Augmentin, Aceclofenac, Paracetamol, Amoxicillin, Omeprazole etc. If timing is written as 1-0-1 it means morning-afternoon-night.`}
+        ]}]
+      })
+    });
+    if(bar) bar.style.width='80%';
+    if(!resp.ok){ const e=await resp.json(); throw new Error(e.error?.message||'Gemini API error '+resp.status); }
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if(bar) bar.style.width='100%';
+    if(pct) pct.textContent='Done!';
+    showExtractedText(dataUrl, text, area, true);
+  }catch(err){
+    if(pct) pct.textContent='Gemini failed, trying basic OCR…';
+    if(bar) bar.style.width='50%';
+    // Fall back to Tesseract
+    loadAndRunTesseract(dataUrl, area);
+  }
+}
+
+function loadAndRunTesseract(dataUrl, area){
+  if(!window.Tesseract){
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    s.onload = function(){ runTesseract(dataUrl, area); };
+    s.onerror = function(){ showRxFallback(dataUrl, area, 'OCR library could not load. Check internet connection.'); };
+    document.head.appendChild(s);
+  } else {
+    runTesseract(dataUrl, area);
+  }
 }
 
 function runTesseract(dataUrl, area){
@@ -1240,17 +1308,81 @@ function runTesseract(dataUrl, area){
   }
 }
 
-function showExtractedText(dataUrl, extractedText, area){
+function showExtractedText(dataUrl, extractedText, area, isGemini){
   if(!area) return;
   window._rxExtractedText = extractedText;
   const hasText = extractedText && extractedText.length > 4;
   const escaped = extractedText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Try to auto-parse medicines from Gemini structured output
+  let parsedMeds = [];
+  let patientInfo = '';
+  if(isGemini && hasText){
+    // Extract patient name
+    const patMatch = extractedText.match(/PATIENT:\s*(.+)/i);
+    if(patMatch) patientInfo = patMatch[1].trim();
+    // Extract doctor
+    const docMatch = extractedText.match(/DOCTOR:\s*(.+)/i);
+    const docName = docMatch ? docMatch[1].trim() : '';
+    // Extract medicines section
+    const medsMatch = extractedText.match(/MEDICINES:\s*([\s\S]*?)(?:DIAGNOSIS|OTHER NOTES|RAW TEXT|$)/i);
+    if(medsMatch){
+      const lines = medsMatch[1].split('\n').map(l=>l.trim()).filter(l=>l.startsWith('-')||l.startsWith('•'));
+      lines.forEach(line=>{
+        const clean = line.replace(/^[-•]\s*/,'').trim();
+        if(clean.length > 2){
+          // Try to split: name+dosage | timing | duration
+          const parts = clean.split(/\s*-\s*/);
+          const nameAndDose = (parts[0]||'').trim();
+          const timing = (parts[1]||'').trim();
+          const duration = (parts[2]||'').trim();
+          // Parse timing like 1-0-1, 1-1-1, 1-0-0
+          let morning=false,afternoon=false,night=false;
+          const timingClean = timing.replace(/\s/g,'');
+          const timeParts = timingClean.match(/^(\d)[-–](\d)[-–](\d)/);
+          if(timeParts){ morning=timeParts[1]!=='0'; afternoon=timeParts[2]!=='0'; night=timeParts[3]!=='0'; }
+          else if(/morning|am/i.test(timing)) morning=true;
+          else if(/night|pm/i.test(timing)) night=true;
+          else if(/twice|bd/i.test(timing)){ morning=true; night=true; }
+          else if(/thrice|tds/i.test(timing)){ morning=true; afternoon=true; night=true; }
+          // Split name from dosage (e.g. "Augmentin 625mg")
+          const nameDoseMatch = nameAndDose.match(/^([A-Za-z][A-Za-z\s\-\.]+?)\s+(\d[\d\.]+\s*(?:mg|ml|mcg|g|iu|%)?)?$/i);
+          const medName = nameDoseMatch ? nameDoseMatch[1].trim() : nameAndDose.replace(/\d[\d\.]*\s*(?:mg|ml|mcg|g|iu|%)?/i,'').trim()||nameAndDose;
+          const medDose = nameDoseMatch ? (nameDoseMatch[2]||'').trim() : (nameAndDose.match(/\d[\d\.]*\s*(?:mg|ml|mcg|g|iu|%)?/i)||[''])[0].trim();
+          if(medName.length>1) parsedMeds.push({name:medName, dosage:medDose, morning, afternoon, night, duration:duration||'As prescribed', doctor:docName, timing});
+        }
+      });
+    }
+  }
+
+  const geminiSummaryHTML = isGemini && hasText ? `
+    <div style="background:var(--gl);border-radius:11px;padding:12px;border:1px solid #A8D5B5;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:5px">✨ AI Vision Result ${patientInfo?'· Patient: <b>'+patientInfo+'</b>':''}</div>
+      <div style="font-size:11px;color:#2D7A4F">Gemini AI read this prescription. Review the extracted text below and correct if needed before saving.</div>
+    </div>` : '';
+
+  const parsedMedsHTML = parsedMeds.length ? `
+    <div style="background:#fff;border-radius:11px;border:1.5px solid var(--blue);padding:13px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:8px">💊 ${parsedMeds.length} medicine${parsedMeds.length>1?'s':''} detected — tap to add:</div>
+      ${parsedMeds.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--g2)">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage}</div>
+          <div style="font-size:10px;color:var(--g4)">${m.timing||''} ${m.duration?'· '+m.duration:''}</div>
+        </div>
+        <button onclick="prefillMedFromRx(${i})" style="background:var(--bl);color:var(--bd);border:1.5px solid #C5D9F8;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">+ Add</button>
+      </div>`).join('')}
+    </div>` : '';
+
+  window._rxParsedMeds = parsedMeds;
+
   area.innerHTML=`
     <div style="margin-top:16px">
       <img src="${dataUrl}" style="width:100%;border-radius:12px;border:.5px solid var(--g2);margin-bottom:14px"/>
+      ${geminiSummaryHTML}
+      ${parsedMedsHTML}
       <div style="margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:8px">${hasText ? '📄 Text extracted from prescription:' : '⚠️ Could not read text clearly'}</div>
-        ${hasText ? `<div style="background:var(--g1);border-radius:10px;padding:13px;border:1.5px solid var(--g2);font-size:12px;color:var(--g6);line-height:1.9;white-space:pre-wrap;max-height:220px;overflow-y:auto;font-family:monospace">${escaped}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:8px">${hasText ? '📄 Extracted text:' : '⚠️ Could not read text clearly'}</div>
+        ${hasText ? `<div style="background:var(--g1);border-radius:10px;padding:13px;border:1.5px solid var(--g2);font-size:12px;color:var(--g6);line-height:1.9;white-space:pre-wrap;max-height:220px;overflow-y:auto">${escaped}</div>
           <div style="display:flex;gap:8px;margin-top:8px">
             <button onclick="copyRxText()" style="flex:1;background:var(--bl);color:var(--bd);border:1.5px solid #C5D9F8;border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📋 Copy Text</button>
             <button onclick="saveRxTextOnly()" style="flex:1;background:var(--gl);color:#1B5E20;border:1.5px solid #A8D5B5;border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">💾 Save to Vault</button>
@@ -1258,7 +1390,7 @@ function showExtractedText(dataUrl, extractedText, area){
           `<div style="background:var(--al);border-radius:10px;padding:13px;font-size:12px;color:#B06000;line-height:1.6">Try a clearer, well-lit photo in focus. You can still save the photo and enter details manually below.</div>`}
       </div>
       <div style="background:#fff;border-radius:11px;border:1.5px solid var(--g2);padding:13px;margin-bottom:10px">
-        <div style="font-size:12px;font-weight:700;color:var(--g6);margin-bottom:8px">💊 Enter medicine details for reminders:</div>
+        <div style="font-size:12px;font-weight:700;color:var(--g6);margin-bottom:8px">💊 Add a medicine manually:</div>
         <input class="inp" id="rx-med-name" placeholder="Medicine name *" style="margin-bottom:8px"/>
         <input class="inp" id="rx-med-dose" placeholder="Dosage e.g. 500mg" style="margin-bottom:8px"/>
         <div style="display:flex;gap:8px;margin-bottom:0px">
@@ -1266,9 +1398,31 @@ function showExtractedText(dataUrl, extractedText, area){
           <input class="inp" id="rx-med-dur" placeholder="Duration e.g. 5 days" style="flex:1"/>
         </div>
       </div>
-      <button class="btn" onclick="saveRxMedicine()">✅ Save Medicine + Extracted Text</button>
+      <button class="btn" onclick="saveRxMedicine()">✅ Save Medicine + Prescription</button>
       <button class="btn2" onclick="showScanTab('manual')">✏️ Switch to Manual Entry</button>
     </div>`;
+}
+
+function prefillMedFromRx(index){
+  const m = (window._rxParsedMeds||[])[index];
+  if(!m) return;
+  // Switch to manual tab with prefilled data
+  showScanTab('manual');
+  setTimeout(function(){
+    const nameEl=document.getElementById('med-name');
+    if(nameEl){ nameEl.value=m.name; }
+    const doseEl=document.getElementById('med-dose');
+    if(doseEl) doseEl.value=m.dosage||'';
+    const durEl=document.getElementById('med-dur');
+    if(durEl) durEl.value=m.duration||'';
+    const docEl=document.getElementById('med-doc');
+    if(docEl) docEl.value=m.doctor||'';
+    const mEl=document.getElementById('med-m'); if(mEl) mEl.checked=m.morning||false;
+    const aEl=document.getElementById('med-a'); if(aEl) aEl.checked=m.afternoon||false;
+    const nEl=document.getElementById('med-n'); if(nEl) nEl.checked=m.night||false;
+    // Auto-lookup use
+    if(nameEl) autoLookupMedUse(m.name);
+  },100);
 }
 
 function showRxFallback(dataUrl, area, msg){
@@ -1342,11 +1496,150 @@ function previewMedPhoto(input){
   reader.readAsDataURL(file);
 }
 
+/* ── Medicine purpose auto-lookup ── */
+const MED_USE_DB = {
+  // Analgesics / Antipyretics
+  'paracetamol':'Pain relief & fever reduction','acetaminophen':'Pain relief & fever reduction',
+  'ibuprofen':'Pain relief, fever & inflammation','aspirin':'Pain relief, blood thinner & fever',
+  'diclofenac':'Pain relief & anti-inflammatory','naproxen':'Pain relief & anti-inflammatory',
+  'mefenamic acid':'Pain relief & menstrual cramps','nimesulide':'Pain relief & inflammation',
+  'tramadol':'Moderate to severe pain relief','ketorolac':'Short-term acute pain relief',
+  'aceclofenac':'Pain relief & inflammation',
+  // Antibiotics
+  'amoxicillin':'Antibiotic — bacterial infections','augmentin':'Antibiotic — resistant infections',
+  'azithromycin':'Antibiotic — respiratory & skin infections','doxycycline':'Antibiotic — broad-spectrum infections',
+  'ciprofloxacin':'Antibiotic — urinary & gut infections','metronidazole':'Antibiotic — anaerobic infections & parasites',
+  'cephalexin':'Antibiotic — skin & urinary infections','cefixime':'Antibiotic — ear, throat & urinary infections',
+  'clarithromycin':'Antibiotic — respiratory infections','levofloxacin':'Antibiotic — lung & urinary infections',
+  'ampicillin':'Antibiotic — broad-spectrum bacterial infections','trimethoprim':'Antibiotic — urinary tract infections',
+  'erythromycin':'Antibiotic — skin & respiratory infections','cloxacillin':'Antibiotic — staphylococcal infections',
+  'cefuroxime':'Antibiotic — skin, ear & respiratory infections',
+  // Antacids / GI
+  'omeprazole':'Acid reducer — ulcers & acidity','pantoprazole':'Acid reducer — GERD & ulcers',
+  'rabeprazole':'Acid reducer — acidity & ulcers','esomeprazole':'Acid reducer — GERD',
+  'ranitidine':'Acid reducer — heartburn & ulcers','famotidine':'Acid reducer — heartburn',
+  'domperidone':'Anti-nausea & stomach motility','ondansetron':'Anti-nausea & vomiting',
+  'metoclopramide':'Anti-nausea & acid reflux','antacid':'Neutralises stomach acid',
+  'lactulose':'Laxative for constipation','bisacodyl':'Laxative for constipation',
+  'ors':'Oral rehydration — dehydration','oral rehydration':'Oral rehydration — diarrhoea',
+  'loperamide':'Antidiarrhoeal','zinc':'Supplement — immunity & wound healing',
+  'cap omez':'Acid reducer — acidity & ulcers','omez':'Acid reducer — acidity & ulcers',
+  // Diabetes
+  'metformin':'Lowers blood sugar — Type 2 diabetes','glipizide':'Lowers blood sugar — Type 2 diabetes',
+  'glimepiride':'Lowers blood sugar — Type 2 diabetes','sitagliptin':'Lowers blood sugar — Type 2 diabetes',
+  'insulin':'Controls blood sugar — diabetes','vildagliptin':'Lowers blood sugar — Type 2 diabetes',
+  'dapagliflozin':'Lowers blood sugar & protects kidneys','empagliflozin':'Lowers blood sugar & heart protection',
+  // BP / Heart
+  'amlodipine':'Blood pressure control & angina','atenolol':'Blood pressure & heart rate control',
+  'telmisartan':'Blood pressure control','losartan':'Blood pressure control & kidney protection',
+  'ramipril':'Blood pressure & heart failure','enalapril':'Blood pressure & heart failure',
+  'metoprolol':'Blood pressure & heart rhythm control','carvedilol':'Heart failure & blood pressure',
+  'furosemide':'Diuretic — fluid retention & BP','hydrochlorothiazide':'Diuretic — blood pressure',
+  'spironolactone':'Diuretic — fluid retention & heart','digoxin':'Heart rate control in heart failure',
+  'warfarin':'Blood thinner — clot prevention','clopidogrel':'Blood thinner — heart attack prevention',
+  'atorvastatin':'Cholesterol lowering','rosuvastatin':'Cholesterol lowering',
+  'simvastatin':'Cholesterol lowering','fenofibrate':'Triglycerides & cholesterol lowering',
+  // Respiratory
+  'salbutamol':'Bronchodilator — asthma & wheeze','albuterol':'Bronchodilator — asthma relief',
+  'montelukast':'Asthma & allergy prevention','budesonide':'Inhaled steroid — asthma',
+  'fluticasone':'Inhaled steroid — asthma & rhinitis','tiotropium':'COPD — long-acting bronchodilator',
+  'theophylline':'Bronchodilator — COPD & asthma','dextromethorphan':'Cough suppressant',
+  'bromhexine':'Cough expectorant — loosens mucus','ambroxol':'Cough expectorant',
+  'guaifenesin':'Expectorant — chest congestion','levocetrizine':'Antihistamine — allergy & cold',
+  // Antihistamines / Allergy
+  'cetirizine':'Antihistamine — allergy, itching & cold','fexofenadine':'Antihistamine — allergy',
+  'loratadine':'Antihistamine — allergy','chlorpheniramine':'Antihistamine — cold & allergy',
+  'hydroxyzine':'Antihistamine — itch & anxiety',
+  // Vitamins / Supplements
+  'vitamin d':'Vitamin D — bones & immunity','vitamin d3':'Vitamin D — bones & immunity',
+  'calcium':'Calcium supplement — bones & teeth','vitamin b12':'Vitamin B12 — nerve function',
+  'folic acid':'Folic acid — prevents birth defects','iron':'Iron supplement — anaemia',
+  'vitamin c':'Vitamin C — immunity & antioxidant','multivitamin':'General vitamin & mineral supplement',
+  'omega 3':'Omega-3 — heart & brain health','vitamin e':'Vitamin E — antioxidant',
+  'magnesium':'Magnesium — muscle & nerve function','vitamin b complex':'B vitamins — energy & nerves',
+  // Thyroid
+  'levothyroxine':'Thyroid hormone replacement','thyroxine':'Thyroid hormone replacement',
+  'carbimazole':'Reduces overactive thyroid hormone','propylthiouracil':'Reduces overactive thyroid',
+  // Steroids / Inflammation
+  'prednisolone':'Steroid — inflammation & allergy','dexamethasone':'Steroid — severe inflammation',
+  'hydrocortisone':'Steroid — inflammation & adrenal insufficiency','methylprednisolone':'Steroid — severe inflammation',
+  'betamethasone':'Steroid — skin & inflammation',
+  // Anxiety / Sleep / Neuro
+  'alprazolam':'Anxiety & panic disorder treatment','clonazepam':'Anxiety & seizure control',
+  'diazepam':'Anxiety & muscle relaxant','zolpidem':'Short-term insomnia treatment',
+  'sertraline':'Antidepressant — depression & anxiety','fluoxetine':'Antidepressant (SSRI)',
+  'escitalopram':'Antidepressant — depression & anxiety','amitriptyline':'Antidepressant & nerve pain',
+  'gabapentin':'Nerve pain & seizure control','pregabalin':'Nerve pain & anxiety',
+  'carbamazepine':'Seizure control & nerve pain','phenytoin':'Epilepsy & seizure control',
+  'levetiracetam':'Epilepsy — seizure control',
+  // Antifungal / Antiviral
+  'fluconazole':'Antifungal — thrush & fungal infections','itraconazole':'Antifungal — systemic fungal infections',
+  'clotrimazole':'Antifungal — skin & vaginal infections','acyclovir':'Antiviral — herpes & chickenpox',
+  'valacyclovir':'Antiviral — herpes','oseltamivir':'Antiviral — influenza',
+  // Urinary
+  'nitrofurantoin':'Antibiotic — urinary tract infection','tamsulosin':'Prostate & urinary flow improvement',
+  'solifenacin':'Overactive bladder treatment','oxybutynin':'Overactive bladder',
+  // Pain (topical/combo)
+  'combiflam':'Paracetamol + Ibuprofen — pain & fever','dolo':'Paracetamol — pain & fever',
+  'dolo 650':'Paracetamol 650mg — pain & fever','crocin':'Paracetamol — pain & fever',
+  'augpen':'Antibiotic — augmentin equivalent','aceclo':'Pain relief & anti-inflammatory',
+  'aceclo-p':'Pain relief & anti-inflammatory (combo)','aceclofenac paracetamol':'Pain relief & inflammation',
+};
+function clearMedUse(){
+  const st=document.getElementById('med-use-status');
+  if(st && st.textContent.includes('Looking')) st.textContent='';
+}
+async function autoLookupMedUse(name){
+  name=(name||'').trim();
+  if(!name) return;
+  const useInp=document.getElementById('med-use');
+  const st=document.getElementById('med-use-status');
+  if(!useInp) return;
+  // If already filled in, don't overwrite
+  if(useInp.value.trim()) return;
+  // 1. Check local DB first (instant)
+  const key=name.toLowerCase().replace(/\s*(tablet|cap|capsule|syrup|injection|mg|ml|mcg|tab|sr|xr|er|cr|od|bd|tds|qid)\b.*/gi,'').trim();
+  const localMatch=Object.keys(MED_USE_DB).find(k=>key.includes(k)||k.includes(key));
+  if(localMatch){
+    useInp.value=MED_USE_DB[localMatch];
+    if(st) st.textContent='✅ auto-filled';
+    setTimeout(()=>{ if(st) st.textContent=''; },2500);
+    return;
+  }
+  // 2. Try OpenFDA drug label API (free, no key needed)
+  if(st) st.textContent='🔍 Looking up…';
+  try{
+    const q=encodeURIComponent(name.split(' ')[0]);
+    const url=`https://api.fda.gov/drug/label.json?search=openfda.generic_name:"${q}"&limit=1`;
+    const res=await fetch(url,{signal:AbortSignal.timeout(5000)});
+    if(res.ok){
+      const data=await res.json();
+      const hit=data.results?.[0];
+      if(hit){
+        // Try to get a short purpose from indications_and_usage or purpose
+        const raw=(hit.purpose?.[0]||hit.indications_and_usage?.[0]||'').replace(/<[^>]*>/g,'').trim();
+        if(raw){
+          // Trim to first sentence / 120 chars
+          const sentence=raw.split(/[.\n]/)[0].replace(/\s+/g,' ').trim().slice(0,120);
+          if(sentence.length>10){
+            useInp.value=sentence;
+            if(st) st.textContent='✅ from FDA';
+            setTimeout(()=>{ if(st) st.textContent=''; },2500);
+            return;
+          }
+        }
+      }
+    }
+  }catch(e){}
+  if(st) st.textContent='';
+}
+
 function saveMedicine(){
   const name=(document.getElementById('med-name')?.value||'').trim();
   if(!name){ alert('Please enter the medicine name.'); return; }
   const med={
     id:'m'+Date.now(), name,
+    use:(document.getElementById('med-use')?.value||'').trim(),
     dosage:(document.getElementById('med-dose')?.value||'').trim(),
     morning:document.getElementById('med-m')?.checked||false,
     afternoon:document.getElementById('med-a')?.checked||false,
@@ -1368,7 +1661,8 @@ function saveMedicine(){
     savePhotos(photos);
   }
   window._medPhotoData=null;
-  ['med-name','med-dose','med-dur','med-doc','med-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  ['med-name','med-use','med-dose','med-dur','med-doc','med-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  const usSt=document.getElementById('med-use-status'); if(usSt) usSt.textContent='';
   ['med-m','med-a','med-n'].forEach(function(id){ const el=document.getElementById(id); if(el) el.checked=false; });
   const zone=document.getElementById('med-photo-zone');
   if(zone) zone.innerHTML='<div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:11px;color:var(--g4)">Tap to attach prescription photo</div>';
@@ -1596,7 +1890,7 @@ function renderMedList(){
     <div style="display:flex;align-items:flex-start;justify-content:space-between">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage||''}</div>
-        <div style="font-size:11px;color:var(--g4);margin-top:2px">${m.food} · ${m.duration} · ${[m.morning?'Morning':'',m.afternoon?'Afternoon':'',m.night?'Night':''].filter(Boolean).join(', ')||'As directed'}</div>
+        <div style="font-size:11px;color:var(--g4);margin-top:2px">${m.use?'<span style="color:var(--teal);font-weight:600">'+m.use+'</span> · ':''}${m.food} · ${m.duration} · ${[m.morning?'Morning':'',m.afternoon?'Afternoon':'',m.night?'Night':''].filter(Boolean).join(', ')||'As directed'}</div>
         ${m.doctor?`<div style="font-size:10px;color:var(--g4);margin-top:1px">Dr: ${m.doctor}</div>`:''}
         ${m.notes?`<div style="font-size:10px;color:var(--g4);margin-top:1px">${m.notes}</div>`:''}
         ${m.photo?`<img src="${m.photo}" style="width:80px;height:60px;object-fit:cover;border-radius:7px;margin-top:7px;border:.5px solid var(--g2)"/>`:'' }
@@ -1634,6 +1928,7 @@ function editMed(id){
   go('scan');
   setTimeout(()=>{
     document.getElementById('med-name').value=m.name||'';
+    document.getElementById('med-use').value=m.use||'';
     document.getElementById('med-dose').value=m.dosage||'';
     document.getElementById('med-m').checked=m.morning||false;
     document.getElementById('med-a').checked=m.afternoon||false;
@@ -1654,7 +1949,7 @@ function updateMedicine(id){
   const meds=getMeds();
   const idx=meds.findIndex(m=>m.id===id);
   if(idx<0) return;
-  meds[idx]={...meds[idx], name, dosage:document.getElementById('med-dose')?.value.trim()||'', morning:document.getElementById('med-m')?.checked||false, afternoon:document.getElementById('med-a')?.checked||false, night:document.getElementById('med-n')?.checked||false, duration:document.getElementById('med-dur')?.value.trim()||'Ongoing', food:document.getElementById('med-food')?.value||'As directed', doctor:document.getElementById('med-doc')?.value.trim()||'', notes:document.getElementById('med-notes')?.value.trim()||'', photo:window._medPhotoData||meds[idx].photo||'' };
+  meds[idx]={...meds[idx], name, use:document.getElementById('med-use')?.value.trim()||'', dosage:document.getElementById('med-dose')?.value.trim()||'', morning:document.getElementById('med-m')?.checked||false, afternoon:document.getElementById('med-a')?.checked||false, night:document.getElementById('med-n')?.checked||false, duration:document.getElementById('med-dur')?.value.trim()||'Ongoing', food:document.getElementById('med-food')?.value||'As directed', doctor:document.getElementById('med-doc')?.value.trim()||'', notes:document.getElementById('med-notes')?.value.trim()||'', photo:window._medPhotoData||meds[idx].photo||'' };
   saveMeds(meds);
   window._editMedId=null; window._medPhotoData=null;
   alert('✅ Medicine updated!');
