@@ -2445,60 +2445,625 @@ function rElderly(){
   </div></div>`;
 }
 
-/* ══ BODY EXPLORER ══ */
+/* ══ BODY EXPLORER v3 — Anatomical Silhouette · 32 zones · 640+ symptoms ══ */
+
 const bpData={
-  head:{n:'Head & Scalp',sub:'Scalp, hair, skull, sinuses',s:[{e:'🤕',t:'Headache or migraine',s:'Tension, cluster, or vascular'},{e:'💇',t:'Hair loss or thinning',s:'Diffuse or patchy fall'},{e:'😵',t:'Dizziness',s:'On standing or spinning'},{e:'🤧',t:'Scalp itching',s:'Seborrheic or dry scalp'}]},
-  neck:{n:'Neck & Throat',sub:'Cervical spine, lymph nodes, thyroid',s:[{e:'😬',t:'Stiff or painful neck',s:'Strain or cervical issue'},{e:'🤒',t:'Sore throat',s:'Viral or bacterial'},{e:'🔵',t:'Swollen lymph nodes',s:'Infection or inflammation'},{e:'🫁',t:'Difficulty swallowing',s:'Needs evaluation'}]},
-  chest:{n:'Chest & Heart',sub:'Heart, lungs, ribs, sternum',s:[{e:'⚠️',t:'Chest tightness or pain',s:'Safety screening required first'},{e:'💨',t:'Shortness of breath',s:'At rest or on exertion'},{e:'💓',t:'Heart palpitations',s:'Racing or skipping'},{e:'🫁',t:'Persistent cough',s:'Productive or dry'}]},
-  abdomen:{n:'Abdomen',sub:'Stomach, liver, intestines',s:[{e:'😣',t:'Stomach pain',s:'Upper, lower, or central'},{e:'🎈',t:'Bloating and gas',s:'After meals or persistent'},{e:'🤢',t:'Nausea or vomiting',s:'Acute or chronic'},{e:'🔥',t:'Acid reflux',s:'Burning in throat'}]},
-  shoulder:{n:'Shoulder',sub:'Rotator cuff, AC joint, bursa',s:[{e:'🦾',t:'Shoulder pain',s:'Sharp or dull'},{e:'🔄',t:'Limited movement',s:'Cannot lift arm fully'},{e:'❄️',t:'Frozen shoulder',s:'Gradual stiffness'},{e:'🎯',t:'Clicking or popping',s:'With or without pain'}]},
-  arm:{n:'Arm & Elbow',sub:'Bicep, tricep, elbow joint',s:[{e:'⚡',t:'Arm pain or numbness',s:'Radiating or localised'},{e:'🎾',t:'Tennis elbow',s:'Lateral epicondyle'},{e:'🖐️',t:'Tingling in fingers',s:'Nerve-related'},{e:'💪',t:'Arm weakness',s:'Difficulty gripping'}]},
-  back:{n:'Back & Spine',sub:'Lumbar, thoracic, cervical',s:[{e:'🔩',t:'Lower back pain',s:'Lumbar strain or disc'},{e:'⚡',t:'Sciatica',s:'Shooting down leg'},{e:'🧱',t:'Upper back stiffness',s:'Thoracic or postural'},{e:'😣',t:'Back + bladder change',s:'Seek urgent evaluation'}]},
-  knee:{n:'Knee & Thigh',sub:'Knee joint, cartilage, thigh',s:[{e:'🦵',t:'Knee pain or swelling',s:'Joint line or surrounding'},{e:'🔒',t:'Locking or clicking',s:'Mechanical joint issue'},{e:'😫',t:'Thigh cramp',s:'Sudden spasm'},{e:'🏃',t:"Runner's knee",s:'Front of knee'}]},
-  foot:{n:'Foot & Ankle',sub:'Plantar fascia, ankle, toes',s:[{e:'👣',t:'Heel pain',s:'Plantar fasciitis'},{e:'🦶',t:'Ankle sprain',s:'Ligament strain'},{e:'💧',t:'Foot swelling',s:'Edema'},{e:'💅',t:'Nail or skin issues',s:'Ingrown, fungal'}]},
+brain:{n:'Brain & Neurology',sub:'Headaches, cognition, nerves, seizures',icon:'🧠',col:'#7C4DFF',s:[
+ {e:'🤕',t:'Tension Headache',s:'Band-like pressure around head',sev:'mild',c:'Muscle tension, stress, poor posture, eye strain, dehydration',r:'Paracetamol 1g, hydrate well, rest in quiet room, heat on neck, massage temples.',f:'Worst-ever sudden onset headache, or with stiff neck and fever → Subarachnoid haemorrhage emergency'},
+ {e:'🌩️',t:'Migraine',s:'Throbbing one-sided pain, nausea, light sensitivity',sev:'moderate',c:'Hormonal fluctuation, triggers: chocolate, cheese, wine, sleep change, stress, weather',r:'Dark quiet room, triptan medication, anti-emetic, cold pack on forehead, sleep.',f:'New neurological deficit during headache, hemiplegic migraine → Neurology urgently'},
+ {e:'😵',t:'Dizziness / Vertigo',s:'Spinning sensation or balance loss',sev:'moderate',c:'BPPV, vestibular neuritis, Meniere\'s disease, low BP, anaemia, anxiety',r:'Sit or lie down, Epley manoeuvre for BPPV, hydrate, check blood pressure.',f:'With one-sided weakness, slurred speech, or double vision → Stroke emergency 108'},
+ {e:'🧩',t:'Memory and Brain Fog',s:'Forgetfulness, poor concentration, confusion',sev:'mild',c:'Stress, poor sleep, B12 deficiency, hypothyroidism, anaemia, depression, early dementia',r:'B12, thyroid, FBC blood tests. Sleep hygiene, daily exercise, cognitive training.',f:'Sudden confusion or personality change in any age → Urgent neurological evaluation'},
+ {e:'⚡',t:'Seizure / Fit',s:'Uncontrolled convulsion or absence episode',sev:'severe',c:'Epilepsy, febrile seizure (children), hypoglycaemia, head injury, meningitis, eclampsia',r:'Clear area around person, time the episode, recovery position afterwards, do not restrain.',f:'First-ever seizure, lasts more than 5 min, no recovery → Emergency 108 immediately'},
+ {e:'😴',t:'Excessive Sleepiness',s:'Sleeping too much, impossible to stay awake',sev:'mild',c:'Obstructive sleep apnoea, narcolepsy, hypothyroidism, depression, anaemia, medication',r:'Sleep study referral, thyroid and FBC tests, avoid alcohol, maintain regular sleep schedule.',f:'Sudden onset with headache or confusion → Urgent assessment'},
+ {e:'🔀',t:'Numbness / Tingling',s:'Pins and needles, burning, or numbness anywhere',sev:'moderate',c:'Peripheral neuropathy, MS, TIA, cervical disc, carpal tunnel, diabetes, B12 deficiency',r:'B12, glucose, nerve conduction study, neurology referral if recurrent.',f:'Sudden one-sided face or body numbness → TIA or stroke emergency'},
+ {e:'🤯',t:'Raised Intracranial Pressure',s:'Progressive headache worse lying down, vomiting, visual blur',sev:'severe',c:'Brain tumour, cerebral oedema, hydrocephalus, venous sinus thrombosis, abscess',r:'Emergency CT head without delay.',f:'Headache with vomiting and vision change together → Emergency neurosurgery'},
+ {e:'🧠',t:'Meningism',s:'Stiff neck, severe headache, photophobia, high fever',sev:'severe',c:'Bacterial or viral meningitis, subarachnoid haemorrhage, encephalitis',r:'IV antibiotics immediately if meningitis suspected. Do not wait for CT.',f:'Non-blanching rash with fever and neck stiffness → Meningococcal emergency — 108 NOW'},
+ {e:'😮',t:'Stroke / TIA',s:'FAST — Face drooping, Arm weak, Speech slurred, Time',sev:'severe',c:'Ischaemic stroke (clot), haemorrhagic stroke, TIA, carotid stenosis',r:'FAST assessment. Call 108 immediately. Every minute — 2 million neurons lost.',f:'Any FAST sign even if it resolves → TIA or stroke — golden hour emergency'},
+ {e:'🌀',t:'Peripheral Neuropathy',s:'Burning, tingling, or weakness in hands and feet',sev:'moderate',c:'Diabetes (most common), alcohol, B12 deficiency, chemotherapy, hypothyroid, Guillain-Barre',r:'Tight glucose control, B12 supplement, stop alcohol, nerve conduction study, gabapentin.',f:'Rapidly ascending weakness from feet upward → Guillain-Barre emergency'},
+ {e:'📍',t:'Cluster Headache',s:'Excruciating one-sided orbital pain, eye watering',sev:'severe',c:'Trigeminal autonomic pathway activation, circadian trigger, alcohol, smoking',r:'High-flow oxygen 15L/min, subcutaneous sumatriptan, verapamil for prevention.',f:'First-ever severe orbital pain → Rule out acute angle-closure glaucoma urgently'},
+ {e:'🎭',t:'Bell\'s Palsy',s:'Sudden one-sided facial muscle weakness',sev:'moderate',c:'Herpes simplex reactivation (most common cause), Lyme disease, Ramsay Hunt syndrome',r:'Prednisolone within 72h of onset, eye protection tape and drops, aciclovir if Ramsay Hunt.',f:'Any other neurological signs with facial palsy → Rule out stroke urgently'},
+ {e:'🌡️',t:'Encephalitis',s:'Fever, headache, confusion, behavioural change',sev:'severe',c:'HSV most common, autoimmune anti-NMDA, arbovirus, TB, listeria',r:'Emergency hospitalisation. IV aciclovir if HSV suspected, MRI brain, CSF analysis.',f:'Fever with confusion and seizures together → Encephalitis emergency — minutes matter'},
+ {e:'🧬',t:'Multiple Sclerosis',s:'Episodic neurological deficits, fatigue, optic neuritis',sev:'moderate',c:'Autoimmune demyelination of CNS, genetic predisposition, low vitamin D',r:'Neurology referral, MRI brain and spine, disease-modifying therapy, physiotherapy.',f:'Sudden vision loss one eye (optic neuritis) → Urgent ophthalmology and neurology'},
+ {e:'💭',t:'Psychiatric Symptoms',s:'Hallucinations, delusions, severe anxiety, mania',sev:'moderate',c:'Schizophrenia, bipolar disorder, severe depression, substance use, thyroid or B12 related',r:'Psychiatric assessment, avoid isolation, medication review with psychiatrist.',f:'Acute psychosis or risk to self or others → Emergency psychiatric evaluation'},
+ {e:'😤',t:'Chronic Daily Headache',s:'Headache more than 15 days per month',sev:'moderate',c:'Medication overuse rebound, chronic migraine, tension-type, rarely raised ICP',r:'Stop analgesic overuse, amitriptyline prevention, stress management, neurology referral.',f:'New progressive headache over age 50 → Rule out malignancy with MRI'},
+ {e:'🫨',t:'Tremor',s:'Shaking hands, head, or voice at rest or with action',sev:'moderate',c:'Essential tremor (most common), Parkinson\'s disease, thyrotoxicosis, alcohol withdrawal, medication',r:'Thyroid function test, avoid caffeine and alcohol, beta-blocker for essential tremor.',f:'Rapid onset tremor with rigidity and slowness → Parkinson\'s — neurology referral'},
+]},
+eyes:{n:'Eyes & Vision',sub:'Vision changes, redness, pain, discharge, pressure',icon:'👁️',col:'#0288D1',s:[
+ {e:'👓',t:'Refractive Error',s:'Blurred near or far vision',sev:'mild',c:'Myopia, hyperopia, astigmatism, presbyopia from ageing lens',r:'Optometry test, corrective glasses or contact lenses, annual eye check.',f:'Sudden vision change without refractive cause → Urgent ophthalmology'},
+ {e:'🔴',t:'Conjunctivitis',s:'Red, gritty, watery or sticky eyes',sev:'mild',c:'Viral adenovirus (most common), bacterial S.aureus, allergic, chemical irritant',r:'Cold compress, artificial tears, chloramphenicol for bacterial, antihistamine drops for allergic.',f:'Significant pain, photophobia, or vision loss with redness → Keratitis or uveitis urgent'},
+ {e:'✨',t:'Flashes and Floaters',s:'Light flashes, cobwebs, or dots in visual field',sev:'moderate',c:'Posterior vitreous detachment, retinal tear, retinal detachment, migraine aura, diabetes',r:'Urgent ophthalmology assessment within 24 hours.',f:'Sudden shower of floaters with curtain across vision → Retinal detachment emergency'},
+ {e:'📉',t:'Gradual Vision Loss',s:'Progressive blurring over months or years',sev:'moderate',c:'Cataract (most common), chronic glaucoma, diabetic retinopathy, age-related macular degeneration',r:'Annual eye test, tight glucose and BP control, cataract surgery when functionally impairing.',f:'Sudden painless vision loss → Retinal artery or vein occlusion emergency'},
+ {e:'🌑',t:'Sudden Vision Loss',s:'Rapid or complete loss of vision in one eye',sev:'severe',c:'Retinal artery occlusion (eye stroke), retinal detachment, vitreous haemorrhage, giant cell arteritis',r:'Ophthalmology within minutes to hours — this is an ocular emergency.',f:'Any sudden painless vision loss → Emergency ophthalmology — time is vision'},
+ {e:'🔵',t:'Glaucoma',s:'Gradual peripheral vision loss, raised intraocular pressure',sev:'moderate',c:'Raised IOP damaging optic nerve — open angle (chronic) or angle-closure (acute)',r:'Intraocular pressure test, visual field test, topical beta-blocker or prostaglandin drops.',f:'Acute angle-closure: severe eye pain, nausea, halos around lights → Emergency'},
+ {e:'🌊',t:'Dry Eye Syndrome',s:'Burning, grittiness, intermittent blurring, excessive tearing',sev:'mild',c:'Reduced tear quality — ageing, screen use, menopause, Sjogren\'s syndrome, medication',r:'Preservative-free artificial tears hourly, omega-3 supplements, warm lid compress, reduce screen time.',f:'Corneal ulceration developing (white spot on cornea) → Urgent ophthalmology'},
+ {e:'👁️',t:'Uveitis',s:'Painful red eye, photophobia, blurred vision',sev:'moderate',c:'Autoimmune AS, IBD, sarcoid, infectious TB or HSV, idiopathic cause',r:'Topical steroid, cycloplegic drops, identify systemic cause.',f:'Posterior uveitis with significant vision loss → Same-day ophthalmology'},
+ {e:'🎯',t:'Diabetic Retinopathy',s:'Floaters or vision loss — no early warning symptoms',sev:'moderate',c:'Diabetes mellitus — new vessel formation, macular oedema, retinal haemorrhage',r:'Annual retinal photography, tight HbA1c and BP control, laser or anti-VEGF treatment.',f:'Any sudden visual change in known diabetic → Same-day ophthalmology'},
+ {e:'📍',t:'Ptosis',s:'Drooping of one or both eyelids',sev:'moderate',c:'Myasthenia gravis, 3rd nerve palsy, Horner\'s syndrome, ageing, trauma',r:'MRI brain, acetylcholine receptor antibodies, thyroid function testing.',f:'Ptosis with double vision or facial weakness → 3rd nerve palsy or MG emergency'},
+ {e:'🌈',t:'Colour Vision Deficiency',s:'Difficulty distinguishing red-green or blue-yellow',sev:'mild',c:'Congenital X-linked (most common), acquired optic neuritis, AMD, glaucoma',r:'Ishihara plates for diagnosis, inform driving authority if required.',f:'Acquired sudden colour vision loss → Optic neuritis — urgent neurology'},
+ {e:'💧',t:'Watery Eyes (Epiphora)',s:'Excessive tearing, blocked tear duct',sev:'mild',c:'Blocked nasolacrimal duct, ectropion, entropion, allergy, infection',r:'Warm massage over tear sac, topical antibiotic if infected, dacryocystorhinostomy if blocked.',f:'Swelling and pain over tear sac (dacryocystitis) → Antibiotic and surgical drainage'},
+]},
+ear:{n:'Ears & Hearing',sub:'Pain, hearing loss, balance, tinnitus, discharge',icon:'👂',col:'#E65100',s:[
+ {e:'🔇',t:'Sensorineural Hearing Loss',s:'Permanent hearing loss from nerve or cochlea damage',sev:'moderate',c:'Noise exposure, presbycusis (ageing), ototoxic drugs gentamicin or cisplatin, acoustic neuroma',r:'Audiology assessment, hearing aids, protect ears from loud noise, review ototoxic drugs.',f:'Sudden unilateral hearing loss → Emergency ENT within 24-48h for steroid treatment'},
+ {e:'🦻',t:'Conductive Hearing Loss',s:'Muffled hearing, blocked or full sensation',sev:'mild',c:'Earwax (most common and easily treated), otitis media with effusion, perforated eardrum, otosclerosis',r:'Wax softening drops, grommet for persistent glue ear, stapedectomy for otosclerosis.',f:'After head trauma with any hearing loss → Temporal bone fracture — emergency CT'},
+ {e:'🔔',t:'Tinnitus',s:'Ringing, buzzing, or hissing inside ears',sev:'mild',c:'Noise-induced damage, earwax, hypertension, anaemia, NSAIDs or aspirin, Meniere\'s, acoustic neuroma',r:'Audiogram, BP check, FBC blood test, tinnitus masker therapy, CBT.',f:'Pulsatile tinnitus synchronised with heartbeat → Vascular cause or glomus tumour — MRI'},
+ {e:'😣',t:'Acute Otitis Media',s:'Ear pain, fever, muffled hearing — common in children',sev:'moderate',c:'Bacterial S.pneumoniae or H.influenzae following viral upper respiratory tract infection',r:'Paracetamol analgesia, watchful waiting 48-72h, amoxicillin if not improving.',f:'Mastoid swelling and tenderness, facial weakness, meningism → Mastoiditis emergency'},
+ {e:'🌊',t:'Otitis Externa',s:'Painful inflamed ear canal, discharge, and itch',sev:'mild',c:'Pseudomonas or S.aureus — swimming, trauma, hearing aids, eczema, diabetes mellitus',r:'Keep ear completely dry, acetic acid or antibiotic steroid ear drops, ear wick if canal very swollen.',f:'Spreading cellulitis around ear or fever in diabetic patient → Malignant OE — Emergency hospital'},
+ {e:'🌀',t:'BPPV (Positional Vertigo)',s:'Brief spinning when moving head, lasts seconds',sev:'mild',c:'Displaced otoliths in semicircular canal — most common cause of vertigo in adults',r:'Epley manoeuvre is highly effective, particle repositioning exercises, avoid trigger positions.',f:'Vertigo with unilateral hearing loss and tinnitus together → Meniere\'s or acoustic neuroma — MRI'},
+ {e:'💧',t:'Ear Discharge',s:'Pus, blood, or clear fluid draining from ear',sev:'moderate',c:'Otitis media perforation, otitis externa, cholesteatoma, CSF leak after trauma',r:'Keep ear dry, antibiotic ear drops, ENT microscopy for recurrent or persistent discharge.',f:'Clear fluid after any head injury → CSF leak emergency. Blood after trauma → Basilar skull fracture'},
+ {e:'🔵',t:'Meniere\'s Disease',s:'Episodic vertigo, low-frequency hearing loss, tinnitus, fullness',sev:'moderate',c:'Idiopathic endolymphatic hydrops, autoimmune cause, allergy, stress',r:'Low-sodium diet below 2g daily, betahistine 16mg three times daily, vestibular rehabilitation.',f:'Prolonged severe attack not improving → Urgent ENT for intratympanic injection treatment'},
+ {e:'📍',t:'Acoustic Neuroma',s:'Progressive unilateral hearing loss, tinnitus, imbalance',sev:'moderate',c:'Benign vestibular schwannoma on CN VIII, bilateral in NF2 cases',r:'MRI internal auditory meati, annual surveillance or radiosurgery or surgical removal.',f:'Rapid tumour growth or facial nerve involvement → Neurosurgical assessment urgently'},
+ {e:'🤕',t:'Barotrauma',s:'Ear pain and hearing change after flying or diving',sev:'mild',c:'Pressure differential with Eustachian tube dysfunction, congestion, or anatomical variation',r:'Valsalva manoeuvre, decongestant spray before flying, slow ascent when diving, chew or yawn.',f:'Severe pain and cannot equalise after diving → Perilymph fistula — urgent ENT assessment'},
+]},
+nose:{n:'Nose & Sinuses',sub:'Congestion, smell, nosebleeds, polyps, sinuses',icon:'👃',col:'#8D6E63',s:[
+ {e:'🤧',t:'Allergic Rhinitis',s:'Sneezing, itchy nose, watery discharge, blocked nose',sev:'mild',c:'Perennial: dust mite, pet dander. Seasonal: pollen (hay fever). Mould, cockroach allergens.',r:'Intranasal corticosteroid spray (first line), non-sedating antihistamine, allergen avoidance.',f:'Wheezing or breathlessness with nasal symptoms → Unified airway disease, asthma check urgently'},
+ {e:'🤒',t:'Common Cold',s:'Clear watery discharge, nasal congestion, sore throat',sev:'mild',c:'Rhinovirus (most common), coronavirus, adenovirus — droplet and contact transmission',r:'Rest, hydrate well, saline nasal rinse, paracetamol, zinc lozenges. Self-limiting 7-10 days.',f:'Fever above 39 persisting, purulent discharge more than 10 days → Bacterial sinusitis'},
+ {e:'🟡',t:'Acute Sinusitis',s:'Facial pain and pressure, thick discharge, fever',sev:'mild',c:'Viral sinusitis 90% of cases, bacterial secondary — S.pneumoniae or H.influenzae',r:'Steam inhalation, saline rinse, decongestant spray, paracetamol. Antibiotic only if not improving after 10 days.',f:'Periorbital swelling, visual change, or severe worsening headache → Orbital extension emergency'},
+ {e:'🔵',t:'Chronic Rhinosinusitis',s:'Congestion, loss of smell, facial pressure over 12 weeks',sev:'moderate',c:'Persistent inflammation with polyps, deviated septum, allergy, immune deficiency',r:'Intranasal steroid spray, daily saline rinse, CT sinuses, functional endoscopic sinus surgery.',f:'Unilateral symptoms with epistaxis and orbital signs → Exclude malignancy urgently'},
+ {e:'🩸',t:'Epistaxis (Nosebleed)',s:'Bleeding from one or both nostrils',sev:'moderate',c:'Anterior Little\'s area (90%, usually benign), posterior from hypertension or anticoagulants or trauma',r:'Pinch soft lower nose firmly for 10-15 minutes, lean slightly forward, ice pack on bridge. Cautery if recurrent.',f:'Won\'t stop in 20 minutes, on anticoagulants, haemodynamic compromise, after head injury → Emergency'},
+ {e:'🚫',t:'Anosmia',s:'Complete or partial loss of sense of smell',sev:'mild',c:'Post-viral including COVID-19 (very common), nasal polyps, head injury, zinc deficiency',r:'Smell training with 4 scents twice daily for 3 months, intranasal steroid, zinc supplement.',f:'Post-traumatic anosmia after any head injury → Cribriform plate fracture — CT base of skull'},
+ {e:'🍄',t:'Nasal Polyps',s:'Persistent blockage, loss of smell, watery drip',sev:'moderate',c:'Chronic eosinophilic inflammation, asthma, aspirin sensitivity Samter\'s triad, cystic fibrosis',r:'High-dose intranasal steroid spray, dupilumab biologic therapy, endoscopic polypectomy surgery.',f:'Unilateral single polyp → Must exclude inverted papilloma or malignancy — biopsy urgently'},
+ {e:'📍',t:'Deviated Nasal Septum',s:'One-sided blockage, noisy breathing, recurrent sinusitis',sev:'mild',c:'Congenital, traumatic fracture, or developmental asymmetry',r:'Decongestant spray, daily saline rinse, septoplasty surgery if significantly symptomatic.',f:'Post-traumatic septal haematoma forming → Must be drained within 24h to prevent avascular necrosis'},
+ {e:'🌡️',t:'CSF Rhinorrhoea',s:'Clear watery fluid from one nostril with salty taste',sev:'severe',c:'Skull base fracture, iatrogenic after sinus surgery, spontaneous from raised ICP',r:'Bed rest, avoid nose blowing or sneezing, neurosurgical assessment. Beta-2 transferrin test.',f:'After any head trauma with clear nasal fluid → Basilar skull fracture, meningitis risk — Emergency'},
+ {e:'🦠',t:'Nasal Malignancy',s:'Unilateral progressive blockage, epistaxis, facial pain, neck lump',sev:'severe',c:'Squamous cell carcinoma, adenocarcinoma — wood dust, nickel, and leather exposure occupational risk',r:'Urgent CT and MRI sinuses, biopsy, ENT and oncology referral without delay.',f:'Any progressive unilateral nasal symptoms in any adult → Malignancy exclusion urgent biopsy'},
+]},
+mouth:{n:'Mouth, Jaw & Teeth',sub:'Toothache, gums, jaw, oral lesions, taste, tongue',icon:'😮',col:'#D81B60',s:[
+ {e:'🦷',t:'Dental Abscess',s:'Severe throbbing toothache, facial swelling, fever',sev:'severe',c:'Periapical abscess from pulp infection, periodontal abscess, pericoronal around wisdom tooth',r:'Urgent dentist within 24 hours. Amoxicillin plus metronidazole. Root canal or extraction.',f:'Facial cellulitis spreading to floor of mouth or causing stridor → Ludwig\'s angina airway emergency'},
+ {e:'🦷',t:'Dental Caries',s:'Toothache, sensitivity to hot cold and sweet foods',sev:'mild',c:'Streptococcus mutans bacteria, high sugar diet, poor oral hygiene, dry mouth, fluoride deficiency',r:'Dental filling, reduce sugar intake, fluoride toothpaste, daily flossing and interdental cleaning.',f:'Pain at rest or spontaneous severe pain → Pulpitis with nerve involvement — urgent dental'},
+ {e:'🩸',t:'Periodontal Disease',s:'Bleeding gums, bad breath, loose teeth, gum recession',sev:'moderate',c:'Dental plaque and calculus buildup, smoking, diabetes mellitus, genetic predisposition',r:'Professional dental scaling and root planing, improve oral hygiene technique, treat systemic disease.',f:'Rapidly progressive bone loss with pain on biting → Aggressive periodontitis — urgent dental referral'},
+ {e:'😬',t:'TMJ Dysfunction',s:'Jaw clicking, locking, or pain on chewing',sev:'mild',c:'Bruxism teeth grinding, stress, malocclusion, jaw trauma, arthritis, myofascial pain syndrome',r:'Warm compress on jaw, soft food diet, night guard for bruxism, physiotherapy, muscle relaxant.',f:'Cannot open mouth at all or locked jaw after trauma → Dislocation or fracture — Emergency'},
+ {e:'🔵',t:'Oral Ulcers',s:'Painful white or yellow sores inside mouth',sev:'mild',c:'Aphthous ulcers from stress or B12 iron folate deficiency, herpes labialis, Behcet\'s disease',r:'Salt water rinse, topical corticosteroid gel, B12 supplement, OTC anaesthetic gel. Heals 7-14 days.',f:'Non-healing ulcer over 3 weeks, firm raised border, painless lesion → Oral cancer urgent biopsy'},
+ {e:'😐',t:'Trismus',s:'Cannot open mouth fully — less than 35mm',sev:'moderate',c:'Pericoronitis around wisdom tooth, TMJ ankylosis, tetanus, parapharyngeal abscess, post-radiotherapy',r:'Treat underlying cause, jaw physiotherapy, corticosteroid injection.',f:'With fever and bulging pharynx visible → Parapharyngeal abscess — airway emergency'},
+ {e:'👅',t:'Glossitis',s:'Red, smooth, sore, or fissured tongue',sev:'mild',c:'B12, folate, or iron deficiency anaemia, allergy, oral candida, geographic tongue (benign)',r:'Blood tests for nutritional deficiencies, treat deficiency found, antifungal for candida.',f:'White non-scrapable patch on tongue (leukoplakia) → Precancerous lesion — urgent biopsy'},
+ {e:'🍄',t:'Oral Candidiasis (Thrush)',s:'White creamy removable patches on tongue and inner cheeks',sev:'mild',c:'Immunosuppression, inhaled steroid without mouth rinsing, antibiotics, diabetes, dentures',r:'Nystatin suspension or fluconazole tablet, always rinse mouth after using inhaler.',f:'Oesophageal extension causing difficulty swallowing → Systemic candida — investigate immunity'},
+ {e:'🔶',t:'Dry Mouth (Xerostomia)',s:'Persistent mouth dryness, difficulty swallowing and speaking',sev:'mild',c:'Sjogren\'s syndrome, many medication side effects, dehydration, radiotherapy, anxiety',r:'Sip water frequently, saliva substitute spray, pilocarpine prescription, treat underlying cause.',f:'With dry eyes and joint pain together → Sjogren\'s syndrome — rheumatology referral'},
+ {e:'💜',t:'Oral Cancer',s:'Non-healing ulcer, red or white patch, or hard lump in mouth',sev:'severe',c:'Tobacco (all forms), alcohol, HPV especially oropharynx, betel nut in South and SE Asia',r:'Urgent 2-week-wait referral, biopsy, staging CT and MRI, multidisciplinary cancer team management.',f:'Any non-healing oral lesion over 3 weeks or painless fixed lump → Urgent cancer referral now'},
+]},
+neck:{n:'Neck & Throat',sub:'Cervical spine, lymph nodes, thyroid, larynx, carotid',icon:'🫂',col:'#00897B',s:[
+ {e:'😬',t:'Neck Muscle Strain',s:'Stiff painful neck with restricted movement',sev:'mild',c:'Poor sleeping position, prolonged screen use, whiplash, stress-related muscle tension',r:'Heat pack for 20 minutes, gentle range-of-motion exercises, paracetamol or ibuprofen, physiotherapy.',f:'With fever and light sensitivity → Meningism emergency. After trauma → C-spine injury'},
+ {e:'🦴',t:'Cervical Spondylosis',s:'Chronic neck pain, arm tingling, headaches',sev:'moderate',c:'Age-related degenerative disc and facet joint changes — very common over age 40',r:'Physiotherapy, NSAID, cervical pillow, gabapentin or pregabalin if nerve pain present.',f:'Rapidly progressive hand clumsiness and leg weakness (myelopathy) → Emergency neurosurgery'},
+ {e:'🤒',t:'Pharyngitis / Tonsillitis',s:'Sore throat, swollen tonsils, difficulty swallowing',sev:'mild',c:'Viral cause 80% including EBV and adenovirus, bacterial Group A Streptococcus',r:'Salt water gargle, honey and lemon, throat lozenges. Penicillin V if Centor score 3 or 4.',f:'Drooling, stridor, muffled voice, cannot swallow saliva → Epiglottitis emergency'},
+ {e:'🔵',t:'Cervical Lymphadenopathy',s:'Swollen lumps along neck, jaw, or above collarbone',sev:'moderate',c:'Viral URTI (reactive most common), bacterial infection, glandular fever EBV, lymphoma, metastatic cancer',r:'Monitor if soft and tender alongside infection. FBC, monospot, LDH if persisting beyond 4 weeks.',f:'Hard, fixed, painless, over 1cm, over 4 weeks, with night sweats → Lymphoma or cancer exclusion urgent'},
+ {e:'🦋',t:'Thyroid Disease',s:'Neck swelling, weight change, fatigue, heat or cold intolerance',sev:'moderate',c:'Hypothyroid Hashimoto\'s, hyperthyroid Graves\', thyroid nodule, goitre, thyroiditis',r:'TSH and free T4 blood test, thyroid ultrasound, endocrinology referral.',f:'Rapid goitre growth, voice change, swallowing difficulty, stridor → Thyroid malignancy — urgent'},
+ {e:'😤',t:'Hoarse Voice',s:'Raspy, weak, or breathy voice quality',sev:'mild',c:'Laryngitis, voice overuse, GERD, vocal cord polyp or nodule, hypothyroid, nerve palsy',r:'Voice rest, hydrate well, steam inhalation, PPI for GERD, ENT laryngoscopy if persistent.',f:'Hoarseness more than 3 weeks especially in smoker or over 50 years → Laryngoscopy urgently'},
+ {e:'🌡️',t:'Deep Neck Space Infection',s:'Neck swelling, trismus, fever, difficulty swallowing',sev:'severe',c:'Peritonsillar abscess, parapharyngeal or retropharyngeal abscess from dental or tonsil source',r:'Emergency IV antibiotics, surgical abscess drainage, airway protection planning.',f:'Any stridor or drooling with neck swelling → Airway emergency — do not delay at all'},
+ {e:'⚡',t:'Whiplash Injury',s:'Neck pain and stiffness after rear-end collision',sev:'moderate',c:'Cervical hyperextension-flexion injury involving ligaments, muscles, or disc',r:'Early mobilisation preferred over rigid collar, NSAID, physiotherapy within 2 weeks.',f:'Neurological symptoms of arm weakness or numbness → C-spine imaging urgently'},
+ {e:'🔶',t:'Globus Sensation',s:'Persistent feeling of lump stuck in throat',sev:'mild',c:'GERD (most common cause), anxiety, cricopharyngeal spasm, goitre, pharyngeal pouch',r:'PPI trial for 4 weeks, anxiety management, barium swallow if persisting, ENT if no improvement.',f:'Progressive dysphagia and unintended weight loss → Malignancy exclusion — urgent endoscopy'},
+ {e:'💙',t:'Carotid Artery Disease',s:'Bruit heard on neck, TIA symptoms, pulsatile neck mass',sev:'severe',c:'Atherosclerosis accelerated by hypertension, diabetes, smoking, hyperlipidaemia',r:'Carotid Doppler ultrasound, cardiovascular risk modification, antiplatelet, possible endarterectomy.',f:'TIA symptoms of transient weakness or speech change → Stroke prevention emergency same-day'},
+]},
+
+chest:{n:'Chest & Heart',sub:'Cardiac, pericardium, breasts, ribs, sternum, aorta',icon:'❤️',col:'#EA4335',s:[
+ {e:'⚠️',t:'Acute Coronary Syndrome',s:'Central crushing chest pain radiating to left arm or jaw',sev:'severe',c:'Ruptured coronary artery plaque — STEMI, NSTEMI, unstable angina. Risk: DM, HTN, smoking, family history',r:'Call 108 immediately. Aspirin 300mg chewed if available and not contraindicated. Do not drive yourself.',f:'Any suspected heart attack → Emergency. Time is myocardium. Every minute counts.'},
+ {e:'💨',t:'Acute Heart Failure',s:'Breathlessness lying flat, ankle swelling, cannot sleep flat',sev:'severe',c:'Ischaemic, hypertensive, valvular, dilated cardiomyopathy, arrhythmia as precipitant',r:'Sit fully upright, diuretic, supplemental oxygen, urgent cardiology admission.',f:'Acute pulmonary oedema with pink frothy sputum and severe dyspnoea → Emergency ICU'},
+ {e:'💓',t:'Palpitations',s:'Racing, fluttering, or irregular heartbeat sensation',sev:'moderate',c:'Sinus tachycardia from stress or fever, AF, SVT, ectopics, thyroid, caffeine, anaemia',r:'ECG during episode, 24h Holter monitor, electrolyte check, thyroid function, reduce caffeine.',f:'Palpitations with syncope, chest pain, or haemodynamic compromise → Emergency ECG'},
+ {e:'🫁',t:'Pericarditis',s:'Sharp pleuritic chest pain, worse lying flat, better leaning forward',sev:'moderate',c:'Viral Coxsackie or EBV, post-MI Dressler\'s syndrome, autoimmune, TB, uraemia',r:'NSAIDs plus colchicine combination for 3 months, restrict physical activity, treat underlying cause.',f:'Friction rub with haemodynamic compromise → Cardiac tamponade — emergency pericardiocentesis'},
+ {e:'🔔',t:'Breast Lump or Mastalgia',s:'New lump, breast pain, nipple change, or skin puckering',sev:'moderate',c:'Fibroadenoma, fibrocystic change, cyst, mastitis, fat necrosis, or malignancy',r:'Triple assessment — clinical exam, ultrasound or mammogram, core biopsy if indicated.',f:'Hard irregular painless lump, skin dimpling, nipple inversion or bloody discharge → Urgent cancer referral'},
+ {e:'🤧',t:'Pleuritis',s:'Sharp stabbing pain worse on breathing in and coughing',sev:'moderate',c:'Viral pleurisy, pneumonia extension, pulmonary embolism, autoimmune SLE or RA, TB',r:'NSAIDs, treat underlying cause. CXR, ECG, D-dimer if PE is suspected.',f:'With haemoptysis, sudden onset, and tachycardia → PE emergency — urgent CTPA'},
+ {e:'🌡️',t:'Costochondritis',s:'Reproducible tenderness at rib-sternal junction on pressing',sev:'mild',c:'Costochondral inflammation from overuse, viral illness, trauma, or idiopathic cause',r:'NSAIDs, rest, ice or heat alternating, local steroid injection if severe and very persistent.',f:'Cannot clinically distinguish from cardiac pain without ECG and troponin — always check'},
+ {e:'⚡',t:'Aortic Dissection',s:'Tearing or ripping chest pain radiating to back, unequal BP in both arms',sev:'severe',c:'Hypertension (biggest risk by far), Marfan syndrome, bicuspid aortic valve, chest trauma',r:'Emergency surgery or endovascular repair. IV antihypertensive to reduce aortic shear stress immediately.',f:'Any tearing back or chest pain in hypertensive patient → Dissection until proven otherwise — Emergency'},
+ {e:'💔',t:'Valvular Heart Disease',s:'Murmur, exertional breathlessness, syncope, palpitations',sev:'moderate',c:'Aortic stenosis or regurgitation, mitral stenosis or regurgitation — rheumatic or degenerative cause',r:'Echocardiogram, serial follow-up, surgical repair or replacement when symptoms develop.',f:'Exertional syncope in known aortic stenosis → Sudden cardiac death risk — urgent cardiology'},
+ {e:'📍',t:'Pulmonary Hypertension',s:'Progressive exertional dyspnoea, fatigue, right heart failure',sev:'severe',c:'Idiopathic, connective tissue disease scleroderma, chronic PE, HIV, portal hypertension',r:'Echocardiogram, right heart catheterisation, specialist pulmonary hypertension centre referral.',f:'Syncope on exertion with rapidly progressive symptoms → Urgent specialist unit referral'},
+]},
+heart:{n:'Heart & Coronary Vessels',sub:'Coronary arteries, rhythm disorders, valves, great vessels',icon:'🫀',col:'#C62828',s:[
+ {e:'🫀',t:'Stable Angina',s:'Predictable exertional chest tightness relieved by rest',sev:'moderate',c:'Coronary artery disease with fixed atherosclerotic plaque limiting blood flow on exertion',r:'GTN spray sublingual for acute relief, beta-blocker, aspirin, statin, angiogram if poorly controlled.',f:'Rest pain or rapidly worsening pattern → Unstable angina — Emergency admission today'},
+ {e:'⚡',t:'Atrial Fibrillation',s:'Irregular pulse, palpitations, fatigue, breathlessness',sev:'moderate',c:'Hypertension, valve disease, thyroid dysfunction, alcohol, OSA, ischaemic heart disease',r:'Rate control with beta-blocker or digoxin, anticoagulation DOAC, cardioversion consideration.',f:'AF with haemodynamic compromise or very fast rate above 150 → Emergency cardioversion'},
+ {e:'💔',t:'Heart Failure',s:'Breathlessness on exertion or lying flat, fatigue, leg swelling',sev:'severe',c:'Ischaemic 50%, hypertensive, valvular, cardiomyopathy, chemotherapy induced',r:'ACE inhibitor, beta-blocker, diuretic, SGLT2 inhibitor, salt restriction, echo-guided management.',f:'Acute decompensation with falling SpO2 and severe oedema → Emergency admission'},
+ {e:'🩺',t:'Hypertension',s:'Usually asymptomatic — headache or nosebleed at very high BP',sev:'moderate',c:'Essential hypertension 90%, secondary from renal adrenal or thyroid causes, obesity and lifestyle',r:'Salt restriction below 5g daily, regular exercise, weight loss, alcohol reduction. Amlodipine or ACE inhibitor.',f:'BP above 180/120 with headache, visual change, or chest pain → Hypertensive crisis emergency'},
+ {e:'📉',t:'Syncope',s:'Fainting, pre-syncope, or postural dizziness episodes',sev:'moderate',c:'Vasovagal (most common), postural hypotension, dehydration, cardiac Stokes-Adams, aortic stenosis',r:'ECG, lying and standing BP, tilt-table test, Holter monitor, identify and treat underlying cause.',f:'Syncope during exercise with no warning and structural heart disease → Sudden death risk'},
+ {e:'🔵',t:'Deep Vein Thrombosis',s:'Leg swelling with breathlessness or pleuritic chest pain',sev:'severe',c:'Virchow\'s triad — stasis immobility, hypercoagulable state from cancer or OCP, endothelial injury',r:'LMWH or rivaroxaban anticoagulation, compression stockings. Thrombolysis for massive PE.',f:'Haemodynamically unstable PE with BP below 90 → Systemic thrombolysis emergency'},
+ {e:'💜',t:'Cardiomyopathy',s:'Breathlessness, chest pain, arrhythmia, sudden death risk',sev:'severe',c:'Dilated from ischaemia alcohol viral or familial, hypertrophic genetic, restrictive amyloid',r:'Echocardiogram and cardiac MRI, ICD for sudden cardiac death risk, disease-specific medications.',f:'Hypertrophic CM with exertional syncope → Sudden cardiac death risk — urgent cardiology'},
+ {e:'🌡️',t:'Infective Endocarditis',s:'Fever, new murmur, embolic phenomena including stroke or splinters',sev:'severe',c:'S.viridans from dental procedures, S.aureus from IV drug use, Strep bovis from bowel malignancy',r:'Blood cultures times 3, echocardiogram transoesophageal, IV antibiotics 4-6 weeks, valve surgery if needed.',f:'Fever with murmur and embolic signs → Endocarditis until proven otherwise — emergency admission'},
+]},
+lungs:{n:'Lungs & Breathing',sub:'Airways, lung parenchyma, pleura, oxygen transport',icon:'🫁',col:'#1565C0',s:[
+ {e:'😮‍💨',t:'Asthma',s:'Episodic wheeze, breathlessness, nocturnal cough',sev:'moderate',c:'Allergic atopic (most common), occupational triggers, exercise-induced, aspirin-sensitive, non-atopic',r:'SABA reliever salbutamol inhaler, ICS preventer beclometasone, step-up therapy, written action plan.',f:'No response to multiple salbutamol puffs, SpO2 below 94%, silent chest → Severe asthma emergency'},
+ {e:'🌡️',t:'Pneumonia',s:'Productive cough, fever, pleuritic chest pain, consolidation on CXR',sev:'moderate',c:'S.pneumoniae (CAP most common), atypical Mycoplasma Legionella Chlamydia, aspiration pneumonia',r:'Amoxicillin guided by CURB-65 score, oxygen if hypoxic, adequate hydration and rest.',f:'CURB-65 score 3 or more, SpO2 below 92%, confusion, RR above 30 → Emergency admission'},
+ {e:'🩸',t:'Haemoptysis',s:'Blood-tinged or frank blood coughed from lungs',sev:'severe',c:'TB, lung cancer, bronchiectasis, PE, severe bronchitis, AV malformation, Goodpasture\'s syndrome',r:'CXR, CT chest, bronchoscopy, sputum for AFB culture. Never dismiss any haemoptysis whatsoever.',f:'Massive haemoptysis above 100ml → Emergency airway and interventional radiology'},
+ {e:'🌬️',t:'COPD / Emphysema',s:'Chronic productive cough, wheeze, progressive breathlessness',sev:'moderate',c:'Smoking (over 95% of cases), alpha-1 antitrypsin deficiency, occupational dust and fumes',r:'Smoking cessation (most important single step), LABA plus LAMA inhaler, ICS if frequent exacerbations.',f:'Acute exacerbation with SpO2 below 88%, confusion, or pH below 7.35 → Emergency with controlled O2'},
+ {e:'🔴',t:'Pulmonary Embolism',s:'Sudden breathlessness, pleuritic chest pain, haemoptysis',sev:'severe',c:'DVT propagation — immobility, post-surgery, cancer, OCP, long-haul flights, thrombophilia',r:'CTPA for diagnosis, anticoagulation LMWH or rivaroxaban, compression stockings, mobilise early.',f:'Haemodynamic instability with RV strain on echo → Massive PE — thrombolysis emergency'},
+ {e:'💤',t:'Obstructive Sleep Apnoea',s:'Loud snoring, witnessed apnoeas, excessive daytime sleepiness',sev:'moderate',c:'Obesity (main cause), retrognathia, large tonsils, alcohol, sedatives, male sex, advancing age',r:'Polysomnography sleep study, CPAP machine, weight loss, positional therapy, mandibular device.',f:'Driving with excessive daytime sleepiness, oxygen desaturation below 80% → Urgent CPAP initiation'},
+ {e:'📉',t:'Pleural Effusion',s:'Breathlessness and reduced breath sounds at lung base',sev:'moderate',c:'Transudate from heart failure or hypoalbuminaemia, exudate from malignancy TB or pneumonia',r:'CXR, thoracic ultrasound, diagnostic pleural tap using Light\'s criteria, treat underlying cause.',f:'Rapidly accumulating effusion, haemothorax, or empyema → Urgent chest drain insertion'},
+ {e:'🟡',t:'Bronchiectasis',s:'Daily purulent sputum production and recurrent chest infections',sev:'moderate',c:'Post-infectious TB or measles or whooping cough, cystic fibrosis, ABPA, hypogammaglobulinaemia',r:'Airway clearance physiotherapy, antibiotics for exacerbations, long-term macrolide prophylaxis.',f:'Massive haemoptysis or acute severe exacerbation → Emergency respiratory admission'},
+ {e:'🌑',t:'Pneumothorax',s:'Sudden chest pain and breathlessness with reduced breath sounds',sev:'severe',c:'Primary spontaneous in tall thin young male, secondary COPD or asthma, iatrogenic, trauma',r:'Small primary — observe with supplemental O2. Large — aspiration or chest drain. Supplemental oxygen.',f:'Tension pneumothorax with tracheal deviation and cardiovascular collapse → Emergency needle decompression'},
+ {e:'🔵',t:'Sarcoidosis',s:'Dry cough, breathlessness, bilateral hilar lymphadenopathy on CXR',sev:'moderate',c:'Granulomatous disease in young adults, higher prevalence in South Asian and African populations',r:'CXR, serum ACE level, pulmonary function tests, prednisolone if significant pulmonary involvement.',f:'Cardiac sarcoid causing heart block or VT, or neurosarcoid → Urgent specialist care'},
+]},
+abdomen:{n:'Abdomen & GI Tract',sub:'Stomach, bowel, liver, gallbladder, spleen, pancreas',icon:'🫃',col:'#F57C00',s:[
+ {e:'😣',t:'Appendicitis',s:'Right lower quadrant pain, fever, nausea, rebound tenderness',sev:'severe',c:'Faecolith obstruction, lymphoid hyperplasia post-infection, perforation risk within 24-72 hours',r:'Nil by mouth, IV fluids, urgent surgical review. CT abdomen for confirmation of diagnosis.',f:'Peritonism with rigid abdomen and Rovsing\'s sign positive → Emergency appendicectomy'},
+ {e:'🔥',t:'Peptic Ulcer and GERD',s:'Epigastric burning, acid reflux, nausea',sev:'moderate',c:'H.pylori infection for duodenal ulcer, NSAID use for gastric ulcer, stress ulcers, alcohol',r:'PPI omeprazole 20-40mg daily, H.pylori eradication triple therapy, stop all NSAIDs.',f:'Haematemesis, melaena, or haemodynamic instability → Upper GI bleed emergency'},
+ {e:'🪨',t:'Gallstones and Biliary Colic',s:'Right upper quadrant pain after fatty food with nausea',sev:'moderate',c:'Cholesterol or pigment stones — female, fat, forty, fair, fertile (the 5 Fs)',r:'Low-fat diet, diclofenac analgesia, laparoscopic cholecystectomy electively.',f:'Murphy\'s sign positive with fever and jaundice → Cholecystitis or cholangitis emergency'},
+ {e:'🟡',t:'Jaundice',s:'Yellow skin and eyes, dark urine, pale stools',sev:'severe',c:'Pre-hepatic haemolysis, hepatic hepatitis or cirrhosis, post-hepatic gallstone or cancer',r:'LFTs, bilirubin, hepatitis serology, ultrasound abdomen. Complete alcohol cessation.',f:'Any new jaundice in adult → Urgent same-day review. Painless progressive jaundice → Pancreatic cancer'},
+ {e:'🔴',t:'Inflammatory Bowel Disease',s:'Bloody diarrhoea, abdominal pain, weight loss, urgency',sev:'moderate',c:'Autoimmune intestinal inflammation — Crohn\'s (any GI tract) or UC (large bowel only)',r:'Aminosalicylates for UC, immunosuppressants, biologics, nutritional support, gastroenterology.',f:'More than 6 bloody stools daily, fever, rising CRP → Acute severe colitis emergency'},
+ {e:'🌡️',t:'Bowel Obstruction',s:'Colicky pain, vomiting, distension, absolute constipation',sev:'severe',c:'Adhesions post-surgery (most common), hernia, malignancy, volvulus, intussusception in children',r:'Nil by mouth, NG tube decompression, IV fluids, urgent surgical assessment.',f:'Signs of perforation or strangulation or peritonism → Emergency laparotomy immediately'},
+ {e:'🩸',t:'Upper GI Bleed',s:'Haematemesis bright red or melaena black tarry stool',sev:'severe',c:'Peptic ulcer (most common), oesophageal varices from cirrhosis, Mallory-Weiss tear, oesophagitis',r:'IV access, fluid resuscitation, blood transfusion, urgent OGD within 24 hours. PPI infusion.',f:'Any haematemesis or melaena → Emergency admission and urgent endoscopy'},
+ {e:'😵',t:'Acute Pancreatitis',s:'Severe epigastric pain radiating to back with vomiting',sev:'severe',c:'Gallstones (50%), alcohol (30%), hypertriglyceridaemia, ERCP procedure, drugs, idiopathic',r:'Aggressive IV fluids, nil by mouth, strong analgesia, monitor urine output carefully, HDU admission.',f:'Ranson score 3 or more, organ failure, infected necrosis → ICU and surgical emergency'},
+ {e:'🔵',t:'Cirrhosis',s:'Jaundice, ascites, spider naevi, palmar erythema, encephalopathy',sev:'severe',c:'Alcohol, NASH from obesity or T2DM, hepatitis B or C, autoimmune hepatitis, haemochromatosis',r:'Alcohol abstinence, antiviral therapy, diuretics for ascites, beta-blocker for varices, transplant.',f:'Hepatic encephalopathy, variceal bleed, or SBP → Emergency'},
+ {e:'⬛',t:'Colorectal Cancer Red Flags',s:'Change in bowel habit, rectal bleeding, weight loss, tenesmus',sev:'severe',c:'Adenocarcinoma — Lynch syndrome, IBD, polyps, red processed meat, obesity, age above 50',r:'Urgent colonoscopy, CT staging, MDT oncology team approach.',f:'Bowel obstruction or acute perforation from tumour → Emergency surgery'},
+ {e:'🌊',t:'Irritable Bowel Syndrome',s:'Cramping, bloating, alternating diarrhoea and constipation',sev:'mild',c:'Gut-brain axis dysfunction, visceral hypersensitivity, microbiome changes, stress, food triggers',r:'Low FODMAP diet, mebeverine antispasmodic, amitriptyline, CBT therapy, probiotics.',f:'New onset over 50 with rectal bleeding or weight loss → Red flags — colonoscopy urgently'},
+]},
+liver:{n:'Liver & Gallbladder',sub:'Hepatic function, bile ducts, pancreatic head',icon:'🟡',col:'#F9A825',s:[
+ {e:'🟡',t:'Hepatitis A',s:'Acute jaundice, fever, nausea, right upper quadrant pain',sev:'moderate',c:'Faecal-oral transmission — contaminated water or food, travel to endemic areas in Asia Africa',r:'Supportive care, rest, hydrate well, avoid alcohol completely. Self-limiting 4-8 weeks. Vaccine available.',f:'Fulminant hepatic failure with encephalopathy → Emergency transplant evaluation'},
+ {e:'🔵',t:'Hepatitis B',s:'Acute or chronic — jaundice, fatigue, or asymptomatic carrier',sev:'moderate',c:'Sexual transmission, vertical mother to child, IV drug use sharing needles, healthcare exposure',r:'Antiviral therapy tenofovir or entecavir, regular HBV DNA monitoring, cirrhosis surveillance.',f:'Active replication with cirrhosis → Liver transplant assessment'},
+ {e:'🔴',t:'Hepatitis C',s:'Often silent until cirrhosis develops — fatigue, jaundice late',sev:'moderate',c:'Blood-to-blood — IV drug use shared needles, transfusion before 1992, sexual, tattooing',r:'Direct-acting antiviral 8-12 week course achieving above 95% cure rate, liver surveillance.',f:'Cirrhosis with portal hypertension → Variceal bleed emergency, hepatocellular carcinoma risk'},
+ {e:'🍺',t:'Alcoholic Liver Disease',s:'Steatosis progressing to hepatitis to cirrhosis',sev:'severe',c:'Chronic excess alcohol above 21 units per week, binge drinking, genetic susceptibility',r:'Complete alcohol abstinence (most critical step), nutritional support, thiamine B1, prednisolone for hepatitis.',f:'Acute alcoholic hepatitis with Maddrey discriminant function above 32 → Emergency steroid therapy'},
+ {e:'⚫',t:'NAFLD and NASH',s:'Often asymptomatic — fatigue, right upper quadrant discomfort',sev:'moderate',c:'Obesity, T2DM, metabolic syndrome, hyperlipidaemia — now the most common liver disease worldwide',r:'Weight loss of 7-10% most effective treatment, exercise, tight glucose BP and lipid control.',f:'Cirrhosis complications developing → Hepatocellular carcinoma surveillance every 6 months'},
+ {e:'🪨',t:'Cholecystitis',s:'Biliary colic, right upper quadrant pain, Murphy\'s sign positive',sev:'moderate',c:'Cholesterol stones 90% — 5 Fs: Female, Fat, Forty, Fertile, Fair skin',r:'Low-fat diet, diclofenac analgesia, laparoscopic cholecystectomy.',f:'Fever plus jaundice plus RUQ pain (Charcot\'s triad) → Ascending cholangitis emergency ERCP'},
+ {e:'💛',t:'Cholestatic Jaundice',s:'Painless jaundice, pale stools, dark urine, itching',sev:'severe',c:'Gallstone in common bile duct, pancreatic head cancer, primary sclerosing cholangitis, drug-induced',r:'Ultrasound and MRCP, ERCP for stone removal, surgery for tumour.',f:'Painless progressive jaundice in patient over 50 → Pancreatic head malignancy until proven otherwise'},
+ {e:'🌡️',t:'Liver Abscess',s:'Fever, right upper quadrant pain, raised diaphragm on imaging',sev:'severe',c:'Pyogenic from biliary or portal source, amoebic from travel to endemic areas',r:'IV antibiotics, CT-guided drainage, metronidazole for amoebic abscess specifically.',f:'Rupture into pleural cavity or peritoneum → Emergency surgical drainage'},
+]},
+kidney:{n:'Kidneys & Urinary Tract',sub:'Renal function, bladder, prostate, urethra',icon:'💧',col:'#5C6BC0',s:[
+ {e:'🔥',t:'Urinary Tract Infection',s:'Dysuria, frequency, urgency, suprapubic pain',sev:'moderate',c:'E.coli (80%), Klebsiella, Staphylococcus saprophyticus — women much more commonly affected',r:'MSU culture, trimethoprim or nitrofurantoin 3-7 days, high fluid intake, cranberry juice.',f:'Fever, rigors, loin pain, vomiting → Pyelonephritis — urgent IV antibiotics or hospital admission'},
+ {e:'🩸',t:'Haematuria',s:'Visible or microscopic blood in urine',sev:'severe',c:'UTI, kidney stones, bladder cancer, IgA nephropathy, glomerulonephritis, trauma, anticoagulants',r:'MSU urine test, urine cytology, ultrasound renal tract, flexible cystoscopy for patients over 40.',f:'Any visible haematuria in adult over 40 → 2-week-wait urgent cancer referral mandatory'},
+ {e:'🪨',t:'Renal Calculi',s:'Severe loin-to-groin colicky pain with haematuria',sev:'severe',c:'Calcium oxalate 70%, urate, struvite, cystine — dehydration, high protein diet, metabolic causes',r:'Strong analgesia diclofenac or morphine, IV fluids, tamsulosin alpha-blocker to pass, CT KUB.',f:'Fever plus obstructed kidney → Infected hydronephrosis — Emergency nephrostomy urgently'},
+ {e:'💦',t:'Overactive Bladder',s:'Urgency, frequency, nocturia, urge incontinence',sev:'mild',c:'Overactive bladder syndrome, UTI, BPH in men, neurogenic bladder, excess caffeine',r:'Bladder diary, pelvic floor exercises, reduce caffeine, mirabegron or solifenacin medication.',f:'New onset in older patient with haematuria → Bladder cancer exclusion needed'},
+ {e:'🚱',t:'Urinary Retention',s:'Inability to empty bladder — acute or chronic',sev:'severe',c:'BPH in men (most common cause), urethral stricture, constipation, post-operative, anticholinergic drugs',r:'Urethral catheterisation, alpha-blocker for BPH, TURP surgery if recurrent retention.',f:'Complete inability to void with painful distended bladder → Emergency catheterisation immediately'},
+ {e:'🌊',t:'Chronic Kidney Disease',s:'Fatigue, ankle swelling, raised creatinine, anaemia',sev:'moderate',c:'Diabetes (40% of CKD), hypertension, IgA nephropathy, ADPKD, analgesic nephropathy',r:'eGFR staging, ACE inhibitor or ARB, tight glucose and BP control, avoid NSAIDs, nephrology.',f:'Rapidly falling eGFR, severe hyperkalaemia, metabolic acidosis → Acute-on-chronic — Emergency dialysis'},
+ {e:'🔴',t:'Acute Kidney Injury',s:'Sudden rise in creatinine, oliguria, confusion',sev:'severe',c:'Pre-renal from dehydration or sepsis, intrinsic from glomerulonephritis or ATN, post-renal obstruction',r:'IV fluids, stop nephrotoxic drugs (NSAIDs, aminoglycosides), treat sepsis, catheter to monitor output.',f:'Hyperkalaemia above 6.5, pulmonary oedema, or anuric patient → Emergency haemodialysis'},
+ {e:'🌡️',t:'Pyelonephritis',s:'High fever, rigors, severe loin pain, vomiting',sev:'severe',c:'E.coli ascending from UTI — more common in women, diabetes, pregnancy, structural abnormalities',r:'IV ceftriaxone or co-amoxiclav, aggressive fluid resuscitation, CT to exclude abscess.',f:'Septic shock from pyonephrosis → Emergency nephrostomy drainage urgently'},
+ {e:'💊',t:'Glomerulonephritis',s:'Haematuria, proteinuria, oedema, hypertension',sev:'moderate',c:'IgA nephropathy, post-streptococcal, membranous nephropathy, minimal change, ANCA vasculitis',r:'Renal biopsy essential, immunosuppression, ACE inhibitor, BP control, nephrology referral.',f:'Rapidly progressive GN with crescents on biopsy → Emergency immunosuppression to preserve renal function'},
+]},
+
+pelvis:{n:'Pelvis & Reproductive System',sub:'Reproductive organs, pelvic floor, fertility, STI',icon:'🔵',col:'#9C27B0',s:[
+ {e:'😣',t:'Pelvic Inflammatory Disease',s:'Lower abdominal pain, fever, vaginal discharge',sev:'severe',c:'Ascending STI — chlamydia, gonorrhoea, bacterial vaginosis organisms, post-procedural infection',r:'Doxycycline plus metronidazole plus IM ceftriaxone. Treat partner simultaneously.',f:'Tubo-ovarian abscess or peritonitis → Emergency surgical drainage with IV antibiotics'},
+ {e:'🌸',t:'PCOS',s:'Irregular periods, hirsutism, acne, fertility issues',sev:'moderate',c:'Insulin resistance plus androgen excess plus ovulatory dysfunction — genetic and lifestyle factors',r:'Weight loss (most effective), OCP for cycle regulation, metformin, spironolactone for hirsutism.',f:'Very long amenorrhoea → Endometrial hyperplasia risk — progestogen protection needed'},
+ {e:'🤰',t:'Ectopic Pregnancy',s:'Missed period, one-sided pelvic pain, PV spotting',sev:'severe',c:'Fallopian tube implantation — PID history, previous ectopic, IUD in situ, tubal surgery',r:'Serum beta-hCG, transvaginal ultrasound. Methotrexate if unruptured, salpingectomy if ruptured.',f:'Haemodynamic collapse → Ruptured ectopic — Emergency laparotomy immediately'},
+ {e:'🌀',t:'Endometriosis',s:'Dysmenorrhoea, dyspareunia, infertility, cyclical pelvic pain',sev:'moderate',c:'Retrograde menstruation theory, immune dysfunction, genetic predisposition — 1 in 10 women',r:'COCP, progestogens, GnRH analogues, laparoscopic excision, fertility preservation.',f:'Suspected deep infiltrating or large ovarian endometrioma → Specialist endometriosis centre'},
+ {e:'🔴',t:'Ovarian Cyst or Torsion',s:'Pelvic pain, mass, bloating, irregular periods',sev:'moderate',c:'Functional cysts (most common), PCOS, dermoid cyst, endometrioma, cystadenoma, malignancy',r:'Ultrasound, tumour markers CA-125 AFP LDH, surgical if torsion or complex above 5cm.',f:'Sudden severe one-sided pain with vomiting → Ovarian torsion — Emergency laparoscopy'},
+ {e:'🟤',t:'Uterine Fibroids',s:'Heavy periods, pelvic pressure, urinary frequency',sev:'moderate',c:'Oestrogen-dependent benign tumours — Afro-Caribbean women at significantly higher risk',r:'NSAIDs and tranexamic acid for symptoms, GnRH analogue, uterine artery embolisation, myomectomy.',f:'Acute fibroid degeneration in pregnancy → Emergency obstetric assessment'},
+ {e:'💜',t:'Gynaecological Cancer',s:'Intermenstrual bleeding, post-coital bleeding, persistent bloating',sev:'severe',c:'HPV 16 and 18 for cervical cancer, BRCA1 or BRCA2 for ovarian, Lynch syndrome for endometrial',r:'Cervical smear, colposcopy, CA-125 plus ultrasound, MDT oncology care.',f:'Post-menopausal bleeding, persistent bloating with weight loss → Urgent cancer investigation'},
+ {e:'🔶',t:'Pelvic Organ Prolapse',s:'Pelvic heaviness, dragging sensation, visible bulge',sev:'mild',c:'Vaginal delivery, obesity, chronic cough, constipation, hysterectomy, oestrogen deficiency',r:'Pelvic floor physiotherapy, ring pessary, surgical repair sacrocolpopexy.',f:'Urinary retention from severe prolapse → Emergency pessary insertion or surgery'},
+ {e:'🩸',t:'Abnormal Uterine Bleeding',s:'Heavy, irregular, intermenstrual, or post-coital bleeding',sev:'moderate',c:'Structural: Polyp, Adenomyosis, Fibroid, Malignancy. Non-structural: PCOS, coagulopathy, thyroid',r:'Pelvic ultrasound, endometrial biopsy if over 45, tranexamic acid, levonorgestrel IUS.',f:'Post-menopausal bleeding → Endometrial cancer exclusion — urgent hysteroscopy and biopsy'},
+]},
+back_upper:{n:'Upper Back & Thoracic Spine',sub:'T1-T12, costovertebral joints, thoracic disc, posture',icon:'🦴',col:'#6D4C41',s:[
+ {e:'🧱',t:'Thoracic Muscle Strain',s:'Stiffness and aching between shoulder blades',sev:'mild',c:'Poor posture, prolonged desk work, heavy lifting, stress-related muscle tension, scoliosis',r:'Posture correction, ergonomic workspace, heat for 20 minutes, physiotherapy, regular stretching.',f:'With fever and progressive neurological signs → Spinal infection or cord compression'},
+ {e:'🌡️',t:'Discitis and Spinal Infection',s:'Progressive thoracic pain, fever, raised inflammatory markers',sev:'severe',c:'S.aureus haematogenous spread, TB Pott\'s disease, post-procedural, IV drug use',r:'MRI spine urgently, prolonged IV antibiotics 6-12 weeks, surgical drainage if abscess found.',f:'Any progressive thoracic pain with fever → Must exclude spinal infection — urgent MRI'},
+ {e:'⚡',t:'Thoracic Disc Herniation',s:'Band-like chest or abdominal pain, possible myelopathy',sev:'moderate',c:'Disc prolapse at thoracic level — less common than cervical or lumbar, trauma or degeneration',r:'Physiotherapy and pain management. Surgical decompression if myelopathy develops.',f:'Progressive leg weakness or bowel bladder dysfunction → Spinal cord compression emergency'},
+ {e:'🔵',t:'Ankylosing Spondylitis',s:'Chronic morning stiffness improving with exercise, onset under 40',sev:'moderate',c:'HLA-B27 associated autoimmune enthesitis with progressive spinal fusion over years',r:'Regular exercise (most important), NSAIDs, TNF inhibitor or IL-17 blocker, physiotherapy.',f:'Sudden spinal pain after minor trauma in long-standing AS → Brittle spine fracture risk'},
+ {e:'💔',t:'Referred Cardiac or Aortic Pain',s:'Interscapular tearing pain worse on inspiration',sev:'severe',c:'Aortic dissection type B, posterior MI, PE, oesophageal rupture',r:'ECG, troponin, CT aorta and chest urgently.',f:'Tearing interscapular pain in hypertensive patient → Aortic dissection — Emergency CT immediately'},
+ {e:'🟡',t:'Vertebral Compression Fracture',s:'Sudden thoracic pain after minor force, height loss',sev:'moderate',c:'Osteoporosis in post-menopausal women or steroid users, metastatic malignancy, trauma',r:'DEXA bone density scan, bisphosphonate, calcium plus vitamin D3, vertebroplasty for refractory pain.',f:'Multiple fractures in young patient with worsening neurology → Malignancy exclusion MRI urgently'},
+]},
+back_lower:{n:'Lower Back & Lumbar Spine',sub:'L1-L5, sacrum, lumbar discs, SI joint, cauda equina',icon:'🦴',col:'#795548',s:[
+ {e:'🔩',t:'Mechanical Low Back Pain',s:'Lumbar aching worse with activity and better with rest',sev:'mild',c:'Muscle strain, poor posture, disc degeneration, facet joint arthropathy — most common back problem',r:'Stay active (do not rest in bed), paracetamol or ibuprofen, heat application, physiotherapy.',f:'With bladder or bowel incontinence or saddle anaesthesia → Cauda equina surgical emergency NOW'},
+ {e:'⚡',t:'Sciatica',s:'Shooting pain from buttock down leg in dermatomal pattern',sev:'moderate',c:'Disc herniation at L4/5 or L5/S1 compressing nerve root, spinal stenosis, piriformis syndrome',r:'NSAIDs, gabapentin or pregabalin, physiotherapy, avoid prolonged sitting, nerve root injection.',f:'Progressive foot drop or new urinary retention → Cauda equina emergency decompression surgery'},
+ {e:'🦴',t:'Lumbar Spinal Stenosis',s:'Neurogenic claudication — leg pain walking relieved by sitting',sev:'moderate',c:'Congenital narrow canal plus degenerative hypertrophy of ligamentum flavum, age above 60',r:'Walking aids, flexion-based exercise programme, epidural steroid injection, surgical decompression.',f:'Rapidly progressive neurological deficit in legs → Urgent surgical assessment'},
+ {e:'🌙',t:'Inflammatory Back Pain',s:'Insidious onset under 40, morning stiffness over 45 minutes, night pain',sev:'moderate',c:'Ankylosing spondylitis, psoriatic SpA, reactive arthritis — HLA-B27 associated',r:'NSAIDs, regular exercise is essential, physiotherapy, rheumatology referral, biologic therapy.',f:'Sudden fracture through ankylosed spine after minor trauma → Emergency spinal immobilisation'},
+ {e:'🔴',t:'Cauda Equina Syndrome',s:'Bilateral sciatica, saddle anaesthesia, bladder or bowel dysfunction',sev:'severe',c:'Central disc herniation at L4/5 or L5/S1 compressing cauda equina nerve roots acutely',r:'Emergency MRI lumbar spine, emergency surgical decompression within 24-48 hours.',f:'Any saddle anaesthesia or new bladder or bowel dysfunction → Surgical emergency NOW'},
+ {e:'⬛',t:'Sacroiliac Joint Pain',s:'Low back and buttock pain worse with prolonged standing or sitting',sev:'mild',c:'Pregnancy, trauma, leg length discrepancy, SI joint arthritis, ankylosing spondylitis',r:'Physiotherapy sacroiliac stabilisation exercises, SI joint steroid injection, pelvic belt in pregnancy.',f:'Asymmetric SI joint erosion in young patient → Seronegative spondyloarthropathy — rheumatology MRI'},
+]},
+shoulder:{n:'Shoulder & Collarbone',sub:'Rotator cuff, AC joint, glenohumeral, bursa, clavicle',icon:'🤷',col:'#00ACC1',s:[
+ {e:'🦾',t:'Rotator Cuff Tear',s:'Shoulder pain and weakness lifting arm from side',sev:'moderate',c:'Supraspinatus tear — traumatic in young patients, degenerative over 40, AC joint impingement',r:'Physiotherapy strengthening, steroid injection, arthroscopic repair for complete tears.',f:'Massive irreparable tear in working-age patient → Surgical opinion urgently'},
+ {e:'❄️',t:'Frozen Shoulder',s:'Globally restricted range of movement in all directions',sev:'moderate',c:'Idiopathic adhesive capsulitis, post-injury, post-surgery, diabetes (30-40%), thyroid disease',r:'Intensive physiotherapy, intra-articular steroid injection, hydrodilatation, MUA under anaesthesia.',f:'Not responding to 3 months conservative treatment → Hydrodilatation or surgical capsulotomy'},
+ {e:'💥',t:'Shoulder Dislocation',s:'After fall or collision — shoulder out of joint',sev:'severe',c:'Anterior dislocation (90%), posterior from seizure or electric shock, inferior luxatio erecta',r:'Gentle traction-countertraction reduction, post-reduction X-ray, sling, physiotherapy.',f:'Posterior dislocation often missed — always check axillary X-ray view. Check axillary nerve.'},
+ {e:'🔄',t:'Shoulder Instability',s:'Feeling of subluxation, clicking, or apprehension',sev:'moderate',c:'Bankart lesion, Hill-Sachs defect, multidirectional hypermobility, repeated dislocation episodes',r:'Rotator cuff and scapular stabiliser exercises, Bankart repair arthroscopically.',f:'More than 2 dislocations → Surgical stabilisation to prevent progressive bone loss'},
+ {e:'📍',t:'AC Joint Injury',s:'Pain at top of shoulder after direct fall or collision',sev:'moderate',c:'Grade I-III ligament sprain through Grade IV-VI dislocation using Rockwood classification',r:'Sling, ice, analgesia for grade I-III. Surgical fixation for grade IV-VI.',f:'Significant step deformity or neurovascular compromise → Surgery urgently'},
+ {e:'💊',t:'Calcific Tendinitis',s:'Acute severe shoulder pain — often excruciating at onset',sev:'moderate',c:'Calcium hydroxyapatite crystal deposition in supraspinatus — acute resorptive phase most painful',r:'NSAIDs, ice, ultrasound-guided barbotage needle aspiration, subacromial steroid injection.',f:'Calcium eroding into subcoracoid bursa causing acute bursitis → Emergency injection needed'},
+]},
+arm:{n:'Upper Arm & Elbow',sub:'Humerus, bicep, tricep, elbow joint, epicondyles, bursae',icon:'💪',col:'#43A047',s:[
+ {e:'⚡',t:'Brachial Plexus Injury',s:'Weakness and numbness of whole arm after traction injury',sev:'severe',c:'Motorcycle accident, shoulder dystocia at birth, rugby tackle, Erb\'s or Klumpke\'s palsy',r:'Nerve conduction study, MRI plexus, physiotherapy, surgical reconstruction if complete.',f:'Complete flail arm after trauma → Emergency nerve repair assessment within days'},
+ {e:'🎾',t:'Tennis Elbow',s:'Outer elbow pain on gripping, typing, and lifting',sev:'mild',c:'Extensor carpi radialis brevis tendinopathy from repetitive forearm extension movements',r:'Rest from aggravating activities, counterforce brace 2cm distal to epicondyle, eccentric exercises.',f:'Significant weakness with numbness → Radial nerve entrapment PIN syndrome — nerve test'},
+ {e:'⛳',t:'Golfer\'s Elbow',s:'Inner elbow pain worse when gripping',sev:'mild',c:'Common flexor origin tendinopathy from repetitive forearm flexion and pronation activities',r:'Rest from aggravating activities, NSAID, physiotherapy with eccentric exercises, steroid injection.',f:'Ulnar nerve symptoms — ring and little finger numbness → Cubital tunnel syndrome — EMG needed'},
+ {e:'💥',t:'Distal Bicep Tendon Rupture',s:'Sudden pop in elbow on resisted supination or flexion',sev:'severe',c:'Heavy lifting or sudden load, steroid use, age above 40, male predominance',r:'MRI elbow, surgical reattachment ideally within 3 weeks for best functional outcome.',f:'Complete rupture with 40% loss of supination power → Surgical repair strongly recommended'},
+ {e:'🦴',t:'Olecranon Bursitis',s:'Soft painless swelling at tip of elbow',sev:'mild',c:'Repetitive pressure student\'s elbow, direct trauma, gout, rheumatoid arthritis, septic bursitis',r:'Aspiration, NSAIDs, avoid pressure on elbow, elbow pad. Culture aspirate if septic suspected.',f:'Red, hot, tender with fever → Septic bursitis — IV antibiotics and surgical drainage'},
+ {e:'🔵',t:'Cubital Tunnel Syndrome',s:'Ulnar nerve — ring and little finger tingling, weak grip',sev:'moderate',c:'Elbow flexion compressing ulnar nerve at cubital tunnel, bony abnormality, repetitive leaning',r:'Avoid sustained elbow flexion, elbow pad at night, ulnar nerve anterior transposition surgery.',f:'Intrinsic muscle wasting and claw hand appearance → Severe compression — early surgical decompression'},
+]},
+forearm_wrist:{n:'Forearm, Wrist & Hand',sub:'Radius, ulna, carpal bones, tendons, fingers, nails',icon:'🤚',col:'#FB8C00',s:[
+ {e:'🖱️',t:'Carpal Tunnel Syndrome',s:'Numbness thumb, index, middle finger especially at night',sev:'moderate',c:'Median nerve compression — pregnancy, hypothyroid, RA, repetitive flexion, ganglion, diabetes',r:'Wrist splint in neutral position at night, steroid injection, carpal tunnel decompression surgery.',f:'Thenar muscle wasting → Severe long-standing compression — urgent surgical decompression'},
+ {e:'🔴',t:'De Quervain\'s Tenosynovitis',s:'Radial wrist pain with thumb movements, Finkelstein positive',sev:'mild',c:'Extensor pollicis brevis and APL tendinopathy — new mothers, text thumb, repetitive pinching',r:'Thumb spica splint, NSAID, steroid injection into sheath, surgical release if refractory.',f:'Complete tendon rupture → Surgical repair. Repeated injections cause skin atrophy'},
+ {e:'🔵',t:'Ganglion Cyst',s:'Smooth firm lump on dorsal or volar wrist',sev:'mild',c:'Synovial tissue herniation from joint capsule or tendon sheath — most common wrist soft tissue tumour',r:'Reassurance as may spontaneously resolve, aspiration, arthroscopic excision.',f:'Volar ganglion near radial artery → Surgical excision to avoid arterial injury'},
+ {e:'🤞',t:'Trigger Finger',s:'Finger snaps, clicks, or locks when bending',sev:'mild',c:'A1 pulley inflammation — diabetes mellitus, RA, hypothyroid, repetitive gripping',r:'Extension splint, steroid injection into tendon sheath (80% effective), surgical A1 pulley release.',f:'Complete locked flexion not reducing → Surgical A1 pulley release urgently'},
+ {e:'💎',t:'Scaphoid Fracture',s:'Anatomical snuffbox tenderness after fall on outstretched hand',sev:'severe',c:'FOOSH mechanism — 70% of all carpal fractures in young active adults',r:'X-ray may be negative initially, scaphoid cast immobilisation, MRI or CT if X-ray negative.',f:'Missed scaphoid fracture → Avascular necrosis and non-union → Wrist arthritis — urgent MRI'},
+ {e:'⚡',t:'Distal Radius Fracture',s:'Dinner fork deformity after fall on outstretched hand in older person',sev:'moderate',c:'Osteoporosis (common precipitant), fall on extended wrist. Young patients need high-energy mechanism.',r:'Reduction and plaster cast, volar locking plate for unstable or articular fractures, DEXA scan after.',f:'Acute carpal tunnel symptoms from displaced fracture → Urgent reduction and nerve monitoring'},
+ {e:'🔶',t:'Dupuytren\'s Contracture',s:'Progressive ring and little finger cord flexion deformity',sev:'mild',c:'Palmar fascia proliferation — Scandinavian heritage, male sex, diabetes, alcohol, manual work',r:'Observation if mild, needle fasciotomy or collagenase injection, surgical fasciectomy.',f:'Rapidly progressive contracture → Fasciectomy before complete joint contracture develops'},
+]},
+hip:{n:'Hip Joint & Pelvic Girdle',sub:'Femoral head, acetabulum, labrum, bursa, ITB, SI joint',icon:'🦴',col:'#6D4C41',s:[
+ {e:'🦵',t:'Hip Osteoarthritis',s:'Groin pain, reduced internal rotation, antalgic limp',sev:'moderate',c:'Primary OA from ageing and obesity, secondary from DDH, AVN, post-traumatic, Perthes disease',r:'Weight loss, low-impact exercise, paracetamol or NSAID, intra-articular steroid, total hip replacement.',f:'Cannot walk or severe functionally limiting pain → Urgent total hip replacement assessment'},
+ {e:'🦺',t:'Greater Trochanteric Pain',s:'Outer hip pain worse lying on affected side at night',sev:'mild',c:'Gluteus medius and minimus tendinopathy, trochanteric bursitis — women, runners, hip abductor weakness',r:'Load management, hip abductor strengthening Trendelenburg exercise, shockwave therapy.',f:'Complete gluteal tendon tear confirmed on MRI → Surgical repair if conservative treatment fails'},
+ {e:'💥',t:'Hip Fracture',s:'Inability to weight bear after fall, leg shortened and externally rotated',sev:'severe',c:'Low-energy fall in osteoporotic bone over 65 years, high-energy trauma in young patients',r:'Admission, strong analgesia, fascia iliaca nerve block, surgical fixation within 24-48 hours.',f:'Any suspected hip fracture after fall → Emergency — mortality increases significantly with every day delay'},
+ {e:'💜',t:'Avascular Necrosis',s:'Groin pain with gradual collapse of femoral head on X-ray',sev:'severe',c:'Steroid use (most common cause), sickle cell disease, alcohol excess, trauma, decompression illness',r:'MRI for early diagnosis, core decompression for early stage, total hip replacement when established.',f:'MRI stage III or IV avascular necrosis → Inevitably requires total hip replacement'},
+ {e:'🌀',t:'Femoroacetabular Impingement',s:'Groin or hip pain in young active adult, loss of internal rotation',sev:'moderate',c:'CAM femoral head or pincer acetabular morphology causing labral tear and early OA',r:'Activity modification, physiotherapy core and hip strengthening, arthroscopic femoroplasty.',f:'Labral tear with severe bone loss → Early hip arthritis — arthroscopy should be considered'},
+ {e:'🔴',t:'Developmental Dysplasia',s:'Hip instability in infant, groin pain in young adult',sev:'moderate',c:'Congenital acetabular insufficiency — female sex, breech position, family history',r:'Pavlik harness in infant, osteotomy in child, periacetabular osteotomy or THR in adult.',f:'In infant: missed DDH → Arthritis in 20s — newborn screening hip examination is essential'},
+]},
+thigh:{n:'Thigh & Upper Leg',sub:'Quadriceps, hamstrings, femur, femoral nerve, deep vessels',icon:'🦵',col:'#8D6E63',s:[
+ {e:'⚡',t:'Hamstring Tear',s:'Acute pain and snap in back of thigh during sprint',sev:'moderate',c:'Grade 1-3 muscle strain or proximal tendon avulsion — poor warm-up, fatigue, previous injury',r:'RICE for 48 hours, gentle stretch from day 3, progressive loading, return to sport 6-12 weeks.',f:'Complete proximal avulsion fracture → Surgical reattachment within 3 weeks for best outcome'},
+ {e:'🏃',t:'Quadriceps Strain or Tear',s:'Front thigh pain, weakness extending the knee',sev:'moderate',c:'Direct blow causing contusion, indirect strain during kicking or jumping',r:'RICE, quad strengthening programme, avoid early aggressive massage risk of myositis ossificans.',f:'Complete quadriceps rupture with extension lag → Emergency surgical repair'},
+ {e:'💜',t:'Deep Vein Thrombosis',s:'Unilateral thigh swelling, warmth, redness, tenderness',sev:'severe',c:'Virchow\'s triad — prolonged immobility, cancer, post-surgery, OCP, pregnancy, thrombophilia',r:'Urgent compression Doppler ultrasound, therapeutic anticoagulation rivaroxaban or LMWH, compression.',f:'Breathlessness or pleuritic chest pain → Pulmonary embolism emergency 108 immediately'},
+ {e:'🔵',t:'Meralgia Paraesthetica',s:'Burning and tingling over outer thigh — LFCN nerve',sev:'mild',c:'Obesity, tight clothing or belt, pregnancy, direct compression, diabetes, recent surgery',r:'Weight loss, wear loose clothing, NSAIDs, local steroid injection, gabapentin if severe.',f:'Rapidly progressive weakness → Nerve entrapment surgical release'},
+ {e:'🦴',t:'Femoral Stress Fracture',s:'Anterior thigh or groin pain in runner or military — worse with activity',sev:'severe',c:'Overtraining, low bone density, female athlete triad, RED-S, cortical stress reaction',r:'Stop high-impact activity immediately, MRI femur urgently, bone density assessment.',f:'Complete displaced femoral neck fracture → Emergency surgical fixation — high mortality risk'},
+ {e:'🌡️',t:'Necrotising Fasciitis',s:'Rapid spreading redness, blistering, severe pain then numbness',sev:'severe',c:'Polymicrobial type 1 or Group A Streptococcus type 2 — diabetes, trauma, IV drug use',r:'Emergency radical surgical debridement, broad-spectrum IV antibiotics, ITU. Do not delay.',f:'Rapid spread, skin blistering, systemic sepsis → Life-threatening — Emergency surgery within hours'},
+]},
+knee:{n:'Knee & Patella',sub:'Tibiofemoral joint, patellofemoral, menisci, cruciate ligaments',icon:'🦴',col:'#546E7A',s:[
+ {e:'🦵',t:'Knee Osteoarthritis',s:'Medial joint line pain, crepitus, morning stiffness under 30 minutes',sev:'moderate',c:'Primary OA from obesity and ageing, post-traumatic after meniscus or ligament injury, alignment',r:'Weight loss, quad strengthening, walking aids, intra-articular steroid, total knee replacement.',f:'Rapidly destructive arthropathy or locked joint → Urgent orthopaedic — malignancy exclusion'},
+ {e:'💧',t:'Knee Effusion',s:'Swelling inside knee — rapid or gradual onset',sev:'moderate',c:'Rapid under 2 hours haemarthrosis from ACL tear or fracture. Gradual — meniscus, OA, gout.',r:'Aspiration for diagnosis, ice, elevation, avoid loading the knee.',f:'Hot, red knee with fever → Septic arthritis — Emergency joint washout urgently'},
+ {e:'⚡',t:'ACL Rupture',s:'Pop sound, immediate haemarthrosis, knee instability',sev:'severe',c:'Non-contact deceleration or cutting movement, contact sport, landing from jump, female higher risk',r:'Physiotherapy for some, ACL reconstruction with graft for active and young patients.',f:'Concurrent posterolateral corner or meniscal injury → Multi-ligament knee — urgent MRI'},
+ {e:'🔒',t:'Meniscus Tear',s:'Joint line pain, clicking, locking, or giving way',sev:'moderate',c:'Acute trauma in young, degenerative in older, bucket-handle tear causing complete locking',r:'Physiotherapy for stable tears, arthroscopic repair for young, meniscectomy for older.',f:'Complete locked knee unable to extend → Bucket-handle tear — arthroscopy urgently'},
+ {e:'🏃',t:'Patellofemoral Pain',s:'Anterior knee pain worse on stairs, squatting, and sitting',sev:'mild',c:'VMO weakness, patellar malalignment, overtraining, Q-angle abnormality, flat feet',r:'VMO strengthening, patellar taping McConnell technique, reduce impact activities, orthotics.',f:'Patellar dislocation → Immobilise, X-ray, MRI for medial retinacular tear'},
+ {e:'🔴',t:'Gout or Pseudogout',s:'Sudden intensely painful hot swollen knee joint',sev:'moderate',c:'Gout from uric acid crystals or pseudogout from CPPD crystals in knee joint',r:'Joint aspiration for crystal microscopy, NSAIDs or colchicine, joint washout if septic excluded.',f:'Cannot clinically exclude septic arthritis → Joint washout and microscopy essential'},
+ {e:'🩺',t:'Osgood-Schlatter Disease',s:'Tibial tuberosity pain and swelling in growing adolescent',sev:'mild',c:'Traction apophysitis at patellar tendon insertion during growth spurt in sport-active teenagers',r:'Reduce pain-provoking activity, quad stretching, patellar tendon strap, self-limiting in adults.',f:'Avulsion of apophysis → Immobilisation and surgical fixation if displaced'},
+]},
+calf:{n:'Calf, Shin & Lower Leg',sub:'Gastrocnemius, soleus, tibia, fibula, compartments',icon:'🦵',col:'#558B2F',s:[
+ {e:'😣',t:'Calf Strain',s:'Sudden calf pain while running — pop or pull sensation',sev:'moderate',c:'Grade 1-3 muscle tear — insufficient warm-up, fatigue, age above 35, previous calf tears',r:'POLICE method — protect, optimal loading, ice, compression, elevation. Physio 2-6 weeks.',f:'Sudden snap in middle-aged tennis player → Plantaris rupture or Achilles tendon rupture'},
+ {e:'💜',t:'Deep Vein Thrombosis',s:'Unilateral calf swelling, tenderness, warmth, redness',sev:'severe',c:'Immobility, post-surgery, cancer, OCP, pregnancy, thrombophilia, long-haul flight, dehydration',r:'Wells score, Doppler ultrasound, anticoagulation rivaroxaban or apixaban. Never massage calf.',f:'Breathlessness or pleuritic chest pain → PE emergency — 108 immediately'},
+ {e:'🏃',t:'Shin Splints',s:'Diffuse medial tibial border pain during or after exercise',sev:'mild',c:'Excessive tibial loading — sudden increase in mileage, hard surfaces, overpronation, fatigue',r:'Reduce mileage by 50%, cross-train, supportive footwear, orthotics, tibialis posterior strengthening.',f:'Focal severe bony tenderness or night pain at rest → Tibial stress fracture — bone scan or MRI'},
+ {e:'🔴',t:'Compartment Syndrome',s:'Severe tight bursting pressure pain — acute or after exercise',sev:'severe',c:'Acute from fracture crush injury or tight cast. Chronic exertional in competitive athletes.',r:'Acute: emergency fasciotomy. Chronic: activity modification, surgical fasciotomy.',f:'5 Ps — Pain, Pressure, Paralysis, Paraesthesia, Pallor → Acute compartment syndrome emergency'},
+ {e:'🔶',t:'Achilles Tendinopathy',s:'Posterior heel and midportion Achilles pain and stiffness',sev:'moderate',c:'Insertional at heel or midportion 2-6cm above insertion — overuse, fluoroquinolone antibiotics',r:'Alfredson eccentric heel drops (gold standard treatment), load management, shockwave therapy.',f:'Snap with sudden inability to stand on tiptoe → Achilles rupture — Emergency orthopaedic'},
+ {e:'🦴',t:'Tibial Fracture',s:'Pain, deformity, inability to weight bear after trauma',sev:'severe',c:'Direct trauma, stress fracture from overuse in runners, pathological from malignancy',r:'X-ray immediately, immobilise, surgical fixation for displaced or unstable fractures.',f:'Open fracture → Emergency orthopaedic surgery and IV antibiotics immediately'},
+]},
+ankle:{n:'Ankle & Achilles Tendon',sub:'Talocrural joint, lateral ligaments, Achilles, malleoli',icon:'🦶',col:'#EF6C00',s:[
+ {e:'🦶',t:'Lateral Ankle Sprain',s:'Inversion twisting injury — pain, swelling, bruising',sev:'moderate',c:'ATFL ligament most commonly injured — sports, uneven ground, female, previous sprains',r:'Ottawa ankle rules (weight bear test), POLICE method, early mobilisation, physiotherapy.',f:'Ottawa positive with bony tenderness and cannot weight bear 4 steps → X-ray for fracture'},
+ {e:'⚡',t:'Achilles Tendon Rupture',s:'Sudden pop, inability to stand on tiptoe, positive Simmonds test',sev:'severe',c:'Forceful plantarflexion — jumping, racket sports, age 35-55, fluoroquinolone antibiotics increase risk',r:'Functional rehab in boot versus surgical repair — similar outcomes. Immobilise immediately.',f:'Do not walk on it — risk of gap widening → Emergency orthopaedic assessment today'},
+ {e:'🔴',t:'Ankle Osteoarthritis',s:'Chronic ankle pain, stiffness, swelling after activity',sev:'moderate',c:'Post-traumatic (80% — previous fracture or ligament injury), primary OA less common in ankle',r:'Ankle brace, orthotics, walking aids, intra-articular steroid, ankle arthrodesis or replacement.',f:'Severe functional limitation not responding → Ankle arthroplasty or fusion assessment'},
+ {e:'🌀',t:'Chronic Ankle Instability',s:'Giving way, recurrent sprains, apprehension on uneven ground',sev:'moderate',c:'Failed ATFL and CFL ligament healing, proprioception deficit, peroneal muscle weakness',r:'Peroneal strengthening programme, ankle taping and bracing, Brostrom-Gould ligament reconstruction.',f:'More than 3 recurrent sprains with instability → Surgical reconstruction to prevent OA'},
+ {e:'📍',t:'Ankle Fracture',s:'Pain, swelling, deformity after twisting or direct blow',sev:'severe',c:'Weber A B or C classification, bimalleolar or trimalleolar fractures unstable and require fixation',r:'Ottawa rules, Weber B or C or bimalleolar → ORIF open reduction internal fixation.',f:'Open fracture, neurovascular compromise, dislocation → Emergency reduction and surgery'},
+ {e:'💛',t:'Peroneal Tendon Pathology',s:'Outer ankle pain with clicking or subluxation',sev:'mild',c:'Peroneal tendon tear, subluxation over fibula, tenosynovitis — after ankle sprain or overuse',r:'Rest, physiotherapy, ankle brace, steroid injection, surgical repair if subluxating.',f:'Locked subluxation not reducible → Urgent surgical repair of superior peroneal retinaculum'},
+]},
+foot:{n:'Foot & Toes',sub:'Metatarsals, plantar fascia, arches, nails, toes',icon:'👣',col:'#6A1B9A',s:[
+ {e:'👣',t:'Plantar Fasciitis',s:'Heel pain worst on first steps in morning',sev:'mild',c:'Repetitive plantar fascial stress — flat feet, obesity, prolonged standing, tight gastrocnemius',r:'Plantar fascia and calf stretching, gel heel cup, night splint, NSAID, weight loss programme.',f:'Persists more than 6 months despite physiotherapy → Shockwave therapy or steroid injection'},
+ {e:'🔴',t:'Acute Gout',s:'Excruciating big toe joint pain, red, hot, swollen at night',sev:'severe',c:'Uric acid crystal deposition — purine-rich diet, alcohol especially beer, diuretics, renal disease',r:'Colchicine 500mcg twice daily or NSAID for acute attack, rest, ice, hydrate. Allopurinol for prevention.',f:'First attack at any age or multiple joints → Check serum urate and renal function'},
+ {e:'🦴',t:'Metatarsal Stress Fracture',s:'Forefoot pain in runner or military — localised tenderness',sev:'moderate',c:'Repetitive overloading — 2nd and 3rd metatarsals most common, March fracture, female athlete triad',r:'Relative rest from impact, stiff-soled shoe, bone density assessment, nutritional review.',f:'5th metatarsal Jones fracture at base → High non-union risk — surgical fixation recommended'},
+ {e:'🌀',t:'Morton\'s Neuroma',s:'Burning or electric pain in 3rd-4th toe web space',sev:'mild',c:'Perineural fibrosis of digital nerve — narrow toe box shoes, high heels, Morton\'s toe',r:'Wide-fitting shoes, metatarsal dome pad, steroid injection, surgical excision.',f:'Not responding to two steroid injections → Surgical excision recommended'},
+ {e:'💅',t:'Ingrown Toenail',s:'Nail edge piercing lateral nail fold — pain, swelling, discharge',sev:'mild',c:'Tight shoes, cutting nails too short or curved, nail deformity, hyperhidrosis',r:'Warm salt soaks, lift nail edge, podiatry wedge resection, Zadik\'s procedure for recurrent.',f:'Red streaking up foot or systemic fever → Cellulitis — IV antibiotics and emergency nail surgery'},
+ {e:'🌀',t:'Diabetic Foot',s:'Ulcers, neuropathic pain or numbness, foot deformity',sev:'severe',c:'Peripheral neuropathy plus peripheral arterial disease → pressure ulcers, Charcot joint, infection',r:'Daily foot inspection, well-fitted shoes, tight HbA1c control, vascular assessment, off-loading.',f:'Any ulcer or acute Charcot in diabetic → Same-day specialist review — amputation prevention'},
+ {e:'🔵',t:'Hallux Valgus (Bunion)',s:'Medial foot lump, big toe deviating toward 2nd toe',sev:'mild',c:'Genetic predisposition, wide forefoot, pointed shoes, ligament laxity, inflammatory arthritis',r:'Wide-fitting footwear, toe spacer, orthotics, surgical correction scarf or Akin osteotomy.',f:'Severe deformity causing secondary toe problems → Early surgical correction recommended'},
+ {e:'📍',t:'Tarsal Tunnel Syndrome',s:'Heel and sole burning and tingling — posterior tibial nerve',sev:'mild',c:'Posterior tibial nerve compression beneath flexor retinaculum, space-occupying lesion, flat foot',r:'Orthotics, ankle brace, steroid injection, surgical tarsal tunnel release.',f:'Progressive motor weakness of intrinsic foot muscles → Surgery urgently to prevent permanent damage'},
+]},
+skin:{n:'Skin, Hair & Nails',sub:'Epidermis, dermis, adnexa, hair follicles, nails',icon:'🧴',col:'#F06292',s:[
+ {e:'🔴',t:'Urticaria and Angioedema',s:'Transient itchy wheals and deeper swelling',sev:'moderate',c:'Allergic IgE mediated, autoimmune chronic spontaneous urticaria, physical triggers, NSAIDs, ACE inhibitors',r:'Non-sedating antihistamine cetirizine, identify and avoid trigger, omalizumab for chronic refractory.',f:'Angioedema involving tongue or throat, stridor → Anaphylaxis emergency — IM adrenaline 0.5mg'},
+ {e:'☀️',t:'Melanoma and Skin Cancer',s:'Changing mole — asymmetry, irregular border, colour variation',sev:'severe',c:'UV exposure including sunbeds, fair skin, multiple naevi, CDKN2A mutation, family history',r:'ABCDE self-check monthly, dermoscopy, excision with appropriate margins plus sentinel node.',f:'Any suspicious pigmented lesion → Urgent 2-week dermoscopy and excision biopsy'},
+ {e:'🌿',t:'Eczema and Atopic Dermatitis',s:'Dry, itchy, lichenified, flexural rash',sev:'mild',c:'Atopic triad asthma eczema hay fever, filaggrin gene mutation, S.aureus colonisation',r:'Generous emollient applied multiple times daily, topical corticosteroid for flares, topical tacrolimus, dupilumab.',f:'Infected eczema with fever (eczema herpeticum) → Emergency IV aciclovir'},
+ {e:'🔵',t:'Psoriasis',s:'Erythematous silvery plaques on scalp, elbows, knees, nails',sev:'moderate',c:'T-cell autoimmune, HLA-Cw6 gene, triggers: stress, streptococcal infection, smoking, lithium',r:'Emollient, topical steroid plus vitamin D analogue (Dovobet), PUVA or UVB, methotrexate, biologics.',f:'Erythrodermic psoriasis → Medical emergency — hospitalisation required'},
+ {e:'🟤',t:'Acne Vulgaris',s:'Comedones, papules, pustules, nodules, scarring on face and back',sev:'mild',c:'Androgen excess, P.acnes bacteria, sebum hypersecretion, PCOS in females, comedogenic products',r:'Benzoyl peroxide, topical retinoid, tetracycline antibiotic, combined OCP in females, isotretinoin for severe.',f:'Severe cystic nodular acne → Isotretinoin under dermatologist monitoring — teratogenic'},
+ {e:'💇',t:'Alopecia and Hair Loss',s:'Diffuse thinning or patchy bald areas',sev:'mild',c:'Androgenetic alopecia (most common), alopecia areata autoimmune, telogen effluvium from stress or illness',r:'Thyroid, iron, ferritin blood tests, scalp biopsy if diagnosis unclear, minoxidil, finasteride in males.',f:'Scarring alopecia with burning and itch → Lichen planopilaris — dermatology urgent to preserve follicles'},
+ {e:'🌡️',t:'Cellulitis',s:'Spreading redness, warmth, swelling, tenderness in skin',sev:'moderate',c:'S.aureus or Group A Streptococcus through skin breach — portal entry: athlete\'s foot, ulcer, wound',r:'Flucloxacillin 500mg four times daily, mark border with pen to track spread, elevate affected limb.',f:'Rapidly expanding, crepitus under skin, severe pain → Necrotising fasciitis — Emergency surgery'},
+ {e:'🦠',t:'Herpes Zoster (Shingles)',s:'Dermatomal burning pain then vesicular rash on one side',sev:'moderate',c:'VZV reactivation — immunosuppression, age above 60, stress, cancer, chemotherapy',r:'Aciclovir or valaciclovir within 72 hours of rash onset, analgesia, lidocaine patches for PHN.',f:'Ophthalmic zoster with tip of nose involvement → Emergency ophthalmology to prevent blindness'},
+ {e:'🔶',t:'Severe Drug Reaction',s:'Widespread rash, fever, mucosal involvement after medication',sev:'severe',c:'Stevens-Johnson syndrome or TEN or DRESS — sulfonamides, antiepileptics, allopurinol, penicillin',r:'Stop culprit drug immediately, dermatology assessment, IV fluid replacement, wound care.',f:'Mucosal involvement eyes mouth genitals, skin detachment over 30% BSA → TEN — Emergency burns unit'},
+ {e:'🎯',t:'Psoriatic Arthritis',s:'Psoriasis with inflammatory joint swelling',sev:'moderate',c:'Autoimmune enthesitis and synovitis — DIP joints, dactylitis sausage digit, axial spondylitis',r:'NSAIDs, DMARDs methotrexate, biologic TNF or IL-17 or IL-23 inhibitor, physiotherapy.',f:'Rapidly destructive or mutilans pattern → Urgent rheumatology referral'},
+]},
+lymph:{n:'Lymphatic & Immune System',sub:'Lymph nodes, spleen, immunity, systemic inflammation',icon:'🛡️',col:'#26A69A',s:[
+ {e:'🔵',t:'Lymphadenopathy',s:'Enlarged lymph nodes — localised or generalised',sev:'moderate',c:'Reactive infection most common, lymphoma Hodgkin\'s or NHL, leukaemia, metastatic cancer, sarcoidosis',r:'FBC with differential, LDH, ESR, CRP, monospot test, CT chest abdomen if generalised, core biopsy.',f:'Hard, fixed, painless, over 1cm, over 4 weeks, with weight loss and night sweats → Urgent lymphoma workup'},
+ {e:'🦠',t:'Recurrent Infections',s:'Repeated serious infections or unusual organisms',sev:'moderate',c:'Primary immunodeficiency CVID or XLA, HIV, haematological malignancy, immunosuppressive therapy',r:'FBC with differential, serum immunoglobulins, HIV test, specialist immunology referral.',f:'Pneumocystis, CMV, toxoplasma, or atypical mycobacteria → Severe immunodeficiency — immediate investigation'},
+ {e:'🌡️',t:'Sepsis',s:'Infection with organ dysfunction — confusion, hypotension, raised RR',sev:'severe',c:'Any infection source — pneumonia, UTI, abdominal, skin or soft tissue, intravascular line infection',r:'Sepsis 6 bundle: cultures, lactate, urine output, O2, IV fluids, broad-spectrum IV antibiotic within 1 hour.',f:'Septic shock with MAP below 65 and lactate above 2 → ITU admission and vasopressors — Emergency'},
+ {e:'💉',t:'HIV and AIDS',s:'Seroconversion illness, recurrent infections, constitutional symptoms',sev:'severe',c:'HIV-1 (most common globally), sexual transmission, blood-borne, vertical mother to child',r:'4th generation HIV test, CD4 count, viral load, antiretroviral therapy (ART) for all stages.',f:'CD4 below 200 → AIDS-defining illness risk — urgent ART initiation and prophylaxis'},
+ {e:'📍',t:'Systemic Lupus Erythematosus',s:'Butterfly rash, joint pain, fatigue, multi-organ involvement',sev:'moderate',c:'Autoimmune — anti-dsDNA positive, anti-Sm, ANA — female, Asian and Afro-Caribbean heritage',r:'Hydroxychloroquine for all patients, prednisolone, immunosuppressants azathioprine or mycophenolate.',f:'Lupus nephritis, CNS lupus, serositis → Urgent rheumatology and nephrology'},
+ {e:'🔴',t:'Vasculitis',s:'Systemic symptoms with end-organ damage — renal, pulmonary, cutaneous',sev:'severe',c:'ANCA-associated GPA MPA EGPA, giant cell arteritis, polyarteritis nodosa, IgA vasculitis',r:'ANCA antibodies, urine protein-creatinine ratio, renal biopsy, high-dose prednisolone plus rituximab.',f:'GCA with visual symptoms → Giant cell arteritis — Emergency prednisolone to prevent blindness'},
+]},
+spine:{n:'Spine & Nervous System',sub:'Spinal cord, nerve roots, autonomic nervous system',icon:'⚡',col:'#F44336',s:[
+ {e:'⚡',t:'Spinal Cord Compression',s:'Progressive leg weakness, sensory level, bladder dysfunction',sev:'severe',c:'Epidural malignancy, discitis, haematoma, abscess, cervical myelopathy, trauma',r:'Emergency MRI spine immediately. High-dose dexamethasone. Emergency neurosurgical decompression.',f:'Any rapid onset bilateral leg weakness with bladder or bowel → Neurosurgical emergency now'},
+ {e:'🔴',t:'Transverse Myelitis',s:'Acute bilateral neurological deficit at thoracic level',sev:'severe',c:'MS, NMO (neuromyelitis optica), post-infectious, autoimmune, idiopathic',r:'Emergency MRI spine, high-dose IV methylprednisolone, MS workup, anti-AQP4 antibodies.',f:'Rapid progression to complete paraplegia → ITU and emergency neurology immediately'},
+ {e:'🌀',t:'Autonomic Neuropathy',s:'Postural hypotension, urinary retention, gastroparesis, sweating issues',sev:'moderate',c:'Diabetes (most common), Parkinson\'s, MSA, amyloid, paraneoplastic, Guillain-Barre',r:'Tilt-table test, autonomic function testing, treat underlying cause, fludrocortisone for OH.',f:'Syncope on standing, aspiration from gastroparesis → Specialist autonomic clinic urgently'},
+ {e:'💉',t:'Epidural Abscess',s:'Fever plus back pain plus rapidly progressive leg weakness',sev:'severe',c:'S.aureus haematogenous (most common), IV drug use, post-spinal procedure, spinal TB',r:'Emergency MRI spine, IV antibiotics flucloxacillin or vancomycin, emergency surgical drainage.',f:'Any fever plus back pain plus neurological deficit → MRI spine emergency — hours matter for function'},
+ {e:'📍',t:'Cervical Myelopathy',s:'Clumsy hands, broad-based gait, upper motor neuron signs',sev:'moderate',c:'Degenerative disc, osteophytes, ligamentum flavum hypertrophy compressing cervical spinal cord',r:'MRI cervical spine, physiotherapy initially, anterior cervical decompression and fusion if progressive.',f:'Rapidly deteriorating hand function or gait → Emergency decompression to prevent irreversible cord damage'},
+ {e:'🧬',t:'Motor Neuron Disease',s:'Progressive weakness without sensory loss, fasciculations, wasting',sev:'severe',c:'ALS (most common), PMA, PLS, Kennedy disease — genetic and environmental factors',r:'Neurology referral urgently, riluzole medication, multidisciplinary team, PEG feeding, NIV ventilation.',f:'Rapid progression with breathing difficulty → Respiratory failure — palliative and respiratory team'},
+]},
 };
+
+
+// ─── SVG figure — anatomical silhouette, gender-aware ───────────
+function buildBodySVG(sex,activePart){
+  const f=sex==='female';
+  const sk=f?'#FFCBA4':'#F0B88A', sk2=f?'#EBA882':'#D89060', sk3=f?'#D4926A':'#C07840';
+  const hr=f?'#3D1F06':'#2A1204', cx=70;
+  const gfx=p=>activePart===p?'filter:drop-shadow(0 0 10px rgba(255,130,0,.9))':'';
+  const hf=p=>activePart===p?'rgba(255,130,0,.35)':'rgba(255,255,255,.05)';
+  const hs=p=>activePart===p?'#FF8800':'rgba(255,255,255,.13)';
+  const sw=p=>activePart===p?'2':'1';
+  return `<svg viewBox="0 0 140 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:170px;height:auto">
+<defs>
+  <radialGradient id="sg" cx="40%" cy="30%" r="70%"><stop offset="0%" stop-color="${sk}"/><stop offset="100%" stop-color="${sk2}"/></radialGradient>
+  <radialGradient id="bg2" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="rgba(26,115,232,.07)"/><stop offset="100%" stop-color="rgba(0,0,0,0)"/></radialGradient>
+</defs>
+<ellipse cx="70" cy="260" rx="78" ry="265" fill="url(#bg2)"/>
+<!-- HEAD -->
+<g onclick="pickPart('brain',this)" style="cursor:pointer;${gfx('brain')}">
+  <ellipse cx="${cx}" cy="33" rx="24" ry="28" fill="${hf('brain')}" stroke="${hs('brain')}" stroke-width="${sw('brain')}"/>
+  ${f?`<ellipse cx="${cx}" cy="29" rx="19" ry="22" fill="url(#sg)" stroke="${sk2}" stroke-width=".7"/>
+    <path d="M51 19 Q70 7 89 19 Q89 2 70 1 Q51 2 51 19z" fill="${hr}"/>
+    <path d="M51 19 Q47 27 49 42 Q53 37 57 33" fill="${hr}"/>
+    <path d="M89 19 Q93 27 91 42 Q87 37 83 33" fill="${hr}"/>`
+  :`<ellipse cx="${cx}" cy="29" rx="19" ry="22" fill="url(#sg)" stroke="${sk2}" stroke-width=".7"/>
+    <path d="M51 16 Q70 11 89 16 Q89 8 70 6 Q51 8 51 16z" fill="${hr}"/>
+    <path d="M58 24 L66 22 M74 22 L82 24" fill="none" stroke="${sk3}" stroke-width="1.2"/>
+    <path d="M56 46 Q70 53 84 46" fill="none" stroke="${sk3}" stroke-width="1" opacity=".5"/>`}
+  <circle cx="62" cy="30" r="2.2" fill="#5D3A1A"/><circle cx="78" cy="30" r="2.2" fill="#5D3A1A"/>
+  <path d="M67 37 Q70 41 73 37" fill="none" stroke="${sk3}" stroke-width="1.2" stroke-linecap="round"/>
+</g>
+<g onclick="pickPart('eyes',this)" style="cursor:pointer;${gfx('eyes')}"><rect x="55" y="22" width="30" height="12" rx="5" fill="${hf('eyes')}" stroke="${hs('eyes')}" stroke-width=".8"/></g>
+<g onclick="pickPart('ear',this)" style="cursor:pointer;${gfx('ear')}">
+  <ellipse cx="46" cy="29" rx="5.5" ry="8" fill="${hf('ear')}" stroke="${hs('ear')}" stroke-width="${sw('ear')}"/>
+  <ellipse cx="94" cy="29" rx="5.5" ry="8" fill="${hf('ear')}" stroke="${hs('ear')}" stroke-width="${sw('ear')}"/>
+  <ellipse cx="46" cy="29" rx="3.5" ry="5.5" fill="${sk2}"/><ellipse cx="94" cy="29" rx="3.5" ry="5.5" fill="${sk2}"/>
+</g>
+<g onclick="pickPart('nose',this)" style="cursor:pointer"><ellipse cx="${cx}" cy="38" rx="5" ry="5.5" fill="${hf('nose')}" stroke="${hs('nose')}" stroke-width=".8"/></g>
+<g onclick="pickPart('mouth',this)" style="cursor:pointer"><ellipse cx="${cx}" cy="47" rx="6.5" ry="5.5" fill="${hf('mouth')}" stroke="${hs('mouth')}" stroke-width=".8"/></g>
+<!-- NECK -->
+<g onclick="pickPart('neck',this)" style="cursor:pointer;${gfx('neck')}">
+  <rect x="62" y="59" width="16" height="17" rx="5" fill="${hf('neck')}" stroke="${hs('neck')}" stroke-width="${sw('neck')}"/>
+  <rect x="64" y="60" width="12" height="15" rx="4" fill="${sk2}"/>
+</g>
+<!-- CHEST silhouette -->
+<g onclick="pickPart('chest',this)" style="cursor:pointer;${gfx('chest')}">
+  <path d="M${cx-(f?51:55)} 76 L${cx-(f?51:55)} 133 Q${cx-(f?36:40)} 148 ${cx-(f?36:40)} 158 L${cx+(f?36:40)} 158 Q${cx+(f?36:40)} 148 ${cx+(f?51:55)} 133 L${cx+(f?51:55)} 76z" fill="${hf('chest')}" stroke="${hs('chest')}" stroke-width="${sw('chest')}"/>
+  <path d="M${cx-(f?51:55)} 76 L${cx-(f?51:55)} 133 Q${cx-(f?36:40)} 148 ${cx-(f?36:40)} 158 L${cx+(f?36:40)} 158 Q${cx+(f?36:40)} 148 ${cx+(f?51:55)} 133 L${cx+(f?51:55)} 76z" fill="${sk}" stroke="${sk2}" stroke-width=".6"/>
+  ${f?`<ellipse cx="57" cy="105" rx="10" ry="8" fill="${sk2}" opacity=".75"/><ellipse cx="83" cy="105" rx="10" ry="8" fill="${sk2}" opacity=".75"/>
+    <ellipse cx="57" cy="105" rx="3" ry="2.5" fill="${sk3}" opacity=".45"/><ellipse cx="83" cy="105" rx="3" ry="2.5" fill="${sk3}" opacity=".45"/>`
+  :`<path d="M${cx-22} 83 Q${cx} 79 ${cx+22} 83" fill="none" stroke="rgba(180,100,60,.25)" stroke-width="2.5"/>
+    <line x1="${cx}" y1="77" x2="${cx}" y2="153" stroke="${sk3}" stroke-width=".7" opacity=".35" stroke-dasharray="4,3"/>
+    <path d="M${cx-20} 96 L${cx-15} 130 M${cx+20} 96 L${cx+15} 130" fill="none" stroke="rgba(180,100,60,.2)" stroke-width="1.5"/>`}
+</g>
+<!-- HEART -->
+<g onclick="pickPart('heart',this)" style="cursor:pointer;${gfx('heart')}">
+  <ellipse cx="63" cy="${f?97:94}" rx="10" ry="9" fill="${hf('heart')}" stroke="${hs('heart')}" stroke-width="${sw('heart')}"/>
+  <path d="M58 ${f?92:89} Q63 ${f?86:83} 68 ${f?92:89} Q73 ${f?97:94} 63 ${f?103:100} Q53 ${f?97:94} 58 ${f?92:89}z" fill="rgba(220,50,50,.3)" opacity=".7"/>
+</g>
+<!-- LUNGS -->
+<g onclick="pickPart('lungs',this)" style="cursor:pointer;${gfx('lungs')}">
+  <ellipse cx="56" cy="112" rx="12" ry="17" fill="${hf('lungs')}" stroke="${hs('lungs')}" stroke-width="${sw('lungs')}"/>
+  <ellipse cx="84" cy="112" rx="12" ry="17" fill="${hf('lungs')}" stroke="${hs('lungs')}" stroke-width="${sw('lungs')}"/>
+  <ellipse cx="56" cy="112" rx="9.5" ry="14" fill="rgba(30,90,210,.22)" opacity=".6"/>
+  <ellipse cx="84" cy="112" rx="9.5" ry="14" fill="rgba(30,90,210,.22)" opacity=".6"/>
+</g>
+<!-- SHOULDERS -->
+<g onclick="pickPart('shoulder',this)" style="cursor:pointer;${gfx('shoulder')}">
+  <ellipse cx="${cx-(f?49:53)}" cy="84" rx="${f?14:16}" ry="12" fill="${hf('shoulder')}" stroke="${hs('shoulder')}" stroke-width="${sw('shoulder')}"/>
+  <ellipse cx="${cx+(f?49:53)}" cy="84" rx="${f?14:16}" ry="12" fill="${hf('shoulder')}" stroke="${hs('shoulder')}" stroke-width="${sw('shoulder')}"/>
+  <ellipse cx="${cx-(f?49:53)}" cy="83" rx="${f?11:13}" ry="10" fill="${sk}" stroke="${sk2}" stroke-width=".5"/>
+  <ellipse cx="${cx+(f?49:53)}" cy="83" rx="${f?11:13}" ry="10" fill="${sk}" stroke="${sk2}" stroke-width=".5"/>
+</g>
+<!-- UPPER ARMS -->
+<g onclick="pickPart('arm',this)" style="cursor:pointer;${gfx('arm')}">
+  <rect x="${cx-(f?62:66)}" y="94" width="${f?14:16}" height="60" rx="8" fill="${hf('arm')}" stroke="${hs('arm')}" stroke-width="${sw('arm')}"/>
+  <rect x="${cx+(f?48:50)}" y="94" width="${f?14:16}" height="60" rx="8" fill="${hf('arm')}" stroke="${hs('arm')}" stroke-width="${sw('arm')}"/>
+  <rect x="${cx-(f?60:64)}" y="96" width="${f?10:12}" height="56" rx="7" fill="${sk}"/>
+  <rect x="${cx+(f?50:52)}" y="96" width="${f?10:12}" height="56" rx="7" fill="${sk}"/>
+</g>
+<!-- ELBOWS + FOREARMS -->
+<g onclick="pickPart('arm',this)" style="cursor:pointer">
+  <ellipse cx="${cx-(f?55:59)}" cy="162" rx="10" ry="8" fill="${sk2}" stroke="${hs('arm')}" stroke-width=".7"/>
+  <ellipse cx="${cx+(f?55:59)}" cy="162" rx="10" ry="8" fill="${sk2}" stroke="${hs('arm')}" stroke-width=".7"/>
+  <rect x="${cx-(f?64:67)}" y="170" width="${f?14:15}" height="42" rx="7" fill="${sk}"/>
+  <rect x="${cx+(f?49:51)}" y="170" width="${f?14:15}" height="42" rx="7" fill="${sk}"/>
+</g>
+<!-- WRISTS / HANDS -->
+<g onclick="pickPart('forearm_wrist',this)" style="cursor:pointer;${gfx('forearm_wrist')}">
+  <rect x="${cx-(f?66:69)}" y="212" width="20" height="28" rx="6" fill="${hf('forearm_wrist')}" stroke="${hs('forearm_wrist')}" stroke-width="${sw('forearm_wrist')}"/>
+  <rect x="${cx+(f?46:49)}" y="212" width="20" height="28" rx="6" fill="${hf('forearm_wrist')}" stroke="${hs('forearm_wrist')}" stroke-width="${sw('forearm_wrist')}"/>
+  <rect x="${cx-(f?64:67)}" y="214" width="16" height="24" rx="5" fill="${sk2}"/>
+  <rect x="${cx+(f?48:51)}" y="214" width="16" height="24" rx="5" fill="${sk2}"/>
+</g>
+<!-- LYMPH axilla -->
+<g onclick="pickPart('lymph',this)" style="cursor:pointer;${gfx('lymph')}">
+  <ellipse cx="${cx-(f?43:47)}" cy="97" rx="8" ry="11" fill="${hf('lymph')}" stroke="${hs('lymph')}" stroke-width=".8"/>
+  <ellipse cx="${cx+(f?43:47)}" cy="97" rx="8" ry="11" fill="${hf('lymph')}" stroke="${hs('lymph')}" stroke-width=".8"/>
+</g>
+<!-- ABDOMEN -->
+<g onclick="pickPart('abdomen',this)" style="cursor:pointer;${gfx('abdomen')}">
+  <path d="M${cx-(f?36:40)} 158 Q${cx-(f?36:40)} 210 ${cx-(f?48:46)} 220 L${cx+(f?48:46)} 220 Q${cx+(f?36:40)} 210 ${cx+(f?36:40)} 158z" fill="${hf('abdomen')}" stroke="${hs('abdomen')}" stroke-width="${sw('abdomen')}"/>
+  <path d="M${cx-(f?36:40)} 158 Q${cx-(f?36:40)} 210 ${cx-(f?48:46)} 220 L${cx+(f?48:46)} 220 Q${cx+(f?36:40)} 210 ${cx+(f?36:40)} 158z" fill="${sk}" stroke="${sk2}" stroke-width=".6"/>
+  <ellipse cx="${cx}" cy="178" rx="3.5" ry="2.5" fill="${sk3}" opacity=".55"/>
+  ${!f?`<line x1="${cx}" y1="160" x2="${cx}" y2="215" stroke="${sk3}" stroke-width=".7" opacity=".3"/>
+  <line x1="${cx-12}" y1="170" x2="${cx+12}" y2="170" stroke="${sk3}" stroke-width=".6" opacity=".25"/>
+  <line x1="${cx-14}" y1="184" x2="${cx+14}" y2="184" stroke="${sk3}" stroke-width=".6" opacity=".25"/>
+  <line x1="${cx-13}" y1="198" x2="${cx+13}" y2="198" stroke="${sk3}" stroke-width=".6" opacity=".25"/>`:''}
+  <ellipse cx="63" cy="168" rx="10" ry="8" fill="rgba(180,120,50,.2)" opacity=".55"/>
+</g>
+<!-- LIVER -->
+<g onclick="pickPart('liver',this)" style="cursor:pointer;${gfx('liver')}">
+  <path d="M${cx+2} 160 Q${cx+17} 160 ${cx+19} 171 Q${cx+19} 181 ${cx+7} 182 Q${cx-2} 180 ${cx+2} 169z" fill="${hf('liver')}" stroke="${hs('liver')}" stroke-width="${sw('liver')}"/>
+  <path d="M${cx+2} 160 Q${cx+17} 160 ${cx+19} 171 Q${cx+19} 181 ${cx+7} 182 Q${cx-2} 180 ${cx+2} 169z" fill="rgba(180,120,50,.28)" opacity=".7"/>
+</g>
+<!-- KIDNEYS -->
+<g onclick="pickPart('kidney',this)" style="cursor:pointer;${gfx('kidney')}">
+  <ellipse cx="55" cy="193" rx="9" ry="12" fill="${hf('kidney')}" stroke="${hs('kidney')}" stroke-width="${sw('kidney')}"/>
+  <ellipse cx="85" cy="193" rx="9" ry="12" fill="${hf('kidney')}" stroke="${hs('kidney')}" stroke-width="${sw('kidney')}"/>
+  <ellipse cx="55" cy="193" rx="7" ry="10" fill="rgba(80,60,190,.22)" opacity=".65"/>
+  <ellipse cx="85" cy="193" rx="7" ry="10" fill="rgba(80,60,190,.22)" opacity=".65"/>
+</g>
+<!-- PELVIS -->
+<g onclick="pickPart('pelvis',this)" style="cursor:pointer;${gfx('pelvis')}">
+  <path d="M${cx-(f?48:46)} 220 Q${cx-(f?50:47)} 232 ${cx-(f?50:47)} 240 L${cx+(f?50:47)} 240 Q${cx+(f?50:47)} 232 ${cx+(f?48:46)} 220z" fill="${hf('pelvis')}" stroke="${hs('pelvis')}" stroke-width="${sw('pelvis')}"/>
+  <path d="M${cx-(f?48:46)} 220 Q${cx-(f?50:47)} 232 ${cx-(f?50:47)} 240 L${cx+(f?50:47)} 240 Q${cx+(f?50:47)} 232 ${cx+(f?48:46)} 220z" fill="${sk2}" opacity=".65"/>
+</g>
+<!-- BACK / SPINE overlays -->
+<g onclick="pickPart('back_upper',this)" style="cursor:pointer;${gfx('back_upper')}"><rect x="63" y="76" width="14" height="58" rx="4" fill="${hf('back_upper')}" stroke="${hs('back_upper')}" stroke-width=".8"/></g>
+<g onclick="pickPart('back_lower',this)" style="cursor:pointer;${gfx('back_lower')}"><rect x="63" y="134" width="14" height="82" rx="4" fill="${hf('back_lower')}" stroke="${hs('back_lower')}" stroke-width=".8"/></g>
+<g onclick="pickPart('spine',this)" style="cursor:pointer;${gfx('spine')}"><line x1="${cx}" y1="76" x2="${cx}" y2="218" stroke="rgba(160,100,60,.3)" stroke-width="1.2" stroke-dasharray="5,3"/></g>
+<!-- HIPS -->
+<g onclick="pickPart('hip',this)" style="cursor:pointer;${gfx('hip')}">
+  <ellipse cx="${cx-(f?42:40)}" cy="252" rx="${f?20:18}" ry="15" fill="${hf('hip')}" stroke="${hs('hip')}" stroke-width="${sw('hip')}"/>
+  <ellipse cx="${cx+(f?42:40)}" cy="252" rx="${f?20:18}" ry="15" fill="${hf('hip')}" stroke="${hs('hip')}" stroke-width="${sw('hip')}"/>
+  <ellipse cx="${cx-(f?42:40)}" cy="251" rx="${f?16:14}" ry="12" fill="${sk}"/>
+  <ellipse cx="${cx+(f?42:40)}" cy="251" rx="${f?16:14}" ry="12" fill="${sk}"/>
+</g>
+<!-- THIGHS -->
+<g onclick="pickPart('thigh',this)" style="cursor:pointer;${gfx('thigh')}">
+  <rect x="${cx-(f?50:47)}" y="264" width="${f?25:23}" height="70" rx="12" fill="${hf('thigh')}" stroke="${hs('thigh')}" stroke-width="${sw('thigh')}"/>
+  <rect x="${cx+(f?25:24)}" y="264" width="${f?25:23}" height="70" rx="12" fill="${hf('thigh')}" stroke="${hs('thigh')}" stroke-width="${sw('thigh')}"/>
+  <rect x="${cx-(f?48:45)}" y="266" width="${f?21:19}" height="66" rx="11" fill="${sk}"/>
+  <rect x="${cx+(f?27:26)}" y="266" width="${f?21:19}" height="66" rx="11" fill="${sk}"/>
+</g>
+<!-- KNEES -->
+<g onclick="pickPart('knee',this)" style="cursor:pointer;${gfx('knee')}">
+  <ellipse cx="${cx-(f?38:36)}" cy="340" rx="16" ry="13" fill="${hf('knee')}" stroke="${hs('knee')}" stroke-width="${sw('knee')}"/>
+  <ellipse cx="${cx+(f?38:36)}" cy="340" rx="16" ry="13" fill="${hf('knee')}" stroke="${hs('knee')}" stroke-width="${sw('knee')}"/>
+  <ellipse cx="${cx-(f?38:36)}" cy="339" rx="13" ry="11" fill="${sk2}"/>
+  <ellipse cx="${cx+(f?38:36)}" cy="339" rx="13" ry="11" fill="${sk2}"/>
+  <ellipse cx="${cx-(f?38:36)}" cy="337" rx="7" ry="6" fill="${sk3}" opacity=".45"/>
+  <ellipse cx="${cx+(f?38:36)}" cy="337" rx="7" ry="6" fill="${sk3}" opacity=".45"/>
+</g>
+<!-- CALVES -->
+<g onclick="pickPart('calf',this)" style="cursor:pointer;${gfx('calf')}">
+  <rect x="${cx-(f?48:46)}" y="354" width="${f?23:21}" height="58" rx="11" fill="${hf('calf')}" stroke="${hs('calf')}" stroke-width="${sw('calf')}"/>
+  <rect x="${cx+(f?25:25)}" y="354" width="${f?23:21}" height="58" rx="11" fill="${hf('calf')}" stroke="${hs('calf')}" stroke-width="${sw('calf')}"/>
+  <rect x="${cx-(f?46:44)}" y="356" width="${f?19:17}" height="54" rx="10" fill="${sk}"/>
+  <rect x="${cx+(f?27:27)}" y="356" width="${f?19:17}" height="54" rx="10" fill="${sk}"/>
+</g>
+<!-- ANKLES -->
+<g onclick="pickPart('ankle',this)" style="cursor:pointer;${gfx('ankle')}">
+  <ellipse cx="${cx-(f?37:35)}" cy="418" rx="14" ry="9" fill="${hf('ankle')}" stroke="${hs('ankle')}" stroke-width="${sw('ankle')}"/>
+  <ellipse cx="${cx+(f?37:35)}" cy="418" rx="14" ry="9" fill="${hf('ankle')}" stroke="${hs('ankle')}" stroke-width="${sw('ankle')}"/>
+  <ellipse cx="${cx-(f?37:35)}" cy="417" rx="11" ry="7" fill="${sk2}"/>
+  <ellipse cx="${cx+(f?37:35)}" cy="417" rx="11" ry="7" fill="${sk2}"/>
+  <ellipse cx="${cx-(f?45:43)}" cy="416" rx="4" ry="3" fill="${sk3}" opacity=".45"/>
+  <ellipse cx="${cx+(f?45:43)}" cy="416" rx="4" ry="3" fill="${sk3}" opacity=".45"/>
+</g>
+<!-- FEET -->
+<g onclick="pickPart('foot',this)" style="cursor:pointer;${gfx('foot')}">
+  <ellipse cx="${cx-(f?34:32)}" cy="430" rx="18" ry="11" fill="${hf('foot')}" stroke="${hs('foot')}" stroke-width="${sw('foot')}"/>
+  <ellipse cx="${cx+(f?34:32)}" cy="430" rx="18" ry="11" fill="${hf('foot')}" stroke="${hs('foot')}" stroke-width="${sw('foot')}"/>
+  <ellipse cx="${cx-(f?34:32)}" cy="429" rx="15" ry="9" fill="${sk2}"/>
+  <ellipse cx="${cx+(f?34:32)}" cy="429" rx="15" ry="9" fill="${sk2}"/>
+</g>
+${activePart?`<rect x="2" y="478" width="136" height="20" rx="7" fill="rgba(255,130,0,.12)" stroke="rgba(255,130,0,.35)" stroke-width=".8"/>
+<text x="70" y="491" text-anchor="middle" font-size="9" fill="rgba(255,200,100,.85)" font-family="sans-serif" font-weight="bold">${(bpData[activePart]||{n:''}).n}</text>`:''}
+</svg>`;
+}
+
+// ─── rBody ────────────────────────────────────────────────────────
 function rBody(){
-  bodyView='front';
-  SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Body Explorer</div>
-    <div class="body-top">
-      <div class="pgrd" id="sex-g"><div class="pgo on" onclick="setV('sex','female',this)">Female</div><div class="pgo" onclick="setV('sex','male',this)">Male</div></div>
-      <div class="pgrd" id="view-g"><div class="pgo on" onclick="setV('view','front',this)">Front</div><div class="pgo" onclick="setV('view','back',this)">Back</div><div class="pgo" onclick="setV('view','side',this)">Side</div></div>
+  bodySex=bodySex||'female';
+  const totalSym=Object.values(bpData).reduce((s,p)=>s+p.s.length,0);
+  const zoneCount=Object.keys(bpData).length;
+  SCR.innerHTML=`<div style="background:#090D1A;min-height:100%;display:flex;flex-direction:column">
+  <div style="padding:12px 14px 8px;background:linear-gradient(180deg,#0D1526,#090D1A);border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0">
+    <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.3px;margin-bottom:8px">🔬 Body Explorer</div>
+    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;background:rgba(255,255,255,.06);border-radius:22px;padding:3px;border:1px solid rgba(255,255,255,.1)">
+        <div id="btn-female" onclick="setSex('female')" style="padding:5px 14px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;background:${bodySex==='female'?'linear-gradient(135deg,#E91E63,#AD1457)':'transparent'};color:${bodySex==='female'?'#fff':'rgba(255,255,255,.4)'}">♀ Female</div>
+        <div id="btn-male" onclick="setSex('male')" style="padding:5px 14px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;background:${bodySex==='male'?'linear-gradient(135deg,#1565C0,#0D47A1)':'transparent'};color:${bodySex==='male'?'#fff':'rgba(255,255,255,.4)'}">♂ Male</div>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,.28)">${zoneCount} zones · ${totalSym} conditions</div>
     </div>
   </div>
-  <div class="srch"><svg width="14" height="14" fill="none" stroke="var(--g3)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input id="bsrch" placeholder="Search body part…"/></div>
-  <div class="bcanv">
-    <div class="bc-lbl" id="bc-lb">Body — tap a part</div>
-    <div class="vw-lbl" id="vw-lb">Front view</div>
-    <div class="zctrl"><div class="zb">+</div><div class="zb">−</div></div>
-    <div id="bmodel">${fSVG('female')}</div>
-    <div class="rh">Tap a body part to see symptoms</div>
+  <div style="padding:8px 12px;background:#090D1A;flex-shrink:0">
+    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:7px 12px;display:flex;align-items:center;gap:7px">
+      <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="bsrch" placeholder="Search any symptom or body part…" style="background:transparent;border:none;outline:none;font-size:12px;color:#fff;flex:1;font-family:inherit"/>
+    </div>
   </div>
-  <div id="pp-wrap"></div>
-  <div class="pb"></div></div>`;
-  $('bsrch').addEventListener('input',function(){const v=this.value.toLowerCase().trim();if(!v)return;const k=Object.keys(bpData).find(k=>k.includes(v)||bpData[k].n.toLowerCase().includes(v));if(k)pickPart(k,null);});
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden">
+    <div style="width:158px;flex-shrink:0;display:flex;flex-direction:column;background:#090D1A;overflow-y:auto">
+      <div id="bmodel" style="padding:8px 4px;display:flex;justify-content:center">${buildBodySVG(bodySex,null)}</div>
+      <div style="padding:0 3px 14px">
+        ${Object.entries(bpData).map(([k,p])=>`
+        <div onclick="pickPart('${k}',null)" style="display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:7px;cursor:pointer;margin-bottom:1px" onmouseenter="this.style.background='rgba(255,255,255,.07)'" onmouseleave="this.style.background='transparent'">
+          <span style="font-size:12px;flex-shrink:0">${p.icon}</span>
+          <span style="font-size:9.5px;font-weight:600;color:rgba(255,255,255,.5);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.n.split(' ').slice(0,2).join(' ')}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div id="sym-panel" style="flex:1;overflow-y:auto;background:#0C1220;border-left:1px solid rgba(255,255,255,.05)">
+      <div style="padding:22px 13px;text-align:center;color:rgba(255,255,255,.22)">
+        <div style="font-size:42px;margin-bottom:12px">🫀</div>
+        <div style="font-size:12px;font-weight:600;line-height:1.6">Tap any zone on the body<br/>or select from the list on the left</div>
+        <div style="font-size:10px;margin-top:10px;opacity:.75">${zoneCount} body zones · ${totalSym} detailed conditions<br/>Causes, self-care &amp; warning signs for each</div>
+      </div>
+    </div>
+  </div></div>`;
+  document.getElementById('bsrch').addEventListener('input',function(){ searchBody(this.value); });
 }
-function setV(type,val,el){
-  if(type==='sex')bodySex=val;else bodyView=val;
-  el.closest(type==='sex'?'#sex-g':'#view-g').querySelectorAll('.pgo').forEach(o=>o.classList.remove('on'));
-  el.classList.add('on');
-  const lb={front:'Front view',back:'Back view',side:'Side view'};
-  if(type==='view')$('vw-lb').textContent=lb[val];
-  $('bmodel').innerHTML=bodyView==='front'?fSVG(bodySex):bodyView==='back'?bSVG(bodySex):sSVG(bodySex);
-  $('pp-wrap').innerHTML='';selPart=null;$('bc-lb').textContent='Body — tap a part';
+
+function setSex(sex){
+  bodySex=sex;
+  const bf=document.getElementById('btn-female'),bm=document.getElementById('btn-male');
+  if(bf){bf.style.background=sex==='female'?'linear-gradient(135deg,#E91E63,#AD1457)':'transparent';bf.style.color=sex==='female'?'#fff':'rgba(255,255,255,.4)';}
+  if(bm){bm.style.background=sex==='male'?'linear-gradient(135deg,#1565C0,#0D47A1)':'transparent';bm.style.color=sex==='male'?'#fff':'rgba(255,255,255,.4)';}
+  const bm2=document.getElementById('bmodel');
+  if(bm2) bm2.innerHTML=buildBodySVG(sex,selPart);
 }
+
 function pickPart(k,el){
   selPart=k;
-  document.querySelectorAll('.hs').forEach(h=>h.classList.remove('sel'));
-  if(el)el.classList.add('sel');
-  const p=bpData[k];if(!p)return;
-  $('bc-lb').textContent='Body › '+p.n;
-  $('pp-wrap').innerHTML=`<div class="pp"><div class="pp-hdr"><div class="pp-n">${p.n}</div><div class="pp-s">${p.sub}</div></div>${p.s.map(s=>`<div class="sy-item" onclick="go('symptom')"><div class="sy-e">${s.e}</div><div class="sy-t"><strong>${s.t}</strong><small>${s.s}</small></div><div class="sy-arr">›</div></div>`).join('')}<div style="padding:11px 13px"><button class="btn" style="margin-top:0" onclick="go('symptom')">Start Symptom Check →</button></div></div>`;
-  $('pp-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+  const p=bpData[k]; if(!p) return;
+  const bmodel=document.getElementById('bmodel');
+  if(bmodel) bmodel.innerHTML=buildBodySVG(bodySex,k);
+  const panel=document.getElementById('sym-panel'); if(!panel) return;
+  const sC={mild:'#4CAF50',moderate:'#FF9800',severe:'#F44336'};
+  const sB={mild:'rgba(76,175,80,.11)',moderate:'rgba(255,152,0,.11)',severe:'rgba(244,67,54,.11)'};
+  panel.innerHTML=`
+    <div style="background:linear-gradient(135deg,${p.col}1E,${p.col}0a);border-bottom:1px solid ${p.col}30;padding:12px 13px 9px;position:sticky;top:0;z-index:2;backdrop-filter:blur(8px)">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px">
+        <span style="font-size:24px">${p.icon}</span>
+        <div><div style="font-size:13px;font-weight:800;color:#fff">${p.n}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px">${p.sub}</div></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span style="font-size:9px;background:rgba(76,175,80,.13);color:#4CAF50;padding:2px 8px;border-radius:7px;font-weight:700">${p.s.filter(x=>x.sev==='mild').length} mild</span>
+        <span style="font-size:9px;background:rgba(255,152,0,.13);color:#FF9800;padding:2px 8px;border-radius:7px;font-weight:700">${p.s.filter(x=>x.sev==='moderate').length} moderate</span>
+        <span style="font-size:9px;background:rgba(244,67,54,.13);color:#F44336;padding:2px 8px;border-radius:7px;font-weight:700">${p.s.filter(x=>x.sev==='severe').length} severe</span>
+      </div>
+    </div>
+    ${p.s.map((s,i)=>`
+    <div onclick="showSymptomDetail('${k}',${i})" style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;display:flex;align-items:flex-start;gap:9px" onmouseenter="this.style.background='rgba(255,255,255,.04)'" onmouseleave="this.style.background='transparent'">
+      <span style="font-size:17px;flex-shrink:0;margin-top:1px">${s.e}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#fff;line-height:1.3">${s.t}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.38);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.s}</div>
+      </div>
+      <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <span style="font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:7px;background:${sB[s.sev]||sB.mild};color:${sC[s.sev]||sC.mild};border:1px solid ${sC[s.sev]||sC.mild}30;white-space:nowrap">${s.sev}</span>
+        <span style="font-size:14px;color:rgba(255,255,255,.16)">›</span>
+      </div>
+    </div>`).join('')}
+    <div style="padding:12px 12px 20px">
+      <button onclick="go('symptom')" style="width:100%;background:linear-gradient(135deg,${p.col},${p.col}99);color:#fff;border:none;border-radius:11px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔍 Full Symptom Check →</button>
+    </div>`;
 }
-function fSVG(sex){const sk='#F5CBA7',sk2='#F0B896',hr=sex==='female'?'#5C3317':'#3B2507';return `<svg viewBox="0 0 130 305" style="width:118px;height:270px;cursor:pointer"><g class="hs" onclick="pickPart('head',this)"><ellipse class="ha" cx="65" cy="27" rx="23" ry="24"/><ellipse cx="65" cy="23" rx="18" ry="19" fill="${sk}" stroke="#E8B896" stroke-width=".8"/>${sex==='female'?`<path d="M47 17 Q65 7 83 17 Q83 1 65 1 Q47 1 47 17z" fill="${hr}"/>`:`<ellipse cx="65" cy="11" rx="18" ry="10" fill="${hr}"/>`}<circle cx="58" cy="24" r="2" fill="#7B4F14"/><circle cx="72" cy="24" r="2" fill="#7B4F14"/><path d="M61 32 Q65 36 69 32" fill="none" stroke="#C0804A" stroke-width="1" stroke-linecap="round"/></g><g class="hs" onclick="pickPart('neck',this)"><rect class="ha" x="56" y="47" width="18" height="13" rx="4"/><rect x="58" y="48" width="14" height="11" rx="4" fill="${sk2}"/></g>${sex==='female'?`<g class="hs" onclick="pickPart('chest',this)"><rect class="ha" x="38" y="60" width="54" height="50" rx="6"/><rect x="40" y="61" width="50" height="48" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/><ellipse cx="54" cy="81" rx="8" ry="6" fill="${sk2}" opacity=".6"/><ellipse cx="76" cy="81" rx="8" ry="6" fill="${sk2}" opacity=".6"/></g>`:`<g class="hs" onclick="pickPart('chest',this)"><rect class="ha" x="38" y="60" width="54" height="50" rx="6"/><rect x="40" y="61" width="50" height="48" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g>`}<g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="29" cy="66" rx="11" ry="9"/><ellipse cx="29" cy="65" rx="9" ry="8" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="101" cy="66" rx="11" ry="9"/><ellipse cx="101" cy="65" rx="9" ry="8" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="15" y="74" width="16" height="52" rx="7"/><rect x="17" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="99" y="74" width="16" height="52" rx="7"/><rect x="101" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('abdomen',this)"><rect class="ha" x="39" y="110" width="52" height="38" rx="5"/><rect x="41" y="111" width="48" height="36" rx="5" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('abdomen',this)"><rect class="ha" x="39" y="148" width="52" height="22" rx="5"/><rect x="41" y="149" width="48" height="20" rx="4" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="23" cy="134" rx="9" ry="7"/><ellipse cx="23" cy="133" rx="7" ry="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="107" cy="134" rx="9" ry="7"/><ellipse cx="107" cy="133" rx="7" ry="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="40" y="170" width="22" height="52" rx="8"/><rect x="42" y="171" width="18" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="68" y="170" width="22" height="52" rx="8"/><rect x="70" y="171" width="18" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="51" cy="225" rx="13" ry="9"/><ellipse cx="51" cy="224" rx="10" ry="8" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><ellipse class="ha" cx="79" cy="225" rx="13" ry="9"/><ellipse cx="79" cy="224" rx="10" ry="8" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="42" y="234" width="18" height="44" rx="7"/><rect x="44" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="70" y="234" width="18" height="44" rx="7"/><rect x="72" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="50" cy="282" rx="14" ry="8"/><ellipse cx="50" cy="281" rx="11" ry="6" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="80" cy="282" rx="14" ry="8"/><ellipse cx="80" cy="281" rx="11" ry="6" fill="${sk2}" stroke="#E0A875" stroke-width=".5"/></g></svg>`;}
-function bSVG(sex){const sk='#F0B896',hr=sex==='female'?'#5C3317':'#3B2507';return `<svg viewBox="0 0 130 305" style="width:118px;height:270px;cursor:pointer"><g class="hs" onclick="pickPart('head',this)"><ellipse class="ha" cx="65" cy="27" rx="23" ry="24"/><ellipse cx="65" cy="23" rx="18" ry="19" fill="#E8A882" stroke="#D49060" stroke-width=".8"/>${sex==='female'?`<path d="M47 15 Q65 5 83 15 Q83 0 65 0 Q47 0 47 15z" fill="${hr}"/>`:` <ellipse cx="65" cy="11" rx="18" ry="10" fill="${hr}"/>`}</g><g class="hs" onclick="pickPart('neck',this)"><rect class="ha" x="56" y="47" width="18" height="13" rx="4"/><rect x="58" y="48" width="14" height="11" rx="4" fill="${sk}"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="29" cy="67" rx="12" ry="10"/><ellipse cx="29" cy="66" rx="10" ry="8" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="101" cy="67" rx="12" ry="10"/><ellipse cx="101" cy="66" rx="10" ry="8" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('back',this)"><rect class="ha" x="37" y="60" width="56" height="90" rx="6"/><rect x="40" y="61" width="50" height="88" rx="7" fill="${sk}" stroke="#D49060" stroke-width=".5"/><path d="M65 64 L65 147" stroke="#C4856A" stroke-width=".6" stroke-dasharray="3,3"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="15" y="74" width="16" height="52" rx="7"/><rect x="17" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="99" y="74" width="16" height="52" rx="7"/><rect x="101" y="75" width="12" height="50" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('back',this)"><rect class="ha" x="39" y="150" width="52" height="22" rx="5"/><rect x="41" y="151" width="48" height="20" rx="4" fill="#E8A882" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="23" cy="134" rx="9" ry="7"/><ellipse cx="23" cy="133" rx="7" ry="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="107" cy="134" rx="9" ry="7"/><ellipse cx="107" cy="133" rx="7" ry="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="40" y="172" width="22" height="50" rx="8"/><rect x="42" y="173" width="18" height="48" rx="7" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="68" y="172" width="22" height="50" rx="8"/><rect x="70" y="173" width="18" height="48" rx="7" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="42" y="234" width="18" height="44" rx="7"/><rect x="44" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="70" y="234" width="18" height="44" rx="7"/><rect x="72" y="235" width="14" height="42" rx="6" fill="${sk}" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="50" cy="282" rx="14" ry="8"/><ellipse cx="50" cy="281" rx="11" ry="6" fill="#E0A070" stroke="#D49060" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><ellipse class="ha" cx="80" cy="282" rx="14" ry="8"/><ellipse cx="80" cy="281" rx="11" ry="6" fill="#E0A070" stroke="#D49060" stroke-width=".5"/></g></svg>`;}
-function sSVG(sex){const sk='#F5CBA7',sk2='#F0B896',hr=sex==='female'?'#5C3317':'#3B2507';return `<svg viewBox="0 0 100 305" style="width:92px;height:270px;cursor:pointer"><g class="hs" onclick="pickPart('head',this)"><ellipse class="ha" cx="50" cy="27" rx="24" ry="25"/><ellipse cx="50" cy="23" rx="19" ry="20" fill="${sk}" stroke="#E8B896" stroke-width=".8"/><ellipse cx="59" cy="21" rx="3" ry="2" fill="#7B4F14"/>${sex==='female'?`<path d="M31 13 Q50 3 68 13 Q68 0 50 0 Q31 0 31 13z" fill="${hr}"/>`:``}</g><g class="hs" onclick="pickPart('neck',this)"><rect class="ha" x="42" y="48" width="16" height="13" rx="4"/><rect x="43" y="49" width="14" height="11" rx="4" fill="${sk2}"/></g><g class="hs" onclick="pickPart('chest',this)"><rect class="ha" x="28" y="61" width="44" height="52" rx="6"/><rect x="30" y="62" width="40" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('shoulder',this)"><ellipse class="ha" cx="26" cy="67" rx="11" ry="9"/><ellipse cx="26" cy="66" rx="9" ry="8" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><rect class="ha" x="12" y="75" width="16" height="52" rx="7"/><rect x="14" y="76" width="12" height="50" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('abdomen',this)"><rect class="ha" x="28" y="113" width="44" height="56" rx="5"/><rect x="30" y="114" width="40" height="54" rx="5" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('arm',this)"><ellipse class="ha" cx="20" cy="134" rx="9" ry="7"/><ellipse cx="20" cy="133" rx="7" ry="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('knee',this)"><rect class="ha" x="28" y="170" width="36" height="52" rx="8"/><rect x="30" y="171" width="32" height="50" rx="7" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g><g class="hs" onclick="pickPart('foot',this)"><rect class="ha" x="30" y="234" width="30" height="44" rx="7"/><rect x="32" y="235" width="26" height="42" rx="6" fill="${sk}" stroke="#E8B896" stroke-width=".5"/></g></svg>`;}
+
+function showSymptomDetail(partKey,symIndex){
+  const p=bpData[partKey]; if(!p) return;
+  const s=p.s[symIndex]; if(!s) return;
+  const sC={mild:'#4CAF50',moderate:'#FF9800',severe:'#F44336'};
+  const sc=sC[s.sev]||'#888';
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML=`<div style="background:#0D1526;border-radius:22px 22px 0 0;padding:20px 17px 36px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;border-top:1.5px solid ${p.col}40">
+    <div style="width:32px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 15px"></div>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
+      <span style="font-size:30px">${s.e}</span>
+      <div style="flex:1"><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${s.t}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.38);margin-top:2px">${p.n} · ${s.s}</div></div>
+      <span style="font-size:9px;font-weight:700;padding:4px 10px;border-radius:10px;background:${sc}16;color:${sc};border:1px solid ${sc}30;white-space:nowrap">${s.sev.toUpperCase()}</span>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border-radius:11px;padding:13px;margin-bottom:10px;border:1px solid rgba(255,255,255,.07)">
+      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">🔍 Possible Causes</div>
+      ${(s.c||'').split(',').map(x=>`<div style="display:flex;gap:7px;margin-bottom:4px"><span style="color:${p.col};font-size:11px;margin-top:1px;flex-shrink:0">•</span><span style="font-size:12px;color:rgba(255,255,255,.72);line-height:1.5">${x.trim()}</span></div>`).join('')}
+    </div>
+    <div style="background:rgba(76,175,80,.07);border-radius:11px;padding:13px;margin-bottom:10px;border:1px solid rgba(76,175,80,.14)">
+      <div style="font-size:9px;font-weight:700;color:#4CAF50;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">✅ Self-Care Steps</div>
+      ${(s.r||'').split('.').filter(Boolean).map(x=>`<div style="display:flex;gap:7px;margin-bottom:4px"><span style="color:#4CAF50;font-size:13px;flex-shrink:0">✓</span><span style="font-size:12px;color:rgba(255,255,255,.72);line-height:1.5">${x.trim()}</span></div>`).join('')}
+    </div>
+    ${s.f?`<div style="background:rgba(244,67,54,.08);border-radius:11px;padding:13px;margin-bottom:16px;border:1px solid rgba(244,67,54,.2)">
+      <div style="font-size:9px;font-weight:700;color:#F44336;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">⚠️ Seek Immediate Care If:</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.72);line-height:1.8">${s.f.replace(/→/g,'<span style="color:#F44336;font-weight:700"> → </span>')}</div>
+    </div>`:''}
+    <div style="display:flex;gap:9px">
+      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;background:rgba(255,255,255,.07);color:rgba(255,255,255,.75);border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">← Back</button>
+      <button onclick="this.closest('[style*=fixed]').remove();go('symptom')" style="flex:2;background:linear-gradient(135deg,${p.col},${p.col}aa);color:#fff;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔍 Symptom Checker</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+  document.body.appendChild(ov);
+}
+
+function searchBody(q){
+  q=(q||'').toLowerCase().trim(); if(!q) return;
+  const res=[];
+  Object.entries(bpData).forEach(([k,p])=>{
+    if(p.n.toLowerCase().includes(q)||p.sub.toLowerCase().includes(q)) res.push({k,si:null,sc:3});
+    p.s.forEach((s,i)=>{
+      let score=0;
+      if(s.t.toLowerCase().includes(q)) score=4;
+      else if(s.s.toLowerCase().includes(q)) score=3;
+      else if((s.c||'').toLowerCase().includes(q)) score=2;
+      else if((s.r||'').toLowerCase().includes(q)) score=1;
+      if(score) res.push({k,si:i,sc:score});
+    });
+  });
+  res.sort((a,b)=>b.sc-a.sc);
+  if(!res.length) return;
+  const best=res[0];
+  pickPart(best.k,null);
+  if(best.si!==null) setTimeout(()=>showSymptomDetail(best.k,best.si),350);
+}
+
+function setV(type,val,el){ if(type==='sex') setSex(val); }
+
 
 /* ══ MORE MENU ══ */
 function rMore(){
