@@ -942,10 +942,12 @@ async function saveAllToSheets(pwdHash){
 /* ══ HOME ══ */
 
 // ── LOCAL DATA HELPERS ─────────────────────────────
-function getMeds(){ try{ return JSON.parse(localStorage.getItem('hv_medicines')||'[]'); }catch(e){ return []; } }
-function saveMeds(arr){ try{ localStorage.setItem('hv_medicines', JSON.stringify(arr)); }catch(e){} }
-function getReports(){ try{ return JSON.parse(localStorage.getItem('hv_reports')||'[]'); }catch(e){ return []; } }
-function saveReports(arr){ try{ localStorage.setItem('hv_reports', JSON.stringify(arr)); }catch(e){} }
+function activeMemberId(){ return U.activeMember||'self'; }
+function memberKey(base){ return base+'_'+activeMemberId(); }
+function getMeds(){ try{ return JSON.parse(localStorage.getItem(memberKey('hv_medicines'))||localStorage.getItem('hv_medicines')||'[]'); }catch(e){ return []; } }
+function saveMeds(arr){ try{ localStorage.setItem(memberKey('hv_medicines'), JSON.stringify(arr)); }catch(e){} }
+function getReports(){ try{ return JSON.parse(localStorage.getItem(memberKey('hv_reports'))||localStorage.getItem('hv_reports')||'[]'); }catch(e){ return []; } }
+function saveReports(arr){ try{ localStorage.setItem(memberKey('hv_reports'), JSON.stringify(arr)); }catch(e){} }
 function getVaultItems(){ try{ return JSON.parse(localStorage.getItem('hv_vault')||'[]'); }catch(e){ return []; } }
 function saveVaultItems(arr){ try{ localStorage.setItem('hv_vault', JSON.stringify(arr)); }catch(e){} }
 function getVaccines(){ try{ return JSON.parse(localStorage.getItem('hv_vaccines')||'[]'); }catch(e){ return []; } }
@@ -1005,21 +1007,120 @@ function localSymptomAnalysis(bodyPart, desc, pain, duration){
 
 /* ══ HOME — reads from localStorage ══ */
 function rHome(){
-  const first=(U.name||'there').split(' ')[0];
-  const meds = getMeds();
-  const reports = getReports();
-  const todayMeds = meds.filter(m => m.active !== false);
-  const recentReports = reports.slice(-3).reverse();
+  const isSelf=(U.activeMember||'self')==='self';
+  const activeMem=isSelf?null:(U.members||[]).find(m=>m.id===U.activeMember);
+  const displayName=isSelf?(U.name||'there'):(activeMem?activeMem.name:'Member');
+  const first=displayName.split(' ')[0];
+  const meds=getMeds(), reports=getReports();
+  const todayMeds=meds.filter(m=>m.active!==false);
+  const recentReports=reports.slice(-3).reverse();
+
+  // ── MEMBER PROFILE VIEW ──────────────────────────────────────
+  if(!isSelf && activeMem){
+    const mc=activeMem.color||'#E8F0FE';
+    const mt=activeMem.textColor||'#0D47A1';
+    const repRows = recentReports.length===0
+      ? '<div class="card" style="cursor:default;text-align:center;color:var(--g4);font-size:13px">No reports yet.</div>'
+      : recentReports.map(r=>{
+          const badge = r.abnormal>0 ? r.abnormal+' Abnormal' : 'Normal';
+          const cls   = r.abnormal>0 ? 'by' : 'bg';
+          return `<div class="card" onclick="go('lab')"><div class="crow">
+            <div class="ic" style="background:#EDE7F6">🧪</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">${r.name}</div>
+            <div style="font-size:11px;color:var(--g4)">${fmtDate(r.date)}</div></div>
+            <div class="badge ${cls}">${badge}</div>
+          </div></div>`;
+        }).join('');
+
+    SCR.innerHTML=`<div class="sc">
+    <div style="padding:12px 14px 0"><div style="font-size:11px;font-weight:700;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Viewing Profile For</div></div>
+    ${familyScrollBar(true)}
+    <div style="background:linear-gradient(135deg,${mc},${mc}99);padding:20px 16px 22px;margin:10px 14px 0;border-radius:16px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">${activeMem.avatar||'👤'}</div>
+        <div style="flex:1">
+          <div style="font-size:20px;font-weight:800;color:${mt}">${activeMem.name||'Unnamed'}</div>
+          <div style="font-size:12px;opacity:.75;color:${mt};margin-top:2px">${activeMem.role||''} · ${activeMem.age?activeMem.age+' yrs':''} · ${activeMem.gender||''}</div>
+        </div>
+        <button onclick="editFamilyMember('${activeMem.id}')" style="background:rgba(255,255,255,.6);border:none;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;color:${mt}">✏️ Edit</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <div style="flex:1;background:rgba(255,255,255,.6);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:${mt}">${todayMeds.length}</div>
+          <div style="font-size:10px;opacity:.7;color:${mt}">Medicines</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.6);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:${mt}">${reports.length}</div>
+          <div style="font-size:10px;opacity:.7;color:${mt}">Reports</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,.6);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:${mt}">${activeMem.gender==='female'?'F':activeMem.gender==='male'?'M':'?'}·${activeMem.age||'--'}</div>
+          <div style="font-size:10px;opacity:.7;color:${mt}">Profile</div>
+        </div>
+      </div>
+    </div>
+    <div class="hbody">
+      <div class="sec">Quick Actions</div>
+      <div class="qa-grid">
+        <div class="qa" onclick="go('scan')"><div class="qi">💊</div><div class="ql">Medicines</div><div class="qs">Add or view</div></div>
+        <div class="qa" onclick="go('lab')"><div class="qi">🧪</div><div class="ql">Lab Reports</div><div class="qs">Add &amp; track</div></div>
+        <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, SpO2</div></div>
+        <div class="qa" onclick="go('body')"><div class="qi">🫀</div><div class="ql">Body Explorer</div><div class="qs">Symptoms</div></div>
+        <div class="qa" onclick="go('symptom')"><div class="qi">✅</div><div class="ql">Symptom Check</div><div class="qs">Quick analysis</div></div>
+        <div class="qa" onclick="go('appointments')"><div class="qi">📅</div><div class="ql">Appointments</div><div class="qs">Doctor visits</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="sec" style="margin-bottom:8px">Today's Medicines</div>
+        <button onclick="go('reminders')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 8px">🔔 Reminders</button>
+      </div>
+      ${renderTodayMedWidget()}
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="sec" style="margin-bottom:8px">Recent Reports</div>
+        <button onclick="go('lab')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 8px">+ Add</button>
+      </div>
+      ${repRows}
+      <div style="padding:12px 14px 4px">
+        <button onclick="switchMember('self')" style="width:100%;background:var(--bl);color:var(--blue);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;cursor:pointer">← Back to My Profile</button>
+      </div>
+      <div class="pb"></div>
+    </div></div>`;
+    return;
+  }
+
+  // ── MAIN USER HOME ────────────────────────────────────────────
+  const mainRepRows = recentReports.length===0
+    ? '<div class="card" style="cursor:default;text-align:center;color:var(--g4);font-size:13px">No reports yet. Tap + Add to log a report.</div>'
+    : recentReports.map(r=>{
+        const badge = r.abnormal>0 ? r.abnormal+' Abnormal' : 'Normal';
+        const cls   = r.abnormal>0 ? 'by' : 'bg';
+        const lab   = r.lab||'—';
+        return `<div class="card" onclick="go('lab')"><div class="crow">
+          <div class="ic" style="background:#EDE7F6">🧪</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">${r.name}</div>
+          <div style="font-size:11px;color:var(--g4)">${fmtDate(r.date)} · ${lab}</div></div>
+          <div class="badge ${cls}">${badge}</div>
+        </div></div>`;
+      }).join('');
+
+  const greet=(function(){const h=new Date().getHours();return h<12?'Good morning 🌅':h<17?'Good afternoon ☀️':h<21?'Good evening 🌇':'Good night 🌙';})();
+  const gStr = U.gender==='female'?'F':U.gender==='male'?'M':'X';
+  const famBar = U.members?.length>1
+    ? `<div style="padding:12px 14px 0"><div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:8px">VIEWING PROFILE FOR</div></div>${familyScrollBar(true)}`
+    : '';
+  const cycleOrVitals = U.gender==='female'
+    ? `<div class="qa" onclick="go('menstrual')"><div class="qi">🌸</div><div class="ql">Cycle Tracker</div><div class="qs">Period &amp; fertility</div></div>`
+    : `<div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, weight</div></div>`;
+
   SCR.innerHTML=`<div class="sc">
-  ${U.members?.length>1?`<div style="padding:12px 14px 0"><div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:8px">VIEWING PROFILE FOR</div></div>${familyScrollBar(true)}`:''}
+  ${famBar}
   <div class="hh">
-    <div class="hgreet">${(function(){const h=new Date().getHours();return h<12?'Good morning 🌅':h<17?'Good afternoon ☀️':h<21?'Good evening 🌇':'Good night 🌙';})()}</div>
+    <div class="hgreet">${greet}</div>
     <div class="hname">Hello, ${first}</div>
     <button class="sos" onclick="go('emergency')">🆘 SOS</button>
     <div class="hstats">
       <div class="hstat"><div class="sv">${todayMeds.length}</div><div class="sl">Medicines</div></div>
       <div class="hstat"><div class="sv">${reports.length}</div><div class="sl">Reports</div></div>
-      <div class="hstat"><div class="sv">${U.gender==='female'?'F':U.gender==='male'?'M':'X'}·${U.age||'--'}</div><div class="sl">Profile</div></div>
+      <div class="hstat"><div class="sv">${gStr}·${U.age||'--'}</div><div class="sl">Profile</div></div>
     </div>
   </div>
   <div class="hbody">
@@ -1028,11 +1129,11 @@ function rHome(){
       <div class="qa" onclick="go('body')"><div class="qi">🫀</div><div class="ql">Body Explorer</div><div class="qs">Tap any body part</div></div>
       <div class="qa" onclick="go('symptom')"><div class="qi">✅</div><div class="ql">Symptom Checker</div><div class="qs">Local analysis</div></div>
       <div class="qa" onclick="go('scan')"><div class="qi">💊</div><div class="ql">Add Medicine</div><div class="qs">Manual or photo</div></div>
-      <div class="qa" onclick="go('lab')"><div class="qi">🧪</div><div class="ql">Lab Reports</div><div class="qs">Add & track results</div></div>
+      <div class="qa" onclick="go('lab')"><div class="qi">🧪</div><div class="ql">Lab Reports</div><div class="qs">Add &amp; track results</div></div>
       <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Log Vitals</div><div class="qs">BP, sugar, SpO2</div></div>
       <div class="qa" onclick="go('nearby')"><div class="qi">📍</div><div class="ql">Nearby Care</div><div class="qs">Hospital, clinic</div></div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 0 0">
+    <div style="display:flex;align-items:center;justify-content:space-between">
       <div class="sec" style="margin-bottom:8px">Today's Medicines</div>
       <button onclick="go('reminders')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">🔔 Reminders</button>
     </div>
@@ -1040,27 +1141,19 @@ function rHome(){
     <div class="sec">More Features</div>
     <div class="qa-grid">
       <div class="qa" onclick="go('family')"><div class="qi">👨‍👩‍👧</div><div class="ql">Family</div><div class="qs">All members</div></div>
-      <div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity</div><div class="qs">Steps & fitness</div></div>
+      <div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity</div><div class="qs">Steps &amp; fitness</div></div>
       <div class="qa" onclick="go('appointments')"><div class="qi">📅</div><div class="ql">Appointments</div><div class="qs">Doctor visits</div></div>
-      ${U.gender==='female'?`<div class="qa" onclick="go('menstrual')"><div class="qi">🌸</div><div class="ql">Cycle Tracker</div><div class="qs">Period & fertility</div></div>`:`<div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, weight</div></div>`}
+      ${cycleOrVitals}
       <div class="qa" onclick="go('water')"><div class="qi">💧</div><div class="ql">Hydration</div><div class="qs">Water reminders</div></div>
       <div class="qa" onclick="go('healthscore')"><div class="qi">🏆</div><div class="ql">Health Score</div><div class="qs">Your score</div></div>
       <div class="qa" onclick="go('search')"><div class="qi">🔍</div><div class="ql">Search</div><div class="qs">Find anything</div></div>
-      <div class="qa" onclick="go('emergency')"><div class="qi">🆘</div><div class="ql">Emergency</div><div class="qs">SOS & info</div></div>
+      <div class="qa" onclick="go('emergency')"><div class="qi">🆘</div><div class="ql">Emergency</div><div class="qs">SOS &amp; info</div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div class="sec" style="margin-bottom:8px">Recent Reports</div>
       <button onclick="go('lab')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">+ Add</button>
     </div>
-    ${recentReports.length === 0
-      ? '<div class="card" style="cursor:default;text-align:center;color:var(--g4);font-size:13px">No reports yet. Tap + Add to log a report.</div>'
-      : recentReports.map(r => `<div class="card" onclick="go('lab')"><div class="crow">
-          <div class="ic" style="background:#EDE7F6">🧪</div>
-          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">${r.name}</div>
-          <div style="font-size:11px;color:var(--g4)">${fmtDate(r.date)} · ${r.lab||'—'}</div></div>
-          <div class="badge ${r.abnormal>0?'by':'bg'}">${r.abnormal>0?r.abnormal+' Abnormal':'Normal'}</div>
-        </div></div>`).join('')
-    }
+    ${mainRepRows}
     <div class="pb"></div>
   </div></div>`;
 }
@@ -2396,36 +2489,148 @@ function familyScrollBar(homeMode=false){
     <div class="fp-add" onclick="go('family')"><div style="font-size:22px">➕</div><span>Add</span></div>
   </div>`;
 }
-function switchMember(id){U.activeMember=id;go('home');}
+
+function switchMember(id){ U.activeMember=id; saveUser(); go('home'); }
+
 function rFamily(){
   if(!U.members) U.members=[{id:'self',name:U.name,role:'Me',age:U.age,gender:U.gender,avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
-  SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Family Profiles</div><div class="hdr-s">Manage health for all your family members</div></div>
-  <div style="padding:14px">
-    ${U.members.map((m)=>`<div class="card" style="cursor:default"><div class="crow">
-      <div style="width:48px;height:48px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${m.avatar}</div>
-      <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--g6)">${m.name} ${m.id==='self'?'(You)':''}</div>
-      <div style="font-size:12px;color:var(--g4)">${m.role} · ${m.age?m.age+' yrs':''} · ${m.gender||''}</div></div>
-      <button class="btn-sm" style="background:var(--bl);color:var(--blue);font-size:12px" onclick="switchMember('${m.id}');go('home')">View</button>
-    </div></div>`).join('')}
-    <div class="card" style="border:1.5px dashed var(--g3);background:var(--g1);text-align:center;cursor:pointer" onclick="addFamilyMember()">
-      <div style="font-size:28px;margin-bottom:6px">➕</div><div style="font-size:14px;font-weight:700;color:var(--g5)">Add Family Member</div>
-      <div style="font-size:11px;color:var(--g4);margin-top:3px">Child, spouse, parent, elder</div>
-    </div>
-    <button class="btn2" onclick="go('pediatric')">👶 Pediatric Mode</button>
-    <button class="btn2" onclick="go('elderly')">🧓 Elderly Care Mode</button>
-    <div class="pb"></div>
-  </div></div>`;
+  const active = U.activeMember||'self';
+  const rows = U.members.map(function(m){
+    const isActive = m.id===active;
+    const border   = isActive ? 'border:2px solid var(--blue);' : '';
+    const viewBg   = isActive ? 'var(--blue)' : 'var(--bl)';
+    const viewCol  = isActive ? '#fff' : 'var(--blue)';
+    const viewLbl  = isActive ? 'Active' : 'View';
+    const youBadge = m.id==='self' ? ' <span style="font-size:10px;background:var(--blue);color:#fff;padding:2px 6px;border-radius:6px;font-weight:600">YOU</span>' : '';
+    const quickBtns = m.id!=='self' ? [
+      '<div style="display:flex;gap:7px;margin-top:10px">',
+      '<button onclick="switchMember(\''+m.id+'\');go(\'scan\')" style="flex:1;background:var(--g1);border:1px solid var(--g2);border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--g5)">💊 Meds</button>',
+      '<button onclick="switchMember(\''+m.id+'\');go(\'lab\')" style="flex:1;background:var(--g1);border:1px solid var(--g2);border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--g5)">🧪 Reports</button>',
+      '<button onclick="switchMember(\''+m.id+'\');go(\'vitals\')" style="flex:1;background:var(--g1);border:1px solid var(--g2);border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--g5)">📊 Vitals</button>',
+      '<button onclick="deleteFamilyMember(\''+m.id+'\')" style="background:#FFF0F0;border:1px solid #FFCDD2;border-radius:9px;padding:7px 9px;font-size:11px;cursor:pointer;color:#C62828">🗑️</button>',
+      '</div>'
+    ].join('') : '';
+
+    return '<div class="card" style="cursor:default;margin-bottom:10px;'+border+'">'
+      + '<div class="crow">'
+      + '<div onclick="editFamilyMember(\''+m.id+'\')" style="width:50px;height:50px;border-radius:50%;background:'+m.color+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;cursor:pointer">'+m.avatar+'</div>'
+      + '<div style="flex:1;min-width:0;padding:0 8px;cursor:pointer" onclick="editFamilyMember(\''+m.id+'\')">'
+      + '<div style="font-size:15px;font-weight:700;color:var(--g6)">'+(m.name||'Tap to name')+youBadge+'</div>'
+      + '<div style="font-size:12px;color:var(--g4);margin-top:2px">'+(m.role||'Member')+' · '+(m.age?m.age+' yrs':'—')+' · '+(m.gender||'—')+'</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;flex-shrink:0">'
+      + '<button onclick="editFamilyMember(\''+m.id+'\')" style="background:var(--bl);color:var(--blue);border:none;border-radius:9px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer">✏️</button>'
+      + '<button onclick="switchMember(\''+m.id+'\')" style="background:'+viewBg+';color:'+viewCol+';border:none;border-radius:9px;padding:7px 11px;font-size:11px;font-weight:700;cursor:pointer">'+viewLbl+'</button>'
+      + '</div>'
+      + '</div>'
+      + quickBtns
+      + '</div>';
+  }).join('');
+
+  SCR.innerHTML = '<div class="sc">'
+    + '<div class="hdr"><div class="hdr-t">Family Profiles</div><div class="hdr-s">Tap a member to view their health dashboard</div></div>'
+    + '<div style="padding:14px">'
+    + rows
+    + '<div class="card" style="border:1.5px dashed var(--g3);background:var(--g1);text-align:center;cursor:pointer;margin-top:4px" onclick="addFamilyMember()">'
+    + '<div style="font-size:28px;margin-bottom:6px">➕</div>'
+    + '<div style="font-size:14px;font-weight:700;color:var(--g5)">Add Family Member</div>'
+    + '<div style="font-size:11px;color:var(--g4);margin-top:3px">Child, spouse, parent, elder</div>'
+    + '</div>'
+    + '<div class="pb"></div>'
+    + '</div></div>';
 }
+
+function deleteFamilyMember(id){
+  if(!confirm('Remove this family member? Their health data stays saved on this device.')) return;
+  U.members = (U.members||[]).filter(function(m){ return m.id!==id; });
+  if((U.activeMember||'self')===id) U.activeMember='self';
+  saveUser(); rFamily();
+}
+
+function editFamilyMember(id){
+  var isSelf = id==='self';
+  var m = isSelf
+    ? {id:'self', name:U.name, role:'Me', age:U.age, gender:U.gender, avatar:'🧑'}
+    : (U.members||[]).find(function(x){ return x.id===id; });
+  if(!m) return;
+
+  var avatars = ['👶','🧒','👧','👦','🧑','👩','👨','🧓','👴','👵','🧑‍⚕️','👼'];
+  var roles   = ['Child','Spouse','Parent','Sibling','Grandparent','Elder','Me','Other'];
+  var genders = ['male','female','other'];
+
+  var avHtml = avatars.map(function(a){
+    var sel = (m.avatar||'')=== a ? 'background:#E3F2FD' : '';
+    return '<div data-av="'+a+'" onclick="[...this.parentNode.children].forEach(function(d){d.style.background=\'\'});this.style.background=\'#E3F2FD\'" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border:1.5px solid #eee;'+sel+'">'+a+'</div>';
+  }).join('');
+
+  var roleHtml = !isSelf ? roles.map(function(r){
+    var sel = (m.role||'')=== r;
+    return '<div data-role="'+r+'" onclick="[...this.parentNode.children].forEach(function(d){d.style.background=\'var(--g1)\';d.style.color=\'var(--g5)\'});this.style.background=\'var(--blue)\';this.style.color=\'#fff\'" style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:'+(sel?'var(--blue)':'var(--g1)')+';color:'+(sel?'#fff':'var(--g5)')+'">'+r+'</div>';
+  }).join('') : '';
+
+  var genHtml = genders.map(function(g){
+    var sel = (m.gender||'')=== g;
+    var lbl = g.charAt(0).toUpperCase()+g.slice(1);
+    return '<div data-gen="'+g+'" onclick="[...this.parentNode.children].forEach(function(d){d.style.background=\'var(--g1)\';d.style.color=\'var(--g5)\'});this.style.background=\'var(--blue)\';this.style.color=\'#fff\'" style="flex:1;padding:10px;border-radius:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:'+(sel?'var(--blue)':'var(--g1)')+';color:'+(sel?'#fff':'var(--g5)')+'">'+lbl+'</div>';
+  }).join('');
+
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = '<div style="background:#fff;border-radius:22px 22px 0 0;padding:20px 18px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">'
+    + '<div style="width:32px;height:3px;background:#eee;border-radius:2px;margin:0 auto 16px"></div>'
+    + '<div style="font-size:16px;font-weight:800;color:var(--g6);margin-bottom:16px">'+(isSelf?'Edit Your Profile':'Edit Family Member')+'</div>'
+    + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:8px">AVATAR</div>'
+    + '<div id="av-pick" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'+avHtml+'</div>'
+    + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">NAME</div>'
+    + '<input id="em-name" value="'+(m.name||'')+'" placeholder="Enter full name" style="width:100%;border:1.5px solid var(--g2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box;outline:none;color:var(--g6)"/>'
+    + (!isSelf ? '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">RELATIONSHIP</div><div id="role-pick" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+roleHtml+'</div>' : '')
+    + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">AGE</div>'
+    + '<input id="em-age" type="number" min="0" max="120" value="'+(m.age||'')+'" placeholder="Age in years" style="width:100%;border:1.5px solid var(--g2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box;outline:none;color:var(--g6)"/>'
+    + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:8px">GENDER</div>'
+    + '<div id="gen-pick" style="display:flex;gap:8px;margin-bottom:22px">'+genHtml+'</div>'
+    + '<div style="display:flex;gap:10px">'
+    + '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="flex:1;background:var(--g1);color:var(--g5);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">Cancel</button>'
+    + '<button onclick="saveMemberEdit(\''+id+'\',this)" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">Save Changes</button>'
+    + '</div></div>';
+
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function saveMemberEdit(id, btn){
+  var ov     = btn.closest('[style*=fixed]');
+  var name   = (ov.querySelector('#em-name').value||'').trim() || 'Member';
+  var age    = (ov.querySelector('#em-age').value||'').trim();
+  var avEl   = ov.querySelector('#av-pick [style*="E3F2FD"]');
+  var avatar = avEl ? avEl.dataset.av : '';
+  var roleEl = ov.querySelector('#role-pick [style*="var(--blue)"]') || ov.querySelector('#role-pick div[style*="blue"]');
+  var role   = roleEl ? roleEl.dataset.role : 'Member';
+  var genEl  = ov.querySelector('#gen-pick [style*="var(--blue)"]') || ov.querySelector('#gen-pick div[style*="blue"]');
+  var gender = genEl ? genEl.dataset.gen : '';
+
+  if(id==='self'){
+    U.name=name; U.age=age; U.gender=gender;
+    var s=(U.members||[]).find(function(m){ return m.id==='self'; });
+    if(s){ s.name=name; s.age=age; s.gender=gender; if(avatar) s.avatar=avatar; }
+    saveUser(); ov.remove(); rHome(); return;
+  }
+  var m=(U.members||[]).find(function(x){ return x.id===id; });
+  if(!m){ ov.remove(); return; }
+  m.name=name; m.age=age; m.gender=gender; m.role=role;
+  if(avatar) m.avatar=avatar;
+  saveUser(); ov.remove();
+  if((U.activeMember||'self')===id) rHome(); else rFamily();
+}
+
 function addFamilyMember(){
-  const avatars=['👶','🧒','👧','👦','🧑','👩','👨','🧓','👴','👵'];
-  const idx=(U.members?.length||0)%avatars.length;
-  const colors=[['#E6F4EA','#1B5E20'],['#FCE4EC','#880E4F'],['#EDE7FE','#311B92'],['#E0F2F1','#004D40'],['#FFF8E1','#F57F17']];
-  const ci=(U.members?.length||0)%colors.length;
-  const nm={id:'m'+Date.now(),name:'Family Member',role:'Child',age:'',gender:'female',avatar:avatars[idx],color:colors[ci][0],textColor:colors[ci][1],mode:'standard'};
+  var colors=[['#E6F4EA','#1B5E20'],['#FCE4EC','#880E4F'],['#EDE7FE','#311B92'],['#E0F2F1','#004D40'],['#FFF8E1','#F57F17']];
+  var ci=(U.members?U.members.length:0)%colors.length;
+  var nm={id:'m'+Date.now(),name:'',role:'Child',age:'',gender:'female',avatar:'👶',color:colors[ci][0],textColor:colors[ci][1]};
   if(!U.members) U.members=[];
-  U.members.push(nm); go('family');
+  U.members.push(nm); saveUser();
+  editFamilyMember(nm.id);
 }
+
 function rPediatric(){
   SCR.innerHTML=`<div class="sc">
   <div class="brow"><div class="bk" onclick="go('family')">←</div><div><div class="bk-t">Pediatric Guardian Mode</div><div class="bk-s">Children 0–18 · Safety-first approach</div></div></div>
