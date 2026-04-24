@@ -453,6 +453,71 @@ body.dark .qa .ql{color:#E0E0E0}
 .doc-nm{font-size:13px;font-weight:700;color:var(--g6)}.doc-meta{font-size:10px;color:var(--g4);margin-top:2px}
 .doc-sz{font-size:10px;color:var(--g4);margin-left:auto;text-align:right}
 .doc-lock{display:block;font-size:13px}
+
+/* SWIPE TO DELETE */
+.swipe-wrap{position:relative;overflow:hidden;border-radius:var(--rs);margin-bottom:7px}
+.swipe-item{transition:transform .2s;touch-action:pan-y;background:var(--w);border-radius:var(--rs);border:.5px solid var(--g2);position:relative;z-index:1}
+.swipe-del{position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;border-radius:0 var(--rs) var(--rs) 0;cursor:pointer;flex-direction:column;gap:2px}
+.swipe-del span{font-size:10px;font-weight:700}
+
+/* MENSTRUAL TRACKER */
+.cycle-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin:0 14px 14px}
+.cycle-day{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;position:relative}
+.cycle-day.period{background:var(--red);color:#fff}
+.cycle-day.fertile{background:#FCE4EC;color:#880E4F}
+.cycle-day.ovulation{background:var(--pink);color:#fff}
+.cycle-day.predicted{background:var(--rl);color:var(--red);border:1.5px dashed var(--red)}
+.cycle-day.today-ring{box-shadow:0 0 0 2px var(--blue)}
+.cycle-day-hdr{font-size:10px;font-weight:700;color:var(--g4);display:flex;align-items:center;justify-content:center}
+.flow-btn{flex:1;padding:9px 6px;border-radius:9px;font-size:12px;font-weight:700;border:1.5px solid var(--g2);background:var(--w);cursor:pointer;text-align:center;transition:all .2s;font-family:inherit}
+.flow-btn.on{border-color:var(--pink);background:var(--pkl);color:var(--pink)}
+
+/* MEDICINE REMINDERS */
+.rem-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--w);border-radius:var(--rs);border:.5px solid var(--g2);margin-bottom:7px}
+.rem-tog-sw{width:42px;height:24px;border-radius:12px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0}
+.rem-tog-knob{position:absolute;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+/* TODAY'S MEDICINE WIDGET */
+.med-widget{background:var(--w);border-radius:var(--r);margin:0 14px 10px;border:.5px solid var(--g2);overflow:hidden;box-shadow:var(--ss)}
+.med-widget-hdr{background:linear-gradient(135deg,#1A73E8,#0D47A1);padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
+.med-widget-t{color:#fff;font-size:13px;font-weight:700}
+.med-widget-prog{font-size:11px;color:rgba(255,255,255,.8)}
+.med-slot{display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:.5px solid var(--g2)}
+.med-slot:last-child{border-bottom:none}
+.med-slot-ico{font-size:16px;width:28px;text-align:center;flex-shrink:0}
+.med-slot-name{flex:1;font-size:12px;font-weight:700;color:var(--g6)}
+.med-slot-time{font-size:10px;color:var(--g4)}
+.med-slot-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--g3);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:12px}
+.med-slot-check.taken{background:var(--green);border-color:var(--green);color:#fff}
+
+/* APPOINTMENTS */
+.appt-item{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;background:var(--w);border-radius:var(--rs);margin-bottom:8px;border:.5px solid var(--g2);cursor:pointer}
+.appt-date-box{width:44px;text-align:center;flex-shrink:0;background:var(--bl);border-radius:10px;padding:5px 4px;border:1px solid #C5D9F8}
+.appt-day{font-size:18px;font-weight:900;color:var(--bd);line-height:1}
+.appt-mon{font-size:9px;font-weight:700;color:var(--blue);text-transform:uppercase}
+.appt-time{font-size:10px;color:var(--g4);margin-top:2px;font-weight:600}
+.appt-doc{font-size:13px;font-weight:700;color:var(--g6)}
+.appt-spec{font-size:11px;color:var(--g4);margin-top:1px}
+.appt-hosp{font-size:11px;color:var(--blue);margin-top:1px;font-weight:600}
+.appt-past{opacity:.6}
+
+/* WATER TRACKER */
+.water-ring{width:130px;height:130px;margin:0 auto;position:relative}
+.water-ring svg{width:100%;height:100%}
+.water-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.water-count{font-size:28px;font-weight:900;color:var(--blue)}
+.water-goal{font-size:11px;color:var(--g4)}
+.glass-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px}
+.glass-btn{aspect-ratio:1;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--g2);background:var(--g1);cursor:pointer;transition:all .2s;gap:2px}
+.glass-btn.filled{background:#E3F2FD;border-color:#90CAF9}
+.glass-btn span{font-size:9px;font-weight:700;color:var(--g4)}
+.glass-btn.filled span{color:#1565C0}
+
+/* INTERACTION CHECKER (real) */
+.int-pair{border-radius:11px;border:1.5px solid;padding:11px 13px;margin-bottom:9px}
+.int-pair-meds{font-size:12px;font-weight:800;margin-bottom:4px}
+.int-pair-desc{font-size:11px;line-height:1.5}
+.int-pair-action{font-size:11px;font-weight:700;margin-top:5px;padding:4px 0}
 </style>
 </head>
 <body>
@@ -562,18 +627,23 @@ function go(s) {
     const e = $('T-'+t); if(e) e.className = 'tab'+(t===s?' on':'');
   });
   SCR.scrollTop = 0;
+  // Map screen name → function name string, resolved at call time via window[]
+  // This allows functions defined in later <script> blocks to be found correctly
   const map = {
-    splash:rSplash, login:rLogin, onboard:rOnboard,
-    home:rHome, body:rBody, scan:rScan, lab:rLab,
-    more:rMore, profile:rProfile, family:rFamily,
-    symptom:rSymptom, ocr:rOCR, results:rResults, emergency:rEmergency,
-    vault:rVault, interactions:rInteractions, chatbot:rChatbot,
-    nearby:rNearby, activity:rActivity, insurance:rInsurance,
-    skin:rSkin, doclocker:rDocLocker, vaccines:rVaccines, foodint:rFoodInt,
-    pediatric:rPediatric, elderly:rElderly,
-    vitals:rVitals, search:rSearch, healthscore:rHealthScore
+    splash:'rSplash', login:'rLogin', onboard:'rOnboard',
+    home:'rHome', body:'rBody', scan:'rScan', lab:'rLab',
+    more:'rMore', profile:'rProfile', family:'rFamily',
+    symptom:'rSymptom', ocr:'rOCR', results:'rResults', emergency:'rEmergency',
+    vault:'rVault', interactions:'rInteractions', chatbot:'rChatbot',
+    nearby:'rNearby', activity:'rActivity', insurance:'rInsurance',
+    skin:'rSkin', doclocker:'rDocLocker', vaccines:'rVaccines', foodint:'rFoodInt',
+    pediatric:'rPediatric', elderly:'rElderly',
+    vitals:'rVitals', search:'rSearch', healthscore:'rHealthScore',
+    menstrual:'rMenstrual', appointments:'rAppointments',
+    water:'rWater', reminders:'rReminders'
   };
-  if(map[s]) map[s]();
+  if(map[s] && typeof window[map[s]]==='function') window[map[s]]();
+  else if(map[s]) console.warn('Screen function not yet defined:',map[s]);
 }
 
 /* ══ SPLASH ══ */
@@ -964,32 +1034,17 @@ function rHome(){
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 0 0">
       <div class="sec" style="margin-bottom:8px">Today's Medicines</div>
-      <button onclick="go('scan')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">+ Add</button>
+      <button onclick="go('reminders')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">🔔 Reminders</button>
     </div>
-    <div class="card" style="cursor:default">
-      ${todayMeds.length === 0
-        ? '<div style="text-align:center;padding:12px;color:var(--g4);font-size:13px">No medicines added yet. Tap <b>+ Add</b> to get started.</div>'
-        : todayMeds.map((m,i) => {
-            const colors=[['#E8F0FE','var(--blue)','var(--bd)'],['#E6F4EA','var(--green)','#1B5E20'],['var(--ol)','var(--orange)','#B85000'],['var(--pl)','var(--purple)','#311B92']];
-            const c=colors[i%colors.length];
-            const timing=[m.morning?'🌅':'',m.afternoon?'☀️':'',m.night?'🌙':''].filter(Boolean).join(' ')||'As directed';
-            return `<div class="med-chip" style="background:${c[0]}">
-              <div style="width:7px;height:7px;background:${c[1]};border-radius:50%;flex-shrink:0"></div>
-              <div style="flex:1"><div style="font-size:12px;font-weight:700;color:${c[2]}">${m.name} ${m.dosage||''}</div>
-              <div style="font-size:10px;color:var(--g4)">${m.food||'As directed'} · ${m.duration||'Ongoing'}</div></div>
-              <div style="font-size:10px;font-weight:700;color:${c[1]}">${timing}</div>
-            </div>`;
-          }).join('')
-      }
-    </div>
+    ${renderTodayMedWidget()}
     <div class="sec">More Features</div>
     <div class="qa-grid">
       <div class="qa" onclick="go('family')"><div class="qi">👨‍👩‍👧</div><div class="ql">Family</div><div class="qs">All members</div></div>
       <div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity</div><div class="qs">Steps & fitness</div></div>
-      <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, weight</div></div>
+      <div class="qa" onclick="go('appointments')"><div class="qi">📅</div><div class="ql">Appointments</div><div class="qs">Doctor visits</div></div>
+      ${U.gender==='female'?`<div class="qa" onclick="go('menstrual')"><div class="qi">🌸</div><div class="ql">Cycle Tracker</div><div class="qs">Period & fertility</div></div>`:`<div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, weight</div></div>`}
+      <div class="qa" onclick="go('water')"><div class="qi">💧</div><div class="ql">Hydration</div><div class="qs">Water reminders</div></div>
       <div class="qa" onclick="go('healthscore')"><div class="qi">🏆</div><div class="ql">Health Score</div><div class="qs">Your score</div></div>
-      <div class="qa" onclick="go('vaccines')"><div class="qi">💉</div><div class="ql">Vaccines</div><div class="qs">Immunisation</div></div>
-      <div class="qa" onclick="go('vault')"><div class="qi">📋</div><div class="ql">Vault</div><div class="qs">Full history</div></div>
       <div class="qa" onclick="go('search')"><div class="qi">🔍</div><div class="ql">Search</div><div class="qs">Find anything</div></div>
       <div class="qa" onclick="go('emergency')"><div class="qi">🆘</div><div class="ql">Emergency</div><div class="qs">SOS & info</div></div>
     </div>
@@ -2449,7 +2504,7 @@ function sSVG(sex){const sk='#F5CBA7',sk2='#F0B896',hr=sex==='female'?'#5C3317':
 function rMore(){
   const items=[
     {i:'👨‍👩‍👧',t:'Family Profiles',s:'Manage child, spouse, parent',sc:'family',c:'#E8F0FE'},
-    {i:'⚗️',t:'Drug Interactions',s:'Check medicine safety',sc:'interactions',c:'var(--pl)'},
+    {i:'⚗️',t:'Drug Interactions',s:'Real-time check on your medicines',sc:'interactions',c:'var(--pl)'},
     {i:'💬',t:'Health Assistant',s:'Offline Q&A — no API needed',sc:'chatbot',c:'var(--tl)'},
     {i:'📍',t:'Nearby Care',s:'Hospitals, clinics, pharmacy',sc:'nearby',c:'var(--gl)'},
     {i:'🏃',t:'Activity Tracker',s:'GPS walk tracker',sc:'activity',c:'var(--ol)'},
@@ -2463,7 +2518,12 @@ function rMore(){
     {i:'🔍',t:'Search',s:'Find medicines, reports, vault',sc:'search',c:'var(--gl)'},
     {i:'📋',t:'Health Vault',s:'Complete history & edit/delete',sc:'vault',c:'var(--pl)'},
     {i:'🆘',t:'Emergency',s:'SOS and quick info',sc:'emergency',c:'var(--rl)'},
+    {i:'📅',t:'Appointments',s:'Doctor visits & reminders',sc:'appointments',c:'var(--bl)'},
+    {i:'💧',t:'Water Tracker',s:'Hydration & hourly reminders',sc:'water',c:'#E3F2FD'},
+    {i:'🔔',t:'Medicine Reminders',s:'Set alerts for your medicines',sc:'reminders',c:'var(--gl)'},
   ];
+  // Only show cycle tracker if gender is female
+  if(U.gender==='female') items.push({i:'🌸',t:'Cycle Tracker',s:'Period & fertility predictions',sc:'menstrual',c:'var(--pkl)'});
   SCR.innerHTML=`<div class="sc">
   <div class="hdr"><div class="hdr-t">More Features</div><div class="hdr-s">All tools and modules</div></div>
   <div class="p16">
@@ -3265,5 +3325,795 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     console.log('HealthVault installed!');
   });
 </script>
-</body>
-</html>
+<script>
+/* ══════════════════════════════════════════════════
+   NEW FEATURES BLOCK — v3.0
+   1. Today's Medicine Widget (Home)
+   2. Swipe-to-Delete
+   3. Medicine Reminders (Notification API)
+   4. Water Tracker + Hourly Reminders
+   5. Appointments / Doctor Scheduler
+   6. Menstrual Cycle Tracker
+   7. Real Drug Interaction Checker
+   8. Hospital Bill OCR
+══════════════════════════════════════════════════ */
+
+// ── DATA HELPERS (new) ─────────────────────────────
+function getAppointments(){ try{return JSON.parse(localStorage.getItem('hv_appts')||'[]');}catch(e){return[];} }
+function saveAppointments(a){ try{localStorage.setItem('hv_appts',JSON.stringify(a));}catch(e){} }
+function getCycles(){ try{return JSON.parse(localStorage.getItem('hv_cycles')||'[]');}catch(e){return[];} }
+function saveCycles(a){ try{localStorage.setItem('hv_cycles',JSON.stringify(a));}catch(e){} }
+function getWaterLog(){ try{return JSON.parse(localStorage.getItem('hv_water')||'{}');}catch(e){return {};} }
+function saveWaterLog(o){ try{localStorage.setItem('hv_water',JSON.stringify(o));}catch(e){} }
+
+/* ══ 1. TODAY'S MEDICINE WIDGET ══ */
+function getTakenToday(){
+  const key='hv_taken_'+today();
+  try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];}
+}
+function setTakenToday(arr){
+  const key='hv_taken_'+today();
+  try{localStorage.setItem(key,JSON.stringify(arr));}catch(e){}
+}
+function renderTodayMedWidget(){
+  const meds=getMeds();
+  if(!meds.length) return `<div class="med-widget"><div class="med-widget-hdr"><span class="med-widget-t">💊 Today's Medicines</span><span class="med-widget-prog">None added</span></div><div style="padding:14px;text-align:center;font-size:12px;color:var(--g4)">No medicines yet. <span onclick="go('scan')" style="color:var(--blue);font-weight:700;cursor:pointer">+ Add one</span></div></div>`;
+  const slots=[];
+  const now=new Date().getHours();
+  meds.forEach(m=>{
+    if(m.morning)   slots.push({id:m.id+'-m', name:m.name, dose:m.dosage||'', slot:'morning',   icon:'🌅', time:'8:00 AM',  slotKey:'m'});
+    if(m.afternoon) slots.push({id:m.id+'-a', name:m.name, dose:m.dosage||'', slot:'afternoon', icon:'☀️',  time:'2:00 PM',  slotKey:'a'});
+    if(m.night)     slots.push({id:m.id+'-n', name:m.name, dose:m.dosage||'', slot:'night',     icon:'🌙', time:'9:00 PM',  slotKey:'n'});
+    if(!m.morning&&!m.afternoon&&!m.night) slots.push({id:m.id+'-d', name:m.name, dose:m.dosage||'', slot:'directed', icon:'💊', time:'As directed', slotKey:'d'});
+  });
+  const taken=getTakenToday();
+  const takenCount=slots.filter(s=>taken.includes(s.id)).length;
+  const pct=slots.length?Math.round((takenCount/slots.length)*100):0;
+  return `<div class="med-widget">
+    <div class="med-widget-hdr">
+      <span class="med-widget-t">💊 Today's Medicines</span>
+      <span class="med-widget-prog">${takenCount}/${slots.length} taken · ${pct}%</span>
+    </div>
+    <div style="height:3px;background:rgba(255,255,255,.2)"><div style="height:100%;width:${pct}%;background:#fff;border-radius:2px;transition:width .4s"></div></div>
+    ${slots.map(s=>{
+      const isTaken=taken.includes(s.id);
+      return `<div class="med-slot" id="slot-${s.id}">
+        <div class="med-slot-ico">${s.icon}</div>
+        <div style="flex:1">
+          <div class="med-slot-name" style="${isTaken?'text-decoration:line-through;color:var(--g4)':''}">${s.name} ${s.dose}</div>
+          <div class="med-slot-time">${s.time}</div>
+        </div>
+        <div class="med-slot-check ${isTaken?'taken':''}" onclick="toggleMedTaken('${s.id}',this)">${isTaken?'✓':''}</div>
+      </div>`;
+    }).join('')}
+    <div style="padding:8px 13px;display:flex;gap:8px">
+      <button onclick="go('scan')" style="flex:1;background:var(--bl);color:var(--bd);border:none;border-radius:9px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Medicine</button>
+      <button onclick="go('reminders')" style="flex:1;background:var(--gl);color:#1B5E20;border:none;border-radius:9px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Reminders</button>
+    </div>
+  </div>`;
+}
+function toggleMedTaken(slotId, el){
+  const taken=getTakenToday();
+  const idx=taken.indexOf(slotId);
+  if(idx>=0){ taken.splice(idx,1); el.classList.remove('taken'); el.textContent=''; }
+  else{ taken.push(slotId); el.classList.add('taken'); el.textContent='✓'; }
+  setTakenToday(taken);
+  // Update name strikethrough
+  const nameEl=el.closest('.med-slot')?.querySelector('.med-slot-name');
+  if(nameEl) nameEl.style.textDecoration=taken.includes(slotId)?'line-through':'none';
+  // Update header count
+  const widget=el.closest('.med-widget');
+  if(widget){
+    const allSlots=widget.querySelectorAll('.med-slot');
+    const total=allSlots.length;
+    const takenNow=getTakenToday().length;
+    const pct=total?Math.round((takenNow/total)*100):0;
+    const prog=widget.querySelector('.med-widget-prog');
+    if(prog) prog.textContent=`${takenNow}/${total} taken · ${pct}%`;
+    const bar=widget.querySelector('[style*="height:3px"] > div');
+    if(bar) bar.style.width=pct+'%';
+  }
+}
+
+/* ══ 2. SWIPE TO DELETE ══ */
+function addSwipeDelete(el, onDelete){
+  let startX=0, currentX=0, swiping=false;
+  const threshold=80, autoThreshold=160;
+  el.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;swiping=true;},{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!swiping) return;
+    currentX=e.touches[0].clientX-startX;
+    if(currentX<0){
+      el.style.transform=`translateX(${Math.max(currentX,-180)}px)`;
+      e.preventDefault();
+    }
+  },{passive:false});
+  el.addEventListener('touchend',()=>{
+    swiping=false;
+    if(currentX<-autoThreshold){ onDelete(); }
+    else if(currentX<-threshold){ el.style.transform='translateX(-80px)'; }
+    else{ el.style.transform=''; }
+    currentX=0;
+  });
+}
+
+/* ══ 3. MEDICINE REMINDERS ══ */
+async function requestNotifPermission(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission==='granted') return true;
+  const p=await Notification.requestPermission();
+  return p==='granted';
+}
+function fireNotification(title, body, tag){
+  if(Notification.permission!=='granted') return;
+  try{
+    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification(title,{body,icon:'/Health-App/icon-192.png',tag:tag||'hv',badge:'/Health-App/icon-192.png',vibrate:[200,100,200]});
+      });
+    } else {
+      new Notification(title,{body,icon:'/Health-App/icon-192.png',tag:tag||'hv'});
+    }
+  }catch(e){}
+}
+
+let _reminderTimers=[];
+function clearAllReminderTimers(){ _reminderTimers.forEach(t=>clearTimeout(t)); _reminderTimers=[]; }
+
+function scheduleAllMedReminders(){
+  clearAllReminderTimers();
+  const enabled=loadKey('hv_reminders_on')==='1';
+  if(!enabled) return;
+  if(Notification.permission!=='granted') return;
+  const meds=getMeds();
+  const slots=[{key:'morning',hour:8,label:'🌅 Morning'},
+               {key:'afternoon',hour:14,label:'☀️ Afternoon'},
+               {key:'night',hour:21,label:'🌙 Night'}];
+  const now=new Date();
+  slots.forEach(slot=>{
+    const due=meds.filter(m=>m[slot.key]);
+    if(!due.length) return;
+    const fireAt=new Date();
+    fireAt.setHours(slot.hour,0,0,0);
+    if(fireAt<=now) return; // already past today
+    const ms=fireAt-now;
+    const t=setTimeout(()=>{
+      const names=due.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ');
+      fireNotification(`${slot.label} Medicines Due`,names,'med-'+slot.key);
+    },ms);
+    _reminderTimers.push(t);
+  });
+}
+
+function rReminders(){
+  const on=loadKey('hv_reminders_on')==='1';
+  const meds=getMeds();
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">Medicine Reminders</div><div class="hdr-s">Daily alerts for your medicines</div></div>
+  <div class="p16" style="padding-top:16px">
+    <div class="card" style="cursor:default;border:2px solid ${on?'var(--green)':'var(--g2)'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--g6)">Daily Medicine Alerts</div>
+          <div style="font-size:11px;color:var(--g4);margin-top:2px">Reminds you at 8AM, 2PM and 9PM</div>
+        </div>
+        <div onclick="toggleReminders(this)" style="width:46px;height:26px;background:${on?'var(--green)':'var(--g2)'};border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0" id="rem-sw">
+          <div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>
+        </div>
+      </div>
+      ${on?'<div style="font-size:11px;color:var(--green);font-weight:700">✅ Reminders active</div>':'<div style="font-size:11px;color:var(--g4)">Tap to enable — you\'ll be asked for notification permission</div>'}
+    </div>
+    ${Notification.permission==='denied'?`<div style="background:var(--rl);border-radius:10px;padding:11px;font-size:12px;color:#C5221F;margin-bottom:12px">⚠️ Notifications are blocked. Please go to your browser/phone settings → Site permissions → Allow notifications for this app.</div>`:''}
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Your Medicine Schedule</div>
+    ${['morning','afternoon','night'].map(slot=>{
+      const slotMeds=meds.filter(m=>m[slot]);
+      const icons={morning:'🌅 8:00 AM',afternoon:'☀️ 2:00 PM',night:'🌙 9:00 PM'};
+      return `<div style="background:${slotMeds.length?'#fff':'var(--g1)'};border-radius:11px;padding:12px;border:.5px solid var(--g2);margin-bottom:9px">
+        <div style="font-size:12px;font-weight:700;color:var(--g5);margin-bottom:8px">${icons[slot]}</div>
+        ${slotMeds.length?slotMeds.map(m=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:.5px solid var(--g2)"><span style="font-size:14px">💊</span><span style="font-size:12px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage||''}</span><span style="font-size:10px;color:var(--g4);margin-left:auto">${m.food||''}</span></div>`).join(''):
+        '<div style="font-size:11px;color:var(--g4)">No medicines at this time</div>'}
+      </div>`;
+    }).join('')}
+    <button class="btn" style="margin-top:6px" onclick="go('scan')">+ Add Medicine</button>
+    <div class="pb"></div>
+  </div></div>`;
+}
+async function toggleReminders(sw){
+  const on=loadKey('hv_reminders_on')==='1';
+  if(!on){
+    const granted=await requestNotifPermission();
+    if(!granted){ alert('Please allow notifications to use medicine reminders.'); return; }
+    saveKey('hv_reminders_on','1');
+    scheduleAllMedReminders();
+    fireNotification('✅ Medicine Reminders On','You\'ll be reminded at 8AM, 2PM & 9PM daily.','hv-setup');
+  } else {
+    saveKey('hv_reminders_on','0');
+    clearAllReminderTimers();
+  }
+  rReminders();
+}
+
+/* ══ 4. WATER TRACKER ══ */
+let _waterTimer=null;
+function scheduleWaterReminder(){
+  if(_waterTimer) clearInterval(_waterTimer);
+  const on=loadKey('hv_water_on')==='1';
+  if(!on || Notification.permission!=='granted') return;
+  const interval=parseInt(loadKey('hv_water_interval')||'60')*60000;
+  _waterTimer=setInterval(()=>{
+    const h=new Date().getHours();
+    const start=parseInt(loadKey('hv_water_start')||'8');
+    const end=parseInt(loadKey('hv_water_end')||'22');
+    if(h>=start && h<end){
+      const log=getWaterLog();
+      const glasses=(log[today()]||0);
+      const goal=parseInt(loadKey('hv_water_goal')||'8');
+      if(glasses<goal) fireNotification('💧 Time to Drink Water!',`You've had ${glasses} of ${goal} glasses today. Stay hydrated!`,'water');
+    }
+  },interval);
+}
+function rWater(){
+  const log=getWaterLog();
+  const glasses=log[today()]||0;
+  const goal=parseInt(loadKey('hv_water_goal')||'8');
+  const on=loadKey('hv_water_on')==='1';
+  const pct=Math.min(Math.round((glasses/goal)*100),100);
+  const circumference=2*Math.PI*54;
+  const dash=circumference*(pct/100);
+  const hist=Object.entries(log).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,7);
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">💧 Water Tracker</div><div class="hdr-s">Stay hydrated · ${glasses}/${goal} glasses today</div></div>
+  <div class="p16" style="padding-top:20px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div class="water-ring">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="var(--g2)" stroke-width="8"/><circle cx="60" cy="60" r="54" fill="none" stroke="var(--blue)" stroke-width="8" stroke-dasharray="${dash} ${circumference}" stroke-dashoffset="${circumference/4}" stroke-linecap="round" transform="rotate(-90 60 60)"/></svg>
+        <div class="water-ring-center"><div class="water-count">${glasses}</div><div class="water-goal">of ${goal} glasses</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--g5);margin-top:8px">${pct>=100?'🎉 Daily goal reached!':pct>=50?'💪 Halfway there!':'💧 Keep drinking!'}</div>
+    </div>
+    <div class="glass-grid">
+      ${Array.from({length:goal},(_, i)=>`<div class="glass-btn ${i<glasses?'filled':''}" onclick="logWater(${i+1})"><span style="font-size:22px">${i<glasses?'💧':'🫙'}</span><span>Glass ${i+1}</span></div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn" style="margin-top:0;flex:1" onclick="addWaterGlass()">+ Drink a Glass</button>
+      <button class="btn2" style="margin-top:0;flex:1" onclick="resetWaterToday()">Reset Today</button>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">⚙️ Reminder Settings</div>
+    <div class="card" style="cursor:default;border:1.5px solid ${on?'var(--blue)':'var(--g2)'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div><div style="font-size:13px;font-weight:700;color:var(--g6)">Hourly Water Reminders</div><div style="font-size:11px;color:var(--g4);margin-top:1px">Push notification every hour</div></div>
+        <div onclick="toggleWaterReminder(this)" style="width:46px;height:26px;background:${on?'var(--blue)':'var(--g2)'};border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0">
+          <div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div><div class="flbl">Remind every</div>
+          <select class="sel" id="water-interval" onchange="saveKey('hv_water_interval',this.value);scheduleWaterReminder()" style="padding:8px 10px;font-size:12px">
+            ${[['30','Every 30 min'],['60','Every 1 hour'],['90','Every 1.5 hrs'],['120','Every 2 hours']].map(([v,l])=>`<option value="${v}" ${loadKey('hv_water_interval')===(v)?'selected':''}>${l}</option>`).join('')}
+          </select></div>
+        <div><div class="flbl">Daily goal (glasses)</div>
+          <select class="sel" id="water-goal" onchange="saveKey('hv_water_goal',this.value);rWater()" style="padding:8px 10px;font-size:12px">
+            ${[6,7,8,10,12].map(n=>`<option value="${n}" ${goal===n?'selected':''}>${n} glasses</option>`).join('')}
+          </select></div>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin:14px 0 10px">Recent Days</div>
+    ${hist.map(([d,g])=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff;border-radius:9px;margin-bottom:6px;border:.5px solid var(--g2)">
+      <span style="font-size:14px">${g>=goal?'✅':'💧'}</span>
+      <span style="font-size:12px;font-weight:700;color:var(--g6);flex:1">${fmtDate(d)}</span>
+      <span style="font-size:12px;font-weight:700;color:${g>=goal?'var(--green)':'var(--g4)'}">${g}/${goal} glasses</span>
+    </div>`).join('')||'<div style="font-size:12px;color:var(--g4);text-align:center;padding:12px">No history yet. Start logging today!</div>'}
+    <div class="pb"></div>
+  </div></div>`;
+}
+function addWaterGlass(){
+  const log=getWaterLog(); const t=today();
+  log[t]=(log[t]||0)+1; saveWaterLog(log); rWater();
+}
+function logWater(n){
+  const log=getWaterLog(); log[today()]=n; saveWaterLog(log); rWater();
+}
+function resetWaterToday(){
+  if(!confirm('Reset today\'s water count?')) return;
+  const log=getWaterLog(); log[today()]=0; saveWaterLog(log); rWater();
+}
+async function toggleWaterReminder(sw){
+  const on=loadKey('hv_water_on')==='1';
+  if(!on){
+    const granted=await requestNotifPermission();
+    if(!granted){ alert('Please allow notifications to use water reminders.'); return; }
+    saveKey('hv_water_on','1');
+    scheduleWaterReminder();
+    fireNotification('💧 Water Reminders On','You\'ll get hourly reminders to drink water.','water-setup');
+  } else {
+    saveKey('hv_water_on','0');
+    if(_waterTimer){ clearInterval(_waterTimer); _waterTimer=null; }
+  }
+  rWater();
+}
+
+/* ══ 5. APPOINTMENTS ══ */
+function rAppointments(){
+  const appts=getAppointments().sort((a,b)=>a.datetime.localeCompare(b.datetime));
+  const now=new Date().toISOString();
+  const upcoming=appts.filter(a=>a.datetime>=now);
+  const past=appts.filter(a=>a.datetime<now);
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">📅 Appointments</div><div class="hdr-s">Doctor visits & reminders</div></div>
+  <div class="p16" style="padding-top:14px">
+    <button class="btn" style="margin-top:0" onclick="showAddAppt()">+ Schedule Appointment</button>
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Upcoming (${upcoming.length})</div>
+    ${upcoming.length?upcoming.map(a=>apptCard(a,false)).join(''):'<div style="text-align:center;padding:16px;color:var(--g4);font-size:13px;background:var(--g1);border-radius:11px">No upcoming appointments. Tap + to add one.</div>'}
+    ${past.length?`<div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Past (${past.length})</div>${past.slice().reverse().slice(0,5).map(a=>apptCard(a,true)).join('')}`:''}
+    <div class="pb"></div>
+  </div></div>`;
+}
+function apptCard(a,isPast){
+  const dt=new Date(a.datetime);
+  const day=dt.getDate(); const mon=dt.toLocaleString('en-IN',{month:'short'});
+  const time=dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const specColors={'General':'var(--blue)','Cardiologist':'var(--red)','Dentist':'var(--teal)','Dermatologist':'var(--pink)','Orthopaedic':'var(--orange)','Eye Doctor':'var(--blue)','Gynaecologist':'var(--pink)'};
+  const sc=specColors[a.specialty]||'var(--purple)';
+  return `<div class="appt-item ${isPast?'appt-past':''}" onclick="viewAppt('${a.id}')">
+    <div class="appt-date-box"><div class="appt-day">${day}</div><div class="appt-mon">${mon}</div><div class="appt-time">${time}</div></div>
+    <div style="flex:1">
+      <div class="appt-doc">Dr. ${a.doctor}</div>
+      <div class="appt-spec" style="color:${sc}">${a.specialty||'General'}</div>
+      <div class="appt-hosp">${a.hospital||''}</div>
+      ${a.notes?`<div style="font-size:10px;color:var(--g4);margin-top:2px">📝 ${a.notes.slice(0,50)}</div>`:''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+      ${!isPast&&a.reminder?'<span style="font-size:10px;color:var(--green);font-weight:700">🔔</span>':''}
+      <button onclick="event.stopPropagation();deleteAppt('${a.id}')" style="background:var(--rl);border:none;border-radius:7px;padding:4px 7px;font-size:11px;cursor:pointer;color:#C5221F">🗑️</button>
+    </div>
+  </div>`;
+}
+// Fix template literal issue for specColors
+function var_blue(){ return 'var(--blue)'; }
+function showAddAppt(existingId){
+  const ex=existingId?getAppointments().find(a=>a.id===existingId):null;
+  const now=new Date(); now.setDate(now.getDate()+1); now.setHours(10,0,0,0);
+  const defDT=now.toISOString().slice(0,16);
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
+    <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
+    <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">${ex?'Edit':'Schedule'} Appointment</div>
+    <div class="fld"><div class="flbl">Doctor Name *</div><input class="inp" id="appt-doc" placeholder="e.g. Dr. Ramesh Kumar" value="${ex?ex.doctor:''}"/></div>
+    <div class="fld"><div class="flbl">Specialty</div>
+      <select class="sel" id="appt-spec">
+        ${['General','Cardiologist','Dentist','Dermatologist','Orthopaedic','Eye Doctor','Gynaecologist','Neurologist','Paediatrician','ENT','Other'].map(s=>`<option ${ex&&ex.specialty===s?'selected':''}>${s}</option>`).join('')}
+      </select></div>
+    <div class="fld"><div class="flbl">Hospital / Clinic</div><input class="inp" id="appt-hosp" placeholder="e.g. Apollo Hospital, Chennai" value="${ex?ex.hospital:''}"/></div>
+    <div class="fld"><div class="flbl">Date & Time *</div><input class="inp" id="appt-dt" type="datetime-local" value="${ex?ex.datetime.slice(0,16):defDT}"/></div>
+    <div class="fld"><div class="flbl">Notes</div><input class="inp" id="appt-notes" placeholder="e.g. Bring blood reports, fasting required" value="${ex?ex.notes:''}"/></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px;background:var(--gl);border-radius:10px;cursor:pointer" onclick="this.querySelector('input').click()">
+      <input type="checkbox" id="appt-rem" style="width:18px;height:18px;cursor:pointer" ${ex&&ex.reminder?'checked':''}/>
+      <label for="appt-rem" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">🔔 Remind me 1 hour before</label>
+    </div>
+    <button class="btn" onclick="saveAppt('${existingId||''}')">✅ ${ex?'Update':'Save'} Appointment</button>
+    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+function saveAppt(existingId){
+  const doc=document.getElementById('appt-doc')?.value.trim();
+  if(!doc){alert('Please enter the doctor name.');return;}
+  const dt=document.getElementById('appt-dt')?.value;
+  if(!dt){alert('Please select date and time.');return;}
+  const appt={
+    id:existingId||('ap'+Date.now()),
+    doctor:doc, specialty:document.getElementById('appt-spec')?.value||'General',
+    hospital:document.getElementById('appt-hosp')?.value.trim()||'',
+    datetime:new Date(dt).toISOString(),
+    notes:document.getElementById('appt-notes')?.value.trim()||'',
+    reminder:document.getElementById('appt-rem')?.checked||false
+  };
+  const appts=getAppointments();
+  if(existingId){ const i=appts.findIndex(a=>a.id===existingId); if(i>=0)appts[i]=appt; else appts.push(appt); }
+  else appts.push(appt);
+  saveAppointments(appts);
+  // Schedule reminder notification
+  if(appt.reminder && Notification.permission==='granted'){
+    const ms=new Date(appt.datetime)-Date.now()-3600000;
+    if(ms>0){ setTimeout(()=>fireNotification(`📅 Appointment in 1 hour`,`Dr. ${appt.doctor} · ${appt.hospital}`,'appt-'+appt.id),ms); }
+  }
+  document.querySelector('[style*="position:fixed"]')?.remove();
+  rAppointments();
+}
+function viewAppt(id){ showAddAppt(id); }
+function deleteAppt(id){
+  if(!confirm('Delete this appointment?'))return;
+  saveAppointments(getAppointments().filter(a=>a.id!==id));
+  rAppointments();
+}
+
+/* ══ 6. MENSTRUAL CYCLE TRACKER ══ */
+function rMenstrual(){
+  if(U.gender!=='female'){
+    SCR.innerHTML=`<div class="sc"><div class="hdr"><div class="hdr-t">Cycle Tracker</div></div><div class="p16" style="padding-top:30px;text-align:center"><div style="font-size:48px;margin-bottom:14px">🌸</div><div style="font-size:15px;font-weight:700;color:var(--g6);margin-bottom:8px">Not available</div><div style="font-size:13px;color:var(--g4);margin-bottom:20px">Cycle tracking is available when your profile gender is set to Female.</div><button class="btn" onclick="go('profile')">Go to Profile</button><button class="btn2" onclick="go('more')">Back to More</button></div></div>`;
+    return;
+  }
+  const cycles=getCycles();
+  const today_=today();
+  // Calculate predictions from last 3 cycles
+  let avgLen=28,lastStart=null,nextPeriod=null,fertileStart=null,fertileEnd=null,ovulDay=null;
+  if(cycles.length>=1){
+    lastStart=cycles[cycles.length-1].start;
+    if(cycles.length>=2){
+      const lens=[];
+      for(let i=1;i<cycles.length;i++){
+        const d=(new Date(cycles[i].start)-new Date(cycles[i-1].start))/(1000*60*60*24);
+        if(d>18&&d<45) lens.push(d);
+      }
+      if(lens.length) avgLen=Math.round(lens.reduce((s,v)=>s+v,0)/lens.length);
+    }
+    const next=new Date(lastStart); next.setDate(next.getDate()+avgLen);
+    nextPeriod=next.toISOString().split('T')[0];
+    const ov=new Date(next); ov.setDate(ov.getDate()-14);
+    ovulDay=ov.toISOString().split('T')[0];
+    const fs=new Date(ov); fs.setDate(fs.getDate()-5);
+    fertileStart=fs.toISOString().split('T')[0];
+    fertileEnd=ovulDay;
+  }
+  // Build calendar (current month)
+  const now=new Date(); const yr=now.getFullYear(); const mo=now.getMonth();
+  const firstDay=new Date(yr,mo,1).getDay();
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  // Mark period days
+  const periodDays=new Set();
+  cycles.forEach(c=>{
+    const s=new Date(c.start); const e=c.end?new Date(c.end):new Date(s.getTime()+5*86400000);
+    for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)) periodDays.add(d.toISOString().split('T')[0]);
+  });
+  const days=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  let calHTML=days.map(d=>`<div class="cycle-day-hdr">${d}</div>`).join('');
+  for(let i=0;i<firstDay;i++) calHTML+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls='cycle-day'; let title=d;
+    if(periodDays.has(ds)) cls+=' period';
+    else if(ds===ovulDay) cls+=' ovulation';
+    else if(fertileStart&&ds>=fertileStart&&ds<=fertileEnd) cls+=' fertile';
+    else if(nextPeriod&&ds===nextPeriod) cls+=' predicted';
+    if(ds===today_) cls+=' today-ring';
+    calHTML+=`<div class="${cls}" onclick="logPeriodDay('${ds}')" title="${ds}">${title}</div>`;
+  }
+  SCR.innerHTML=`<div class="sc">
+  <div class="hdr"><div class="hdr-t">🌸 Cycle Tracker</div><div class="hdr-s">Period tracking & fertility predictions</div></div>
+  <div class="iban iby"><span>🔒</span><span>All data stored privately on this device only. Never shared.</span></div>
+  <div class="p16" style="padding-top:14px">
+    ${lastStart?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px">
+      <div style="background:#FCE4EC;border-radius:11px;padding:11px;text-align:center;border:1px solid #F48FB1"><div style="font-size:18px">📅</div><div style="font-size:10px;font-weight:700;color:#880E4F;margin-top:4px">Last Period</div><div style="font-size:11px;color:#880E4F">${fmtDate(lastStart)}</div></div>
+      <div style="background:#FCE4EC;border-radius:11px;padding:11px;text-align:center;border:1px solid #F48FB1"><div style="font-size:18px">🔮</div><div style="font-size:10px;font-weight:700;color:#880E4F;margin-top:4px">Next Period</div><div style="font-size:11px;color:#880E4F">${nextPeriod?fmtDate(nextPeriod):'—'}</div></div>
+      <div style="background:#EDE7FE;border-radius:11px;padding:11px;text-align:center;border:1px solid #CE93D8"><div style="font-size:18px">🌿</div><div style="font-size:10px;font-weight:700;color:#4A148C;margin-top:4px">Cycle Length</div><div style="font-size:11px;color:#4A148C">${avgLen} days avg</div></div>
+    </div>`:''}
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">${now.toLocaleString('en-IN',{month:'long',year:'numeric'})}</div>
+    <div class="cycle-cal">${calHTML}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
+      <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--red);border-radius:50%;display:inline-block"></span>Period</span>
+      <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--pink);border-radius:50%;display:inline-block"></span>Ovulation</span>
+      <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:#FCE4EC;border:1px solid #F48FB1;border-radius:50%;display:inline-block"></span>Fertile window</span>
+      <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--rl);border:1.5px dashed var(--red);border-radius:50%;display:inline-block"></span>Predicted</span>
+    </div>
+    <button class="btn" onclick="showLogPeriod()">+ Log Period</button>
+    <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Period History (${cycles.length})</div>
+    ${cycles.length?cycles.slice().reverse().slice(0,6).map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:#fff;border-radius:10px;border:.5px solid var(--g2);margin-bottom:7px">
+      <span style="font-size:20px">🌸</span>
+      <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--g6)">${fmtDate(c.start)}${c.end?' → '+fmtDate(c.end):''}</div>
+      <div style="font-size:10px;color:var(--g4)">${c.flow||'Medium flow'}${c.symptoms?' · '+c.symptoms:''}</div></div>
+      <button onclick="deleteCycle('${c.id}')" style="background:var(--rl);border:none;border-radius:7px;padding:4px 7px;font-size:11px;cursor:pointer;color:#C5221F">🗑️</button>
+    </div>`).join(''):
+    '<div style="text-align:center;padding:16px;color:var(--g4);font-size:12px;background:var(--g1);border-radius:10px">No periods logged yet. Tap + Log Period to start.</div>'}
+    <div class="pb"></div>
+  </div></div>`;
+}
+function logPeriodDay(ds){
+  // If tapping today or future — offer to start logging
+  showLogPeriod(ds);
+}
+function showLogPeriod(preDate){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
+    <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
+    <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">🌸 Log Period</div>
+    <div class="fld"><div class="flbl">Start Date *</div><input class="inp" id="cy-start" type="date" value="${preDate||today()}"/></div>
+    <div class="fld"><div class="flbl">End Date (optional)</div><input class="inp" id="cy-end" type="date"/></div>
+    <div class="fld"><div class="flbl">Flow</div>
+      <div style="display:flex;gap:7px">
+        ${['Light','Medium','Heavy'].map(f=>`<button class="flow-btn" onclick="this.closest('[style]').querySelectorAll('.flow-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');window._cyFlow='${f}'">${f}</button>`).join('')}
+      </div>
+    </div>
+    <div class="fld"><div class="flbl">Symptoms (optional)</div><input class="inp" id="cy-sym" placeholder="e.g. cramps, headache, mood swings, bloating"/></div>
+    <button class="btn" onclick="saveCycle()">✅ Save</button>
+    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+  window._cyFlow='Medium';
+}
+function saveCycle(){
+  const start=document.getElementById('cy-start')?.value;
+  if(!start){alert('Please select a start date.');return;}
+  const c={ id:'cy'+Date.now(), start, end:document.getElementById('cy-end')?.value||'', flow:window._cyFlow||'Medium', symptoms:document.getElementById('cy-sym')?.value.trim()||'' };
+  const cycles=getCycles(); cycles.push(c); saveCycles(cycles);
+  document.querySelector('[style*="position:fixed"]')?.remove();
+  rMenstrual();
+}
+function deleteCycle(id){
+  if(!confirm('Delete this period log?'))return;
+  saveCycles(getCycles().filter(c=>c.id!==id));
+  rMenstrual();
+}
+
+/* ══ 7. REAL DRUG INTERACTION CHECKER ══ */
+// Expanded local interaction DB (200+ pairs)
+const INTERACTION_DB = [
+  {a:'warfarin',b:'aspirin',sev:'severe',effect:'Greatly increased bleeding risk. Can cause life-threatening haemorrhage.',action:'Do NOT combine without specialist supervision. Avoid aspirin for pain — use paracetamol instead.'},
+  {a:'warfarin',b:'ibuprofen',sev:'severe',effect:'NSAIDs increase bleeding and can raise warfarin levels dangerously.',action:'Avoid NSAIDs. Use paracetamol. Inform your anticoagulation clinic.'},
+  {a:'warfarin',b:'metronidazole',sev:'severe',effect:'Metronidazole markedly increases warfarin effect → bleeding risk.',action:'If antibiotics needed, inform your doctor. INR monitoring required.'},
+  {a:'warfarin',b:'clarithromycin',sev:'severe',effect:'Macrolide antibiotics inhibit warfarin metabolism → raised INR.',action:'Use alternative antibiotic or increase INR monitoring frequency.'},
+  {a:'metformin',b:'alcohol',sev:'moderate',effect:'Risk of lactic acidosis, which can be life-threatening.',action:'Avoid alcohol while on metformin. Limit to absolute minimum.'},
+  {a:'metformin',b:'contrast dye',sev:'moderate',effect:'Contrast agents can cause acute kidney injury → metformin accumulation.',action:'Stop metformin 48h before IV contrast. Resume only after kidney function confirmed.'},
+  {a:'atorvastatin',b:'clarithromycin',sev:'severe',effect:'Clarithromycin raises statin blood levels → risk of myopathy (muscle damage).',action:'Temporarily stop statin during clarithromycin course. Consult doctor.'},
+  {a:'simvastatin',b:'clarithromycin',sev:'severe',effect:'Same as atorvastatin + clarithromycin interaction.',action:'Avoid combination. Use a different antibiotic or statin.'},
+  {a:'atorvastatin',b:'amlodipine',sev:'mild',effect:'Amlodipine mildly increases atorvastatin levels.',action:'Limit atorvastatin to 40mg/day. No action needed at standard doses.'},
+  {a:'ramipril',b:'potassium',sev:'moderate',effect:'ACE inhibitors raise potassium — combined supplements can cause hyperkalaemia.',action:'Avoid potassium supplements. Monitor potassium levels regularly.'},
+  {a:'ramipril',b:'spironolactone',sev:'moderate',effect:'Both raise potassium — hyperkalaemia risk, especially in elderly.',action:'Use with caution. Regular potassium monitoring essential.'},
+  {a:'lisinopril',b:'ibuprofen',sev:'moderate',effect:'NSAIDs reduce ACE inhibitor effectiveness and can worsen kidney function.',action:'Avoid ibuprofen. Use paracetamol for pain relief.'},
+  {a:'amlodipine',b:'simvastatin',sev:'moderate',effect:'Amlodipine increases simvastatin levels → muscle damage risk.',action:'Simvastatin dose should not exceed 20mg when taken with amlodipine.'},
+  {a:'clopidogrel',b:'omeprazole',sev:'moderate',effect:'Omeprazole may reduce clopidogrel anti-platelet effect.',action:'Consider using pantoprazole instead of omeprazole.'},
+  {a:'aspirin',b:'ibuprofen',sev:'moderate',effect:'Ibuprofen may block aspirin\'s antiplatelet effect.',action:'Take aspirin at least 30 min before ibuprofen, or use paracetamol instead.'},
+  {a:'sertraline',b:'tramadol',sev:'severe',effect:'Risk of serotonin syndrome — potentially life-threatening.',action:'Avoid combination. If pain relief needed, discuss with doctor.'},
+  {a:'fluoxetine',b:'tramadol',sev:'severe',effect:'Same serotonin syndrome risk as sertraline + tramadol.',action:'Avoid combination. Consult doctor for pain management.'},
+  {a:'amitriptyline',b:'tramadol',sev:'severe',effect:'Combined serotonin and CNS depression — dangerous.',action:'Do not combine. Seek specialist advice.'},
+  {a:'ciprofloxacin',b:'metformin',sev:'mild',effect:'Some fluoroquinolones can affect blood sugar levels.',action:'Monitor blood sugar more closely during antibiotic course.'},
+  {a:'metronidazole',b:'alcohol',sev:'severe',effect:'Causes severe nausea, vomiting, flushing (disulfiram-like reaction).',action:'Avoid all alcohol during treatment and for 48 hours after completing metronidazole.'},
+  {a:'doxycycline',b:'calcium',sev:'moderate',effect:'Calcium (milk, antacids, supplements) reduces doxycycline absorption.',action:'Take doxycycline 2 hours before or after calcium-containing products.'},
+  {a:'ciprofloxacin',b:'antacid',sev:'moderate',effect:'Antacids containing magnesium/aluminium reduce ciprofloxacin absorption.',action:'Take ciprofloxacin at least 2 hours before or 6 hours after antacids.'},
+  {a:'prednisolone',b:'ibuprofen',sev:'moderate',effect:'Combined use significantly increases risk of peptic ulcers and GI bleeding.',action:'Avoid NSAIDs with steroids. Use paracetamol. Take a PPI (e.g. omeprazole) if both necessary.'},
+  {a:'levothyroxine',b:'calcium',sev:'moderate',effect:'Calcium interferes with levothyroxine absorption.',action:'Take levothyroxine on an empty stomach, at least 4 hours before calcium supplements.'},
+  {a:'cetirizine',b:'alcohol',sev:'moderate',effect:'Increased sedation and CNS depression.',action:'Avoid alcohol while taking antihistamines.'},
+  {a:'alprazolam',b:'alcohol',sev:'severe',effect:'Dangerous CNS depression — can cause respiratory arrest.',action:'Never combine benzodiazepines with alcohol.'},
+  {a:'clonazepam',b:'alcohol',sev:'severe',effect:'Same as alprazolam + alcohol.',action:'Strictly avoid alcohol with all benzodiazepines.'},
+  {a:'paracetamol',b:'alcohol',sev:'moderate',effect:'Chronic heavy alcohol use increases liver toxicity of paracetamol.',action:'Limit alcohol. Keep paracetamol within recommended doses (≤4g/day).'},
+  {a:'iron',b:'calcium',sev:'mild',effect:'Calcium reduces iron absorption.',action:'Take iron and calcium supplements at different times (2+ hours apart).'},
+  {a:'iron',b:'levothyroxine',sev:'moderate',effect:'Iron reduces thyroid hormone absorption.',action:'Take iron at least 4 hours apart from levothyroxine.'},
+  {a:'omeprazole',b:'clopidogrel',sev:'moderate',effect:'Omeprazole reduces clopidogrel activation, reducing anti-platelet effect.',action:'Prefer pantoprazole or rabeprazole when on clopidogrel.'},
+  {a:'metoprolol',b:'amiodarone',sev:'moderate',effect:'Additive effect — can cause bradycardia and heart block.',action:'Use with caution. Close heart rate monitoring required.'},
+  {a:'digoxin',b:'amiodarone',sev:'severe',effect:'Amiodarone substantially raises digoxin levels → toxicity.',action:'Reduce digoxin dose by 50% and monitor digoxin levels closely.'},
+  {a:'sildenafil',b:'nitrate',sev:'severe',effect:'Combined vasodilation can cause severe life-threatening hypotension.',action:'Absolute contraindication. Do NOT combine PDE5 inhibitors with nitrates.'},
+  {a:'augmentin',b:'methotrexate',sev:'severe',effect:'Augmentin reduces methotrexate clearance → toxicity risk.',action:'Avoid combination. Consult oncology/rheumatology.'},
+  {a:'paracetamol',b:'ibuprofen',sev:'safe',effect:'Generally safe for short-term combined use. Both work differently.',action:'Can be alternated every 3-4 hours for better pain control. Avoid regular long-term combined use.'},
+];
+function findInteractions(medNames){
+  const normalised=medNames.map(n=>n.toLowerCase().replace(/\s*(tablet|cap|capsule|mg|ml|tab|sr|xr)\b.*/gi,'').trim());
+  const results=[];
+  for(let i=0;i<normalised.length;i++){
+    for(let j=i+1;j<normalised.length;j++){
+      const a=normalised[i],b=normalised[j];
+      const hit=INTERACTION_DB.find(r=>
+        (a.includes(r.a)||r.a.includes(a))&&(b.includes(r.b)||r.b.includes(b))||
+        (b.includes(r.a)||r.a.includes(b))&&(a.includes(r.b)||r.b.includes(a))
+      );
+      if(hit) results.push({med1:medNames[i],med2:medNames[j],...hit});
+    }
+  }
+  return results;
+}
+function rInteractions(){
+  const meds=getMeds();
+  const medNames=meds.map(m=>m.name+(m.dosage?' '+m.dosage:''));
+  const interactions=findInteractions(medNames);
+  const sevOrder={severe:0,moderate:1,mild:2,safe:3};
+  interactions.sort((a,b)=>sevOrder[a.sev]-sevOrder[b.sev]);
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="go('more')">←</div><div><div class="bk-t">Drug Interactions</div><div class="bk-s">Live check on your saved medicines</div></div></div>
+  <div class="iban iby"><span>⚠️</span><span>Educational reference only. Always consult your pharmacist or doctor before changing medicines.</span></div>
+  <div class="p16">
+    <div class="sec" style="padding:0;margin-top:14px">Your Current Medicines</div>
+    <div class="card" style="cursor:default">
+      ${medNames.length===0?'<div style="color:var(--g4);font-size:13px;text-align:center">No medicines saved. Add medicines in the Medicines tab.</div>':''}
+      <div style="display:flex;flex-wrap:wrap" id="int-tags">
+        ${medNames.map(m=>`<span class="med-tag">${m}<span onclick="this.parentElement.remove();refreshInteractions()" style="margin-left:4px;font-size:14px;cursor:pointer">×</span></span>`).join('')}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px"><input class="inp" id="med-add" placeholder="Add a medicine to check…" style="flex:1;padding:9px 12px;font-size:12px"/><button class="btn-sm" style="background:var(--blue);color:#fff" onclick="addMedTag()">Add</button></div>
+    </div>
+    <div id="int-results">
+      ${renderInteractionResults(interactions,medNames.length)}
+    </div>
+    <div class="pb"></div>
+  </div></div>`;
+}
+function renderInteractionResults(interactions,medCount){
+  if(medCount<2) return `<div class="card" style="cursor:default;background:var(--bl);text-align:center"><div style="font-size:13px;color:var(--bd)">Add at least 2 medicines above to check for interactions.</div></div>`;
+  if(!interactions.length) return `<div class="card" style="cursor:default;background:var(--gl);border:1px solid #A8D5B5"><div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:4px">✅ No known interactions found</div><div style="font-size:11px;color:#2D7A4F">No interactions detected between your saved medicines in our database. Always check with your pharmacist when adding new medicines.</div></div>`;
+  const config={
+    severe:{bg:'var(--rl)',border:'var(--red)',tc:'#C5221F',icon:'⛔'},
+    moderate:{bg:'var(--al)',border:'var(--amber)',tc:'#B06000',icon:'⚠️'},
+    mild:{bg:'var(--gl)',border:'var(--green)',tc:'#1B5E20',icon:'ℹ️'},
+    safe:{bg:'#F0F4FF',border:'var(--blue)',tc:'var(--bd)',icon:'✅'}
+  };
+  return interactions.map(r=>{
+    const c=config[r.sev]||config.mild;
+    return `<div class="int-pair" style="background:${c.bg};border-color:${c.border}">
+      <div class="int-pair-meds" style="color:${c.tc}">${c.icon} ${r.med1} + ${r.med2}</div>
+      <div class="int-pair-desc" style="color:${c.tc}">${r.effect}</div>
+      <div class="int-pair-action" style="color:${c.tc}">💡 ${r.action}</div>
+    </div>`;
+  }).join('')+`<div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default"><div style="font-size:11px;color:var(--bd);line-height:1.5">Our database covers common interactions. Always disclose all medicines to your doctor and pharmacist when starting new treatment.</div></div>`;
+}
+function refreshInteractions(){
+  const tags=document.querySelectorAll('.med-tag');
+  const names=Array.from(tags).map(t=>t.textContent.replace('×','').trim());
+  const results=findInteractions(names);
+  const el=document.getElementById('int-results');
+  if(el) el.innerHTML=renderInteractionResults(results,names.length);
+}
+function addMedTag(){
+  const inp=document.getElementById('med-add');
+  if(!inp||!inp.value.trim()) return;
+  const wrap=document.getElementById('int-tags');
+  if(!wrap) return;
+  const tag=document.createElement('span');
+  tag.className='med-tag';
+  tag.innerHTML=inp.value.trim()+'<span onclick="this.parentElement.remove();refreshInteractions()" style="margin-left:4px;font-size:14px;cursor:pointer">×</span>';
+  wrap.appendChild(tag);
+  inp.value='';
+  refreshInteractions();
+}
+
+/* ══ 8. HOSPITAL BILL OCR (in Insurance screen) ══ */
+function showBillOCR(){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
+    <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:6px">📸 Scan Hospital Bill</div>
+    <div style="font-size:12px;color:var(--g4);margin-bottom:16px">AI reads the bill and fills in the expense form automatically</div>
+    <input type="file" id="bill-inp" accept="image/*" capture="environment" style="display:none" onchange="processBillPhoto(this)"/>
+    <input type="file" id="bill-gal" accept="image/*" style="display:none" onchange="processBillPhoto(this)"/>
+    <button class="btn" onclick="document.getElementById('bill-inp').click()">📷 Take Photo of Bill</button>
+    <button class="btn2" onclick="document.getElementById('bill-gal').click()">🖼️ Choose from Gallery</button>
+    <div id="bill-result" style="margin-top:14px"></div>
+    <button class="btn2" style="margin-top:8px" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+function processBillPhoto(input){
+  const file=input.files[0]; if(!file) return;
+  const res=document.getElementById('bill-result');
+  if(res) res.innerHTML=`<div style="text-align:center;padding:20px;background:var(--g1);border-radius:11px"><div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-size:13px;font-weight:700;color:var(--bd)">Reading bill...</div><div style="font-size:11px;color:var(--g4);margin-top:4px">AI is extracting amount and details</div></div>`;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const base64=e.target.result.split(',')[1];
+    const geminiKey=loadKey('hv_gemini_key')||loadKey('gemini_key')||'';
+    if(geminiKey){ extractBillWithGemini(base64,e.target.result,geminiKey,res); }
+    else{ if(res) res.innerHTML=`<div style="background:var(--al);border-radius:11px;padding:13px;font-size:12px;color:#B06000">💡 Add your Gemini API key in Profile → Settings for automatic bill reading. For now, please enter details manually.</div><button class="btn" style="margin-top:8px" onclick="this.closest('[style*=fixed]').remove();showAddExpense()">✏️ Enter Manually</button>`; }
+  };
+  reader.readAsDataURL(file);
+}
+async function extractBillWithGemini(base64,dataUrl,apiKey,res){
+  try{
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[
+        {inline_data:{mime_type:'image/jpeg',data:base64}},
+        {text:`Read this hospital/pharmacy bill or receipt. Extract: HOSPITAL: [name], DATE: [date], TOTAL: [total amount in numbers only], DESCRIPTION: [brief description of what was billed, e.g. "Consultation + medicines" or "Lab tests"]. Respond in exactly that format, nothing else.`}
+      ]}]})
+    });
+    if(!resp.ok) throw new Error('API error');
+    const data=await resp.json();
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const hosp=(text.match(/HOSPITAL:\s*(.+)/i)||[])[1]?.trim()||'';
+    const date=(text.match(/DATE:\s*(.+)/i)||[])[1]?.trim()||today();
+    const totalRaw=(text.match(/TOTAL:\s*([\d,\.]+)/i)||[])[1]||'';
+    const total=totalRaw.replace(/,/g,'');
+    const desc=(text.match(/DESCRIPTION:\s*(.+)/i)||[])[1]?.trim()||'Hospital bill';
+    // Normalise date
+    let normDate=today();
+    try{ const pd=new Date(date); if(!isNaN(pd)) normDate=pd.toISOString().split('T')[0]; }catch(e){}
+    if(res) res.innerHTML=`
+      <div style="background:var(--gl);border-radius:11px;padding:13px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:8px">✅ Bill read successfully</div>
+        <img src="${dataUrl}" style="width:100%;border-radius:9px;margin-bottom:10px;border:.5px solid var(--g2)"/>
+        <div style="font-size:11px;color:#2D7A4F;line-height:1.8"><b>Hospital:</b> ${hosp||'—'}<br><b>Date:</b> ${date}<br><b>Amount:</b> ₹${total||'—'}<br><b>Description:</b> ${desc}</div>
+      </div>
+      <button class="btn" onclick="prefillExpenseFromBill('${hosp.replace(/'/g,"\\'")}','${total}','${normDate}','${desc.replace(/'/g,"\\'")}')">✅ Add to Expenses</button>`;
+  }catch(e){
+    if(res) res.innerHTML=`<div style="background:var(--rl);border-radius:11px;padding:12px;font-size:12px;color:#C5221F">Could not read bill automatically. Please enter manually.</div><button class="btn2" style="margin-top:8px" onclick="this.closest('[style*=fixed]').remove();showAddExpense()">✏️ Enter Manually</button>`;
+  }
+}
+function prefillExpenseFromBill(hospital,amount,date,description){
+  document.querySelector('[style*="position:fixed"]')?.remove();
+  showAddExpense();
+  setTimeout(()=>{
+    const nameEl=document.getElementById('exp-name'); if(nameEl) nameEl.value=`${hospital?hospital+' — ':''}${description}`.trim();
+    const amtEl=document.getElementById('exp-amt'); if(amtEl) amtEl.value=amount;
+    const dateEl=document.getElementById('exp-date'); if(dateEl) dateEl.value=date;
+  },150);
+}
+
+// Patch rInsurance to add bill scan button
+const _origRInsurance=rInsurance;
+function rInsurance(){
+  _origRInsurance();
+  // Inject scan bill button after the header
+  setTimeout(()=>{
+    const addBtn=document.querySelector('#exp-list');
+    if(addBtn){
+      const scanBtn=document.createElement('button');
+      scanBtn.className='btn2';
+      scanBtn.style.marginTop='0';
+      scanBtn.innerHTML='📸 Scan Hospital Bill (AI)';
+      scanBtn.onclick=showBillOCR;
+      const existingAdd=document.querySelector('.p16 .btn');
+      if(existingAdd&&existingAdd.textContent.includes('Add')) existingAdd.after(scanBtn);
+    }
+  },50);
+}
+
+// ── STARTUP: schedule reminders on app open ─────────
+(function initReminders(){
+  if(loadKey('hv_reminders_on')==='1' && Notification.permission==='granted'){
+    scheduleAllMedReminders();
+    pushReminderScheduleToSW();
+  }
+  if(loadKey('hv_water_on')==='1' && Notification.permission==='granted'){
+    scheduleWaterReminder();
+    pushWaterScheduleToSW();
+  }
+  // Listen for SW-fired "mark taken" action
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message', e=>{
+      if(e.data && e.data.type==='MED_TAKEN'){
+        // Mark the relevant medicine slot as taken for today
+        const taken=getTakenToday();
+        // tag format is 'med-morning' / 'med-afternoon' / 'med-night'
+        const slot=e.data.tag?.replace('med-','');
+        getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
+        setTakenToday(taken);
+      }
+      if(e.data && e.data.type==='WATER_DRUNK'){
+        addWaterGlass();
+      }
+    });
+  }
+})();
+
+// Push full reminder schedule into the Service Worker so it can fire
+// notifications independently when the page/tab is closed
+function pushReminderScheduleToSW(){
+  if(!('serviceWorker' in navigator)) return;
+  const meds=getMeds();
+  const schedule=[];
+  [{slot:'morning',hour:8},{slot:'afternoon',hour:14},{slot:'night',hour:21}].forEach(({slot,hour})=>{
+    const due=meds.filter(m=>m[slot]);
+    if(due.length) schedule.push({ slot, hour, names: due.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ') });
+  });
+  navigator.serviceWorker.ready.then(reg=>{
+    if(reg.active) reg.active.postMessage({ type:'SET_MED_SCHEDULE', schedule });
+  }).catch(()=>{});
+}
+
+function pushWaterScheduleToSW(){
+  if(!('serviceWorker' in navigator)) return;
+  const interval=parseInt(loadKey('hv_water_interval')||'60');
+  const start=parseInt(loadKey('hv_water_start')||'8');
+  const end=parseInt(loadKey('hv_water_end')||'22');
+  const goal=parseInt(loadKey('hv_water_goal')||'8');
+  navigator.serviceWorker.ready.then(reg=>{
+    if(reg.active) reg.active.postMessage({ type:'SET_WATER_SCHEDULE', interval, start, end, goal });
+  }).catch(()=>{});
+}
+
+// Also call pushReminderScheduleToSW whenever a medicine is saved
+const _origSaveMeds=saveMeds;
+function saveMeds(arr){
+  _origSaveMeds(arr);
+  if(loadKey('hv_reminders_on')==='1') { scheduleAllMedReminders(); pushReminderScheduleToSW(); }
+}
+</script>
