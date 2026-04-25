@@ -954,7 +954,18 @@ async function saveAllToSheets(pwdHash){
 function activeMemberId(){ return U.activeMember||'self'; }
 function memberKey(base){ return base+'_'+activeMemberId(); }
 function getMeds(){ try{ return JSON.parse(localStorage.getItem(memberKey('hv_medicines'))||localStorage.getItem('hv_medicines')||'[]'); }catch(e){ return []; } }
-function saveMeds(arr){ try{ localStorage.setItem(memberKey('hv_medicines'), JSON.stringify(arr)); }catch(e){} }
+function saveMeds(arr){
+  try{ localStorage.setItem(memberKey('hv_medicines'), JSON.stringify(arr)); }catch(e){}
+  // Push updated schedule to SW whenever medicines change (was a broken override — fixed here)
+  try{
+    if(loadKey('hv_reminders_on')==='1'){
+      // scheduleAllMedReminders and pushReminderScheduleToSW may not exist yet at parse time
+      // so we call them via window[] to be safe
+      if(typeof scheduleAllMedReminders==='function') scheduleAllMedReminders();
+      if(typeof pushReminderScheduleToSW==='function') pushReminderScheduleToSW();
+    }
+  }catch(e){}
+}
 function getReports(){ try{ return JSON.parse(localStorage.getItem(memberKey('hv_reports'))||localStorage.getItem('hv_reports')||'[]'); }catch(e){ return []; } }
 function saveReports(arr){ try{ localStorage.setItem(memberKey('hv_reports'), JSON.stringify(arr)); }catch(e){} }
 function getVaultItems(){ try{ return JSON.parse(localStorage.getItem('hv_vault')||'[]'); }catch(e){ return []; } }
@@ -5228,10 +5239,5 @@ function pushTipsScheduleToSW(){
   }).catch(()=>{});
 }
 
-// Also call pushReminderScheduleToSW whenever a medicine is saved
-const _origSaveMeds=saveMeds;
-function saveMeds(arr){
-  _origSaveMeds(arr);
-  if(loadKey('hv_reminders_on')==='1') { scheduleAllMedReminders(); pushReminderScheduleToSW(); }
-}
+// saveMeds SW push is now handled directly inside the saveMeds definition above (infinite recursion fix)
 </script>
