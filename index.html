@@ -508,6 +508,12 @@ body.dark .qa .ql{color:#E0E0E0}
 .water-count{font-size:28px;font-weight:900;color:var(--blue)}
 .water-goal{font-size:11px;color:var(--g4)}
 .glass-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px}
+/* HEALTH TIPS TAB */
+.tip-cat-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid;transition:all .2s;margin:3px}
+.tip-card{background:var(--w);border-radius:14px;padding:16px;box-shadow:var(--ss);border:.5px solid var(--g2);margin-bottom:12px;position:relative;overflow:hidden}
+.tip-card:active{opacity:.9}
+.tip-card-accent{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px}
+.tip-notif-banner{background:var(--gl);border:1px solid #A8D5B5;border-radius:12px;padding:13px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
 .glass-btn{aspect-ratio:1;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--g2);background:var(--g1);cursor:pointer;transition:all .2s;gap:2px}
 .glass-btn.filled{background:#E3F2FD;border-color:#90CAF9}
 .glass-btn span{font-size:9px;font-weight:700;color:var(--g4)}
@@ -541,6 +547,7 @@ body.dark .qa .ql{color:#E0E0E0}
       <div class="tab" id="T-body" onclick="go('body')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v6M9 10h6M9 21l3-8 3 8"/><path d="M10 17H7l-2 4M14 17h3l2 4"/></svg><span>Body</span></div>
       <div class="tab" id="T-scan" onclick="go('scan')"><div class="tdot"></div><svg viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="4" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/><path d="M7 14v3a5 5 0 0 0 10 0v-3"/></svg><span>Medicines</span></div>
       <div class="tab" id="T-lab" onclick="go('lab')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M9 3h6v8l3 9H6l3-9V3z"/><path d="M6 9h12"/></svg><span>Lab</span></div>
+      <div class="tab" id="T-tips" onclick="go('tips')"><div class="tdot"></div><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 2a7 7 0 0 1 7 7c0 3-1.8 5.5-4 6.6V18a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-2.4C6.8 14.5 5 12 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/></svg><span>Tips</span></div>
       <div class="tab" id="T-more" onclick="go('more')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>More</span></div>
       <div class="tab" id="T-search" onclick="go('search')"><div class="tdot"></div><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><span>Search</span></div>
       <div class="tab" id="T-profile" onclick="go('profile')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
@@ -623,7 +630,7 @@ function go(s) {
   const isAuth = AUTH.includes(s);
   TB.style.display = isAuth ? 'none' : 'flex';
   SN.style.display = isAuth ? 'none' : 'flex';
-  ['home','body','scan','lab','more','search','profile'].forEach(t => {
+  ['home','body','scan','lab','tips','more','search','profile'].forEach(t => {
     const e = $('T-'+t); if(e) e.className = 'tab'+(t===s?' on':'');
   });
   SCR.scrollTop = 0;
@@ -640,7 +647,8 @@ function go(s) {
     pediatric:'rPediatric', elderly:'rElderly',
     vitals:'rVitals', search:'rSearch', healthscore:'rHealthScore',
     menstrual:'rMenstrual', appointments:'rAppointments',
-    water:'rWater', reminders:'rReminders'
+    water:'rWater', reminders:'rReminders',
+    tips:'rTips'
   };
   if(map[s] && typeof window[map[s]]==='function') window[map[s]]();
   else if(map[s]) console.warn('Screen function not yet defined:',map[s]);
@@ -4042,7 +4050,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 </div>
 
 <script>
-  // Register Service Worker — only on real HTTPS hosting (not preview/iframe)
+  // Register Service Worker — only on real hosting (not preview/iframe)
   if('serviceWorker' in navigator){
     const isRealHost = location.hostname !== 'www.claudeusercontent.com' &&
                        !location.hostname.includes('claude.ai') &&
@@ -4050,18 +4058,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     if(isRealHost){
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(r => {
-            console.log('SW registered:', r.scope);
-            // Bug 1 fix: force the new SW to activate immediately if an old one is waiting
-            if(r.waiting) r.waiting.postMessage({type:'SKIP_WAITING'});
-            r.addEventListener('updatefound', () => {
-              const newSW = r.installing;
-              if(newSW) newSW.addEventListener('statechange', () => {
-                if(newSW.state === 'installed' && navigator.serviceWorker.controller)
-                  newSW.postMessage({type:'SKIP_WAITING'});
-              });
-            });
-          })
+          .then(r => console.log('SW registered:', r.scope))
           .catch(e => console.warn('SW registration failed:', e));
       });
     }
@@ -4238,16 +4235,32 @@ function fireNotification(title, body, tag){
   }catch(e){}
 }
 
-/* Bug 2 fix: setTimeout-based reminders removed.
- * Android suspends JS timers whenever the screen locks or the user switches apps,
- * so setTimeout(fn, 8h) is never reliable on mobile.
- * The Service Worker's checkAlarms() loop is now the sole alarm source.
- * scheduleAllMedReminders() is kept as a stub so existing callers don't break,
- * but it only pushes the schedule into the SW — it no longer sets any timers. */
-function clearAllReminderTimers(){ /* no-op — timers removed */ }
+let _reminderTimers=[];
+function clearAllReminderTimers(){ _reminderTimers.forEach(t=>clearTimeout(t)); _reminderTimers=[]; }
+
 function scheduleAllMedReminders(){
-  // Delegate entirely to the Service Worker
-  pushReminderScheduleToSW();
+  clearAllReminderTimers();
+  const enabled=loadKey('hv_reminders_on')==='1';
+  if(!enabled) return;
+  if(Notification.permission!=='granted') return;
+  const meds=getMeds();
+  const slots=[{key:'morning',hour:8,label:'🌅 Morning'},
+               {key:'afternoon',hour:14,label:'☀️ Afternoon'},
+               {key:'night',hour:21,label:'🌙 Night'}];
+  const now=new Date();
+  slots.forEach(slot=>{
+    const due=meds.filter(m=>m[slot.key]);
+    if(!due.length) return;
+    const fireAt=new Date();
+    fireAt.setHours(slot.hour,0,0,0);
+    if(fireAt<=now) return; // already past today
+    const ms=fireAt-now;
+    const t=setTimeout(()=>{
+      const names=due.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ');
+      fireNotification(`${slot.label} Medicines Due`,names,'med-'+slot.key);
+    },ms);
+    _reminderTimers.push(t);
+  });
 }
 
 function rReminders(){
@@ -4299,12 +4312,23 @@ async function toggleReminders(sw){
 }
 
 /* ══ 4. WATER TRACKER ══ */
-/* Bug 2 fix: setInterval water timer removed — killed by Android when app is backgrounded.
- * Water reminders are now handled entirely by the Service Worker's checkAlarms(). */
-let _waterTimer = null; // kept for toggleWaterReminder compatibility
+let _waterTimer=null;
 function scheduleWaterReminder(){
-  // Delegate entirely to the Service Worker
-  pushWaterScheduleToSW();
+  if(_waterTimer) clearInterval(_waterTimer);
+  const on=loadKey('hv_water_on')==='1';
+  if(!on || Notification.permission!=='granted') return;
+  const interval=parseInt(loadKey('hv_water_interval')||'60')*60000;
+  _waterTimer=setInterval(()=>{
+    const h=new Date().getHours();
+    const start=parseInt(loadKey('hv_water_start')||'8');
+    const end=parseInt(loadKey('hv_water_end')||'22');
+    if(h>=start && h<end){
+      const log=getWaterLog();
+      const glasses=(log[today()]||0);
+      const goal=parseInt(loadKey('hv_water_goal')||'8');
+      if(glasses<goal) fireNotification('💧 Time to Drink Water!',`You've had ${glasses} of ${goal} glasses today. Stay hydrated!`,'water');
+    }
+  },interval);
 }
 function rWater(){
   const log=getWaterLog();
@@ -4381,10 +4405,7 @@ async function toggleWaterReminder(sw){
     fireNotification('💧 Water Reminders On','You\'ll get hourly reminders to drink water.','water-setup');
   } else {
     saveKey('hv_water_on','0');
-    // Push cleared schedule to SW so it stops firing water reminders
-    navigator.serviceWorker && navigator.serviceWorker.ready.then(reg=>{
-      reg.active && reg.active.postMessage({type:'CLEAR_WATER_SCHEDULE'});
-    }).catch(()=>{});
+    if(_waterTimer){ clearInterval(_waterTimer); _waterTimer=null; }
   }
   rWater();
 }
@@ -4816,41 +4837,29 @@ function rInsurance(){
 // ── STARTUP: schedule reminders on app open ─────────
 (function initReminders(){
   if(loadKey('hv_reminders_on')==='1' && Notification.permission==='granted'){
-    // Bug 2 fix: scheduleAllMedReminders() now only calls pushReminderScheduleToSW()
-    // No more setTimeout() — the SW handles all alarm firing
     scheduleAllMedReminders();
+    pushReminderScheduleToSW();
   }
   if(loadKey('hv_water_on')==='1' && Notification.permission==='granted'){
+    scheduleWaterReminder();
     pushWaterScheduleToSW();
   }
-
-  if(!('serviceWorker' in navigator)) return;
-
-  navigator.serviceWorker.ready.then(reg=>{
-    // Tell the SW to immediately check alarms in case any were missed while app was closed
-    if(reg.active) reg.active.postMessage({type:'CHECK_ALARMS'});
-
-    // Bonus fix: register Periodic Background Sync so Chrome on Android wakes the SW
-    // roughly every hour even when the app is fully closed.
-    // Requires: HTTPS + PWA installed to home screen + user granted notification permission
-    if('periodicSync' in reg && Notification.permission==='granted'){
-      reg.periodicSync.register('hv-alarms', { minInterval: 60 * 60 * 1000 })
-        .catch(()=>{}); // silently ignore if permission not granted or API unavailable
-    }
-  }).catch(()=>{});
-
-  // Listen for SW-fired action broadcasts
-  navigator.serviceWorker.addEventListener('message', e=>{
-    if(e.data && e.data.type==='MED_TAKEN'){
-      const taken=getTakenToday();
-      const slot=e.data.tag?.replace('med-','');
-      getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
-      setTakenToday(taken);
-    }
-    if(e.data && e.data.type==='WATER_DRUNK'){
-      addWaterGlass();
-    }
-  });
+  // Listen for SW-fired "mark taken" action
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message', e=>{
+      if(e.data && e.data.type==='MED_TAKEN'){
+        // Mark the relevant medicine slot as taken for today
+        const taken=getTakenToday();
+        // tag format is 'med-morning' / 'med-afternoon' / 'med-night'
+        const slot=e.data.tag?.replace('med-','');
+        getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
+        setTakenToday(taken);
+      }
+      if(e.data && e.data.type==='WATER_DRUNK'){
+        addWaterGlass();
+      }
+    });
+  }
 })();
 
 // Push full reminder schedule into the Service Worker so it can fire
@@ -4876,6 +4885,255 @@ function pushWaterScheduleToSW(){
   const goal=parseInt(loadKey('hv_water_goal')||'8');
   navigator.serviceWorker.ready.then(reg=>{
     if(reg.active) reg.active.postMessage({ type:'SET_WATER_SCHEDULE', interval, start, end, goal });
+  }).catch(()=>{});
+}
+
+
+/* ══════════════════════════════════════════════════
+   HEALTH TIPS TAB — v1.0
+   100+ curated tips across 6 categories.
+   No external API needed — works 100% offline.
+   Notification pushes are handled by the SW.
+══════════════════════════════════════════════════ */
+
+const HEALTH_TIPS = {
+  food:[
+    {t:'Start with protein',b:'Having protein (eggs, dal, paneer, nuts) at breakfast keeps you full longer and reduces mid-morning cravings.'},
+    {t:'Eat the rainbow',b:'Different coloured vegetables have different nutrients. Aim to put at least 3 colours on your plate every meal.'},
+    {t:'Chew slowly',b:'It takes 20 minutes for your brain to register fullness. Eating slowly can reduce calorie intake by up to 10%.'},
+    {t:'Don\'t skip breakfast',b:'A nutritious breakfast kickstarts metabolism and improves concentration throughout the morning.'},
+    {t:'Limit ultra-processed food',b:'Packaged snacks, instant noodles and biscuits spike blood sugar and lead to energy crashes. Choose whole foods instead.'},
+    {t:'Healthy dinner swap',b:'Replace white rice with millets or brown rice at dinner to lower glycaemic load and improve digestion overnight.'},
+    {t:'Add more fibre',b:'Fruits, vegetables, legumes and whole grains support gut health and reduce cholesterol. Aim for 25–30g of fibre daily.'},
+    {t:'Reduce salt gradually',b:'Cutting down sodium lowers blood pressure. Switch to rock salt or reduce by ¼ tsp per week — you\'ll stop noticing within 3 weeks.'},
+    {t:'Seasonal fruits first',b:'Seasonal fruits are cheaper, fresher, and have higher nutrient density than off-season or imported varieties.'},
+    {t:'Cook with healthy oils',b:'Use cold-pressed groundnut, sesame or coconut oil for cooking. Avoid refined vegetable oils repeatedly heated to high temperatures.'},
+    {t:'Snack on nuts',b:'A small handful of almonds, walnuts or cashews provides healthy fats, protein and magnesium — perfect for a 4 PM slump.'},
+    {t:'Avoid eating late',b:'Finish dinner at least 2–3 hours before bedtime to improve digestion and support restful sleep.'},
+    {t:'Fermented foods daily',b:'Curd, buttermilk, idli and dosa provide probiotics that support gut bacteria and boost immunity.'},
+    {t:'Limit sugary drinks',b:'One can of cola has 10 teaspoons of sugar. Replace with coconut water, buttermilk or nimbu pani without added sugar.'},
+    {t:'Plate portions wisely',b:'Fill half your plate with vegetables, a quarter with protein, and a quarter with complex carbs for balanced meals.'},
+    {t:'Soak nuts and lentils',b:'Soaking reduces phytic acid, making minerals like iron and zinc significantly more absorbable by the body.'},
+    {t:'Include iron-rich foods',b:'Spinach, rajma, horsegram and jaggery are excellent plant-based iron sources — pair with vitamin C for better absorption.'},
+  ],
+  exercise:[
+    {t:'Walk after meals',b:'A 10-minute walk after eating reduces post-meal blood sugar spikes by up to 30% — especially helpful for diabetics.'},
+    {t:'Take the stairs',b:'Taking stairs instead of lifts for 10 minutes a day burns an extra 100 calories and strengthens your heart.'},
+    {t:'Stretch every morning',b:'5 minutes of gentle stretching after waking up improves circulation, reduces stiffness and sets a positive tone for the day.'},
+    {t:'30 minutes is enough',b:'WHO recommends 150 minutes of moderate activity per week. That\'s just 30 minutes, 5 days a week — a brisk walk counts!'},
+    {t:'Strength train twice a week',b:'Lifting weights or bodyweight exercises (squats, push-ups) maintain muscle mass, improve metabolism and protect bones.'},
+    {t:'Stand up every hour',b:'Sitting for long stretches increases cardiovascular risk. Set a reminder to stand and move for 2 minutes each hour.'},
+    {t:'Dance counts too',b:'Dancing for 30 minutes burns 200–400 calories and releases endorphins. Put on your favourite music and enjoy it.'},
+    {t:'Morning sunlight + walk',b:'A 20-minute outdoor walk in the morning gives you Vitamin D, resets your circadian rhythm and improves mood.'},
+    {t:'Yoga for flexibility',b:'Regular yoga reduces cortisol (stress hormone), improves flexibility and supports joint health in all age groups.'},
+    {t:'Track steps, not just gym time',b:'Aiming for 8,000–10,000 steps a day reduces all-cause mortality risk by 50% compared to sedentary lifestyles.'},
+    {t:'Warm up before exercise',b:'5 minutes of light movement before intense exercise prevents injury and gradually raises your heart rate safely.'},
+    {t:'Consistency beats intensity',b:'Exercising moderately every day is far more effective than one intense gym session per week. Build the habit first.'},
+    {t:'Swim for low impact',b:'Swimming is ideal for people with joint pain, obesity or back problems — it provides full-body workout with zero impact.'},
+    {t:'Exercise with a friend',b:'People who exercise with a partner are 95% more likely to stick to their routine than those who work out alone.'},
+  ],
+  sleep:[
+    {t:'Sleep 7–9 hours',b:'Adults need 7–9 hours of sleep. Chronic sleep deprivation raises blood pressure, weakens immunity and impairs memory.'},
+    {t:'Fixed wake-up time',b:'Keeping the same wake-up time (even on weekends) strengthens your body clock and improves sleep quality significantly.'},
+    {t:'Darken your room',b:'Even dim light from screens or streetlights suppresses melatonin. Use blackout curtains or an eye mask for deeper sleep.'},
+    {t:'No screens 1 hour before bed',b:'Blue light from phones and tablets delays melatonin production by up to 3 hours. Switch to reading or light stretching instead.'},
+    {t:'Cool room for better sleep',b:'The ideal sleep temperature is 18–20°C. A cooler room helps your core temperature drop, which triggers deeper sleep.'},
+    {t:'Avoid caffeine after 2 PM',b:'Caffeine has a half-life of 5–6 hours, meaning half of your 3 PM coffee is still in your system at 8 PM.'},
+    {t:'Power nap correctly',b:'A 20-minute nap between 1–3 PM restores alertness without causing grogginess. Longer naps disrupt night sleep.'},
+    {t:'Consistent bedtime routine',b:'Doing the same activities (warm shower, light reading) before bed signals your brain that sleep is coming.'},
+    {t:'Limit alcohol before bed',b:'Alcohol may help you fall asleep faster but it severely disrupts REM sleep, leaving you groggy the next day.'},
+    {t:'Write tomorrow\'s list tonight',b:'Offloading tomorrow\'s tasks onto paper before bed reduces mental chatter and helps you fall asleep faster.'},
+  ],
+  hydration:[
+    {t:'Drink water first thing',b:'Have a glass of water before your morning tea or coffee to rehydrate your body after 7–8 hours of sleep.'},
+    {t:'Your urine is a guide',b:'Pale yellow urine = well hydrated. Dark yellow = drink more. Clear = you may be over-hydrating. Aim for pale yellow.'},
+    {t:'Eat your water too',b:'Cucumber, watermelon, tomatoes and oranges are 90%+ water — great for hydration, especially in summer.'},
+    {t:'Drink before you feel thirsty',b:'Thirst is a late sign of dehydration. By the time you feel thirsty, you\'re already mildly dehydrated.'},
+    {t:'Coconut water > sports drinks',b:'For light exercise, coconut water replenishes electrolytes naturally with no added sugar or artificial colours.'},
+    {t:'Keep a water bottle visible',b:'Simply keeping a water bottle on your desk or table increases your daily water consumption by an average of 30%.'},
+    {t:'Herbal teas count',b:'Unsweetened herbal teas (tulsi, ginger, chamomile) contribute to your daily fluid intake and have added benefits.'},
+    {t:'Hydrate more when sick',b:'Fever, vomiting or diarrhoea rapidly depletes fluids. Sip water or ORS frequently — even small amounts help.'},
+    {t:'Limit excess tea and coffee',b:'More than 4 cups of caffeinated drinks daily can cause mild dehydration due to their diuretic effect.'},
+  ],
+  mental:[
+    {t:'5 minutes of gratitude',b:'Writing 3 things you\'re grateful for each morning rewires neural pathways toward positivity within 3–4 weeks.'},
+    {t:'Box breathing for stress',b:'Inhale 4s → hold 4s → exhale 4s → hold 4s. Repeat 4 times. Activates the parasympathetic nervous system immediately.'},
+    {t:'Nature resets the mind',b:'Just 20 minutes in a park or green space measurably reduces cortisol and improves focus for up to 2 hours.'},
+    {t:'Limit news to once a day',b:'Constant news consumption is linked to elevated anxiety. Check news once a day at a fixed time and then stop.'},
+    {t:'Talk to someone',b:'Sharing a worry with a trusted person cuts its psychological weight in half. Don\'t bottle things up alone.'},
+    {t:'Digital detox weekly',b:'One screen-free hour before bed each day reduces anxiety levels and improves sleep quality and mood over time.'},
+    {t:'Celebrate small wins',b:'Acknowledging small daily accomplishments activates the brain\'s reward circuit and builds lasting motivation.'},
+    {t:'Mindfulness for 10 minutes',b:'10 minutes of mindfulness meditation daily reduces symptoms of anxiety and depression as effectively as medication in mild cases.'},
+    {t:'Limit social media scrolling',b:'Studies show more than 1–2 hours of passive social media use daily is associated with higher rates of depression and loneliness.'},
+    {t:'Physical activity = mental health',b:'Exercise increases serotonin, dopamine and BDNF — natural antidepressants produced by your own body.'},
+    {t:'Set work boundaries',b:'Responding to work messages after hours keeps your nervous system in "alert" mode. Set a clear switch-off time daily.'},
+  ],
+  preventive:[
+    {t:'Annual health check-up',b:'A basic annual blood panel (CBC, lipids, sugar, thyroid, Vitamin D) catches silent problems before they become serious.'},
+    {t:'Know your numbers',b:'Track your blood pressure, fasting sugar and BMI. Normal BP is under 120/80. Normal fasting sugar is under 100 mg/dL.'},
+    {t:'Dental check every 6 months',b:'Oral bacteria linked to gum disease are directly connected to heart disease and diabetes complications. Brush twice daily.'},
+    {t:'Eye check annually',b:'Many vision and retinal problems are symptomless until advanced. A yearly eye exam catches them early and affordably.'},
+    {t:'Wash hands properly',b:'20 seconds of handwashing with soap removes 99% of pathogens — most effective single step to prevent infections.'},
+    {t:'Vaccinate on schedule',b:'Keep your flu, tetanus and hepatitis B vaccinations up to date. Check with your doctor about any boosters due.'},
+    {t:'Know your family history',b:'Conditions like diabetes, heart disease and certain cancers have strong genetic components. Share this with your doctor.'},
+    {t:'Check moles regularly',b:'Any mole that changes in size, shape or colour — or that bleeds — should be evaluated by a dermatologist promptly.'},
+    {t:'Sleep is preventive care',b:'Chronic sleep deprivation doubles your risk of cardiovascular disease, type 2 diabetes and immune dysfunction.'},
+    {t:'Manage stress proactively',b:'Chronic stress raises cortisol, which damages blood vessels, suppresses immunity and accelerates biological ageing.'},
+  ]
+};
+
+const TIP_META = {
+  food:      {label:'🥗 Food',       color:'var(--green)', light:'var(--gl)', dark:'#1B5E20'},
+  exercise:  {label:'🏃 Exercise',   color:'var(--orange)',light:'var(--ol)', dark:'#B85000'},
+  sleep:     {label:'🌙 Sleep',      color:'var(--purple)',light:'var(--pl)', dark:'#311B92'},
+  hydration: {label:'💧 Hydration',  color:'var(--blue)',  light:'var(--bl)', dark:' var(--bd)'},
+  mental:    {label:'🧘 Mental',     color:'var(--teal)',  light:'var(--tl)', dark:'#004D40'},
+  preventive:{label:'🩺 Preventive', color:'var(--red)',   light:'var(--rl)', dark:'#C5221F'},
+};
+
+let _tipsFilter = 'all';
+
+function getTipOfDay(){
+  // Pick a deterministic tip for today using date as seed — cycles through all tips
+  const allTips = Object.entries(HEALTH_TIPS).flatMap(([cat, tips]) =>
+    tips.map(t => ({...t, cat}))
+  );
+  const seed = new Date().toISOString().split('T')[0].replace(/-/g,'');
+  const idx = parseInt(seed) % allTips.length;
+  return allTips[idx];
+}
+
+function rTips(){
+  const todayTip = getTipOfDay();
+  const meta = TIP_META[todayTip.cat];
+  const notifOn = loadKey('hv_tips_notif_on') === '1';
+  const notifTime = loadKey('hv_tips_notif_time') || '08:00';
+
+  const cats = ['all', ...Object.keys(TIP_META)];
+
+  SCR.innerHTML = `<div class="sc">
+  <div class="hdr">
+    <div class="hdr-t">💡 Daily Health Tips</div>
+    <div class="hdr-s">100+ expert tips · Food, sleep, exercise & more</div>
+  </div>
+
+  <!-- Tip of the Day -->
+  <div style="background:linear-gradient(135deg,${meta.color},${meta.color}cc);margin:14px;border-radius:16px;padding:18px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:rgba(255,255,255,.1);border-radius:50%"></div>
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.8);letter-spacing:.5px;margin-bottom:6px">TODAY'S TIP</div>
+    <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px;line-height:1.35">${todayTip.t}</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.88);line-height:1.6">${todayTip.b}</div>
+    <div style="margin-top:10px;display:inline-block;background:rgba(255,255,255,.2);border-radius:10px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff">${TIP_META[todayTip.cat].label}</div>
+  </div>
+
+  <!-- Notification toggle -->
+  <div style="margin:0 14px 14px">
+    <div class="tip-notif-banner">
+      <span style="font-size:22px">🔔</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#1B5E20">Daily tip notification</div>
+        <div style="font-size:11px;color:#2D7A4F;margin-top:2px">Get a health tip pushed to your phone every day</div>
+      </div>
+      <div onclick="toggleTipsNotif(this)" id="tips-sw"
+           style="width:46px;height:26px;background:${notifOn ? 'var(--green)' : 'var(--g2)'};border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0">
+        <div style="position:absolute;top:3px;${notifOn ? 'right:3px' : 'left:3px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>
+      </div>
+    </div>
+    ${notifOn ? `<div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:11px;padding:12px;border:.5px solid var(--g2)">
+      <span style="font-size:14px">⏰</span>
+      <div style="flex:1;font-size:13px;font-weight:600;color:var(--g6)">Notification time</div>
+      <input type="time" value="${notifTime}" onchange="saveTipsTime(this.value)"
+             style="background:var(--g1);border:1.5px solid var(--g2);border-radius:9px;padding:6px 10px;font-size:13px;color:var(--g6);outline:none;font-family:inherit"/>
+    </div>` : ''}
+    ${Notification.permission === 'denied' ? '<div style="background:var(--rl);border-radius:10px;padding:10px;font-size:12px;color:#C5221F;margin-top:8px">⚠️ Notifications blocked. Enable them in browser settings for this site.</div>' : ''}
+  </div>
+
+  <!-- Category filter pills -->
+  <div style="padding:0 14px 10px;display:flex;flex-wrap:wrap;gap:4px">
+    ${cats.map(c => {
+      const m = c === 'all' ? {label:'✨ All', color:'var(--blue)', light:'var(--bl)', dark:'var(--bd)'} : TIP_META[c];
+      const on = _tipsFilter === c;
+      return `<div class="tip-cat-pill" onclick="filterTips('${c}')"
+        style="background:${on ? m.color : 'transparent'};color:${on ? '#fff' : m.dark};border-color:${m.color};opacity:${on ? 1 : 0.75}">
+        ${m.label}</div>`;
+    }).join('')}
+  </div>
+
+  <!-- Tips list -->
+  <div class="p16 pb" id="tips-list">
+    ${renderTipsList()}
+  </div>
+  </div>`;
+}
+
+function renderTipsList(){
+  const entries = Object.entries(HEALTH_TIPS);
+  let html = '';
+  for(const [cat, tips] of entries){
+    if(_tipsFilter !== 'all' && _tipsFilter !== cat) continue;
+    const m = TIP_META[cat];
+    html += `<div style="font-size:13px;font-weight:700;color:var(--g6);margin:14px 0 8px">${m.label}</div>`;
+    for(const tip of tips){
+      html += `<div class="tip-card">
+        <div class="tip-card-accent" style="background:${m.color}"></div>
+        <div style="padding-left:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:4px">${tip.t}</div>
+          <div style="font-size:12px;color:var(--g5);line-height:1.6">${tip.b}</div>
+        </div>
+      </div>`;
+    }
+  }
+  return html;
+}
+
+function filterTips(cat){
+  _tipsFilter = cat;
+  const list = document.getElementById('tips-list');
+  if(list) list.innerHTML = renderTipsList();
+  // Re-render pills
+  const pills = document.querySelectorAll('.tip-cat-pill');
+  const cats = ['all', ...Object.keys(TIP_META)];
+  pills.forEach((p, i) => {
+    const c = cats[i];
+    const m = c === 'all' ? {label:'✨ All', color:'var(--blue)', light:'var(--bl)', dark:'var(--bd)'} : TIP_META[c];
+    const on = _tipsFilter === c;
+    p.style.background = on ? m.color : 'transparent';
+    p.style.color = on ? '#fff' : m.dark;
+    p.style.opacity = on ? '1' : '0.75';
+  });
+}
+
+async function toggleTipsNotif(sw){
+  const on = loadKey('hv_tips_notif_on') === '1';
+  if(!on){
+    const granted = await requestNotifPermission();
+    if(!granted){ alert('Please allow notifications to receive daily health tips.'); return; }
+    saveKey('hv_tips_notif_on', '1');
+    pushTipsScheduleToSW();
+    fireNotification('💡 Daily Tips On', 'You\'ll get a health tip notification every morning!', 'tips-setup');
+  } else {
+    saveKey('hv_tips_notif_on', '0');
+    navigator.serviceWorker && navigator.serviceWorker.ready.then(reg => {
+      reg.active && reg.active.postMessage({type: 'CLEAR_TIPS_SCHEDULE'});
+    }).catch(()=>{});
+  }
+  rTips();
+}
+
+function saveTipsTime(val){
+  saveKey('hv_tips_notif_time', val);
+  pushTipsScheduleToSW();
+}
+
+function pushTipsScheduleToSW(){
+  if(!('serviceWorker' in navigator)) return;
+  const [h, m] = (loadKey('hv_tips_notif_time') || '08:00').split(':').map(Number);
+  navigator.serviceWorker.ready.then(reg => {
+    if(reg.active) reg.active.postMessage({
+      type: 'SET_TIPS_SCHEDULE',
+      hour: h,
+      minute: m || 0
+    });
   }).catch(()=>{});
 }
 
