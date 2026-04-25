@@ -1110,6 +1110,30 @@ function rHome(){
         </div>
       </div>
     </div>
+    ${(()=>{
+      // Show DOB prompt banner for child profiles with no DOB entered yet
+      const isChild = ['child'].includes((activeMem.role||'').toLowerCase()) || (parseInt(activeMem.age)||0) < 18;
+      if(!isChild) return '';
+      const vacKey = 'hv_childvac_' + activeMem.id;
+      let vacData = {};
+      try { vacData = JSON.parse(localStorage.getItem(vacKey)||'{}'); } catch(e){}
+      if(vacData.dob) return `
+        <div style="margin:12px 14px 0;background:#E8F0FE;border:1.5px solid #C5D9F8;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="go('vaccines')">
+          <span style="font-size:22px">💉</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:#0D47A1">Vaccination Schedule</div>
+            <div style="font-size:11px;color:#1565C0;margin-top:1px">DOB: ${fmtDate(vacData.dob)} · Tap to view schedule</div>
+          </div>
+          <span style="color:#1A73E8;font-size:16px">›</span>
+        </div>`;
+      return `
+        <div style="margin:12px 14px 0;background:#FFF8E1;border:1.5px solid #F9AB00;border-radius:12px;padding:12px 14px">
+          <div style="font-size:12px;font-weight:700;color:#B06000;margin-bottom:6px">👶 Set Date of Birth for Vaccine Schedule</div>
+          <div style="font-size:11px;color:#7B4700;margin-bottom:10px;line-height:1.5">Enter ${activeMem.name||'child'}'s date of birth to auto-generate India's NIS vaccination schedule with due dates.</div>
+          <input type="date" max="${today()}" onchange="saveChildDOBFromHome(this.value,'${activeMem.id}')"
+            style="width:100%;border:1.5px solid #F9AB00;border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;outline:none;color:var(--g6);background:#fff;box-sizing:border-box"/>
+        </div>`;
+    })()}
     <div class="hbody">
       <div class="sec">Quick Actions</div>
       <div class="qa-grid">
@@ -1118,7 +1142,7 @@ function rHome(){
         <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, SpO2</div></div>
         <div class="qa" onclick="go('body')"><div class="qi">🫀</div><div class="ql">Body Explorer</div><div class="qs">Symptoms</div></div>
         <div class="qa" onclick="go('symptom')"><div class="qi">✅</div><div class="ql">Symptom Check</div><div class="qs">Quick analysis</div></div>
-        <div class="qa" onclick="go('appointments')"><div class="qi">📅</div><div class="ql">Appointments</div><div class="qs">Doctor visits</div></div>
+        <div class="qa" onclick="go('vaccines')"><div class="qi">💉</div><div class="ql">Vaccines</div><div class="qs">NIS schedule</div></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="sec" style="margin-bottom:8px">Today's Medicines</div>
@@ -2722,7 +2746,20 @@ function calcChildAge(dob){
   return yrs + 'y ' + (mos>0?mos+'m':'');
 }
 
-/* Save date of birth and reload the child vaccine screen */
+/* Save DOB from the home screen banner and go straight to vaccines */
+function saveChildDOBFromHome(val, memberId){
+  if(!val) return;
+  const key  = 'hv_childvac_' + memberId;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+  data.dob = val;
+  if(!data.records) data.records = {};
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
+  pushVacRemindersToSW();
+  go('vaccines');
+}
+
+/* Save date of birth from the vaccine screen */
 function saveChildDOB(val){
   if(!val) return;
   const data = getChildVacData();
@@ -3062,13 +3099,13 @@ function editFamilyMember(id){
   }).join('');
 
   var ov = document.createElement('div');
+  ov.id = 'family-edit-ov';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   ov.innerHTML = '<div style="background:#fff;border-radius:22px 22px 0 0;padding:20px 18px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">'
     + '<div style="width:32px;height:3px;background:#eee;border-radius:2px;margin:0 auto 16px"></div>'
     + '<div style="font-size:16px;font-weight:800;color:var(--g6);margin-bottom:16px">'+(isSelf?'Edit Your Profile':'Edit Family Member')+'</div>'
     + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">AVATAR</div>'
     + '<div style="background:#F0F4FF;border-radius:11px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><span style="font-size:26px" id="av-suggested">'+autoAv+'</span><div><div style="font-size:12px;font-weight:700;color:var(--bd)">Suggested for '+(m.role||'Member')+' · '+(m.gender||'')+'</div><div style="font-size:11px;color:var(--g4);margin-top:2px">Tap any emoji below to change</div></div></div>'
-
     + '<div id="av-pick" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'+avHtml+'</div>'
     + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">NAME</div>'
     + '<input id="em-name" value="'+(m.name||'')+'" placeholder="Enter full name" style="width:100%;border:1.5px solid var(--g2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box;outline:none;color:var(--g6)"/>'
@@ -3078,23 +3115,27 @@ function editFamilyMember(id){
     + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:8px">GENDER</div>'
     + '<div id="gen-pick" style="display:flex;gap:8px;margin-bottom:22px">'+genHtml+'</div>'
     + '<div style="display:flex;gap:10px">'
-    + '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="flex:1;background:var(--g1);color:var(--g5);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">Cancel</button>'
-    + '<button onclick="saveMemberEdit(\''+id+'\',this)" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer">Save Changes</button>'
+    + '<button onclick="document.getElementById(\'family-edit-ov\').remove()" style="flex:1;background:var(--g1);color:var(--g5);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>'
+    + '<button onclick="saveMemberEdit(\''+id+'\')" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Save Changes</button>'
     + '</div></div>';
 
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  // Remove any existing overlay first
+  var existing = document.getElementById('family-edit-ov');
+  if(existing) existing.remove();
   document.body.appendChild(ov);
 }
 
-function saveMemberEdit(id, btn){
-  var ov     = btn.closest('[style*=fixed]');
+function saveMemberEdit(id){
+  var ov     = document.getElementById('family-edit-ov');
+  if(!ov) return;
   var name   = (ov.querySelector('#em-name').value||'').trim() || 'Member';
   var age    = (ov.querySelector('#em-age').value||'').trim();
-  var avEl   = ov.querySelector('#av-pick [style*="E3F2FD"]');
+  var avEl   = ov.querySelector('#av-pick div[style*="E3F2FD"]');
   var avatar = avEl ? avEl.dataset.av : '';
-  var roleEl = ov.querySelector('#role-pick [style*="var(--blue)"]') || ov.querySelector('#role-pick div[style*="blue"]');
+  var roleEl = ov.querySelector('#role-pick div[style*="blue"]');
   var role   = roleEl ? roleEl.dataset.role : 'Member';
-  var genEl  = ov.querySelector('#gen-pick [style*="var(--blue)"]') || ov.querySelector('#gen-pick div[style*="blue"]');
+  var genEl  = ov.querySelector('#gen-pick div[style*="blue"]');
   var gender = genEl ? genEl.dataset.gen : '';
 
   if(id==='self'){
@@ -3106,7 +3147,6 @@ function saveMemberEdit(id, btn){
   var m=(U.members||[]).find(function(x){ return x.id===id; });
   if(!m){ ov.remove(); return; }
   m.name=name; m.age=age; m.gender=gender; m.role=role;
-  // If user didn't tap an avatar in the picker, apply the smart default for their role+gender+age
   m.avatar = avatar || smartAvatar(role, gender, age);
   saveUser(); ov.remove();
   if((U.activeMember||'self')===id) rHome(); else rFamily();
@@ -3834,7 +3874,7 @@ function rMore(){
   // Only show cycle tracker if gender is female
   if(U.gender==='female') items.push({i:'🌸',t:'Cycle Tracker',s:'Period & fertility predictions',sc:'menstrual',c:'var(--pkl)'});
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">More Features</div><div class="hdr-s">All tools and modules</div></div>
+  <div class="brow"><div class="bk" onclick="go('home')">←</div><div style="flex:1"><div class="bk-t">More Features</div><div class="bk-s">All tools and modules</div></div></div>
   <div class="p16">
     ${items.map(it=>`<div class="card" onclick="go('${it.sc}')"><div class="crow"><div class="ic" style="background:${it.c};font-size:20px">${it.i}</div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">${it.t}</div><div style="font-size:11px;color:var(--g4);margin-top:2px">${it.s}</div></div><div style="color:var(--g3);font-size:17px">›</div></div></div>`).join('')}
     <div class="pb"></div>
@@ -5406,24 +5446,26 @@ function prefillExpenseFromBill(hospital,amount,date,description){
   },150);
 }
 
-// Patch rInsurance to add bill scan button
-const _origRInsurance=rInsurance;
-function rInsurance(){
+// Merge the bill scan button directly into rInsurance — no fragile patch needed
+const _origRInsurance = rInsurance;
+rInsurance = function(){
   _origRInsurance();
-  // Inject scan bill button after the header
+  // Safely inject the scan bill button after the Add button if not already there
   setTimeout(()=>{
-    const addBtn=document.querySelector('#exp-list');
-    if(addBtn){
-      const scanBtn=document.createElement('button');
-      scanBtn.className='btn2';
-      scanBtn.style.marginTop='0';
-      scanBtn.innerHTML='📸 Scan Hospital Bill (AI)';
-      scanBtn.onclick=showBillOCR;
-      const existingAdd=document.querySelector('.p16 .btn');
-      if(existingAdd&&existingAdd.textContent.includes('Add')) existingAdd.after(scanBtn);
-    }
-  },50);
-}
+    const expList = document.getElementById('exp-list');
+    if(!expList) return;
+    if(document.getElementById('bill-scan-btn')) return; // already injected
+    const addBtn = document.querySelector('#exp-list')?.parentElement?.querySelector('.btn-sm');
+    // Insert scan button row above expense list
+    const scanDiv = document.createElement('button');
+    scanDiv.id = 'bill-scan-btn';
+    scanDiv.className = 'btn2';
+    scanDiv.style.cssText = 'margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px';
+    scanDiv.innerHTML = '📸 Scan Hospital Bill';
+    scanDiv.onclick = showBillOCR;
+    expList.parentElement.insertBefore(scanDiv, expList);
+  }, 30);
+};
 
 // ── PER-USER CLIENT ID ─────────────────────────────
 // Each browser/device gets a unique ID stored in localStorage.
