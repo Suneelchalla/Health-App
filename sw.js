@@ -1,5 +1,5 @@
 /**
- * HealthVault Service Worker v8 — Multi-user isolation + all previous fixes
+ * HealthVault Service Worker v10 — Appointment reminders + all previous fixes
  *
  * KEY FIX (v8) — Multi-user notification isolation:
  *  Schedules are stored per-clientId so User A's medicine/water/tips reminders
@@ -18,7 +18,7 @@
  *  Bonus — periodicsync handler for Chrome-on-Android background wakeups
  */
 
-const CACHE_NAME = 'healthvault-v9';
+const CACHE_NAME = 'healthvault-v10';
 const ASSETS = [
   '/Health-App/', '/Health-App/index.html',
   '/Health-App/manifest.json', '/Health-App/icon-192.png', '/Health-App/icon-512.png'
@@ -42,7 +42,8 @@ function getClientState(clientId) {
       lastFiredMed: {},
       lastFiredWater: Date.now(), // Bug 7: not 0
       lastFiredTips: '',
-      lastFiredVac: {}        // { 'memberId_vacId': 'YYYY-MM-DD' } — prevent double-fire per day
+      lastFiredVac: {},       // { 'memberId_vacId': 'YYYY-MM-DD' } — prevent double-fire per day
+      apptReminders: []       // [{ id, fireAt, title, body }] — one-time appointment alarms
     });
   }
   return clientSchedules.get(clientId);
@@ -181,6 +182,21 @@ function checkAlarms() {
       }
     }
 
+    // Appointment reminders — one-time alarms (fire when fireAt <= now)
+    if (state.apptReminders && state.apptReminders.length > 0) {
+      const nowMs = Date.now();
+      const fired = [];
+      state.apptReminders.forEach(rem => {
+        if (nowMs >= rem.fireAt) {
+          notifyClient(clientId, rem.title, rem.body, 'appt-' + rem.id, []);
+          fired.push(rem.id);
+        }
+      });
+      if (fired.length) {
+        state.apptReminders = state.apptReminders.filter(r => !fired.includes(r.id));
+      }
+    }
+
     // Vaccine reminders — fire at 9 AM on the reminderDate (3 days before due)
     if (state.vacReminders && state.vacReminders.length > 0 && h >= 9) {
       for (const rem of state.vacReminders) {
@@ -257,6 +273,16 @@ self.addEventListener('message', e => {
   if (e.data.type === 'CLEAR_VAC_REMINDERS' && state) {
     state.vacReminders = [];
     state.lastFiredVac = {};
+  }
+  if (e.data.type === 'SET_APPT_REMINDER' && state) {
+    // Remove any existing reminder for this appt id, then add the new one
+    state.apptReminders = (state.apptReminders || []).filter(r => r.id !== e.data.id);
+    if (e.data.fireAt > Date.now()) {
+      state.apptReminders.push({ id: e.data.id, fireAt: e.data.fireAt, title: e.data.title, body: e.data.body });
+    }
+  }
+  if (e.data.type === 'CLEAR_APPT_REMINDER' && state) {
+    state.apptReminders = (state.apptReminders || []).filter(r => r.id !== e.data.id);
   }
   if (e.data.type === 'CHECK_ALARMS') checkAlarms();
 });
