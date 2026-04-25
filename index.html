@@ -31,7 +31,8 @@
 }
 html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  display:flex;align-items:center;justify-content:center;padding:0;min-height:100vh;overflow-x:hidden}
+  display:flex;align-items:center;justify-content:center;padding:0;min-height:100vh;overflow-x:hidden;
+  overscroll-behavior:none;overscroll-behavior-y:none}
 .wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;padding:12px 0 20px}
 .badge-top{display:flex;align-items:center;gap:8px;background:#fff;padding:7px 16px;border-radius:24px;
   box-shadow:0 2px 12px rgba(26,115,232,.15);border:1px solid #C5D9F8}
@@ -44,7 +45,7 @@ html,body{height:100%;background:linear-gradient(135deg,#E8F0FE,#F0F4FF,#E3F2FD)
   border-radius:clamp(0px,4vw,50px);overflow:hidden;
   box-shadow:0 32px 80px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);
   position:relative;display:flex;flex-direction:column;flex-shrink:0}
-.screen{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.screen{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none;overscroll-behavior-y:none}
 .tabbar{flex-shrink:0!important;}
 .screen::-webkit-scrollbar{display:none}
 @media(max-width:480px){
@@ -4170,6 +4171,28 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     deferredPrompt = null;
     console.log('HealthVault installed!');
   });
+
+  // ── Prevent pull-to-refresh on Android Chrome ──────────────────────────────
+  // Android Chrome fires a native pull-to-refresh when the user drags down
+  // from the top of the page, reloading the entire PWA and showing a blank screen.
+  // Setting overscroll-behavior:none in CSS handles most cases, but the JS
+  // below catches any edge cases where the body itself is being dragged.
+  (function blockPullToRefresh(){
+    var lastY = 0;
+    document.addEventListener('touchstart', function(e){
+      if(e.touches.length === 1) lastY = e.touches[0].clientY;
+    }, {passive: true});
+    document.addEventListener('touchmove', function(e){
+      var scr = document.getElementById('SCR');
+      var y = e.touches[0].clientY;
+      var draggingDown = y > lastY;
+      // Only block if the scrollable screen div is at the top AND user drags down
+      if(draggingDown && scr && scr.scrollTop === 0){
+        e.preventDefault();
+      }
+      lastY = y;
+    }, {passive: false});
+  })();
 </script>
 <script>
 /* ══════════════════════════════════════════════════
@@ -5051,12 +5074,12 @@ const HEALTH_TIPS = {
 };
 
 const TIP_META = {
-  food:      {label:'🥗 Food',       color:'var(--green)', light:'var(--gl)', dark:'#1B5E20'},
-  exercise:  {label:'🏃 Exercise',   color:'var(--orange)',light:'var(--ol)', dark:'#B85000'},
-  sleep:     {label:'🌙 Sleep',      color:'var(--purple)',light:'var(--pl)', dark:'#311B92'},
-  hydration: {label:'💧 Hydration',  color:'var(--blue)',  light:'var(--bl)', dark:' var(--bd)'},
-  mental:    {label:'🧘 Mental',     color:'var(--teal)',  light:'var(--tl)', dark:'#004D40'},
-  preventive:{label:'🩺 Preventive', color:'var(--red)',   light:'var(--rl)', dark:'#C5221F'},
+  food:      {label:'🥗 Food',       color:'#34A853', grad:'#2E7D32', light:'#E6F4EA', dark:'#1B5E20'},
+  exercise:  {label:'🏃 Exercise',   color:'#FA7B17', grad:'#E65100', light:'#FEF3E2', dark:'#B85000'},
+  sleep:     {label:'🌙 Sleep',      color:'#7C4DFF', grad:'#4527A0', light:'#EDE7FE', dark:'#311B92'},
+  hydration: {label:'💧 Hydration',  color:'#1A73E8', grad:'#0D47A1', light:'#E8F0FE', dark:'#0D47A1'},
+  mental:    {label:'🧘 Mental',     color:'#00897B', grad:'#004D40', light:'#E0F2F1', dark:'#004D40'},
+  preventive:{label:'🩺 Preventive', color:'#EA4335', grad:'#B71C1C', light:'#FCE8E6', dark:'#C5221F'},
 };
 
 let _tipsFilter = 'all';
@@ -5086,7 +5109,7 @@ function rTips(){
   </div>
 
   <!-- Tip of the Day -->
-  <div style="background:linear-gradient(135deg,${meta.color},${meta.color}cc);margin:14px;border-radius:16px;padding:18px;position:relative;overflow:hidden">
+  <div style="background:linear-gradient(135deg,${meta.color},${meta.grad});margin:14px;border-radius:16px;padding:18px;position:relative;overflow:hidden">
     <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:rgba(255,255,255,.1);border-radius:50%"></div>
     <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.8);letter-spacing:.5px;margin-bottom:6px">TODAY'S TIP</div>
     <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:6px;line-height:1.35">${todayTip.t}</div>
