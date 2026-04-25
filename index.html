@@ -2562,7 +2562,23 @@ function editFamilyMember(id){
     : (U.members||[]).find(function(x){ return x.id===id; });
   if(!m) return;
 
-  var avatars = ['👶','🧒','👧','👦','🧑','👩','👨','🧓','👴','👵','🧑‍⚕️','👼'];
+  // Role-grouped avatar sets — auto-suggest based on current role+gender
+  var autoAv = smartAvatar(m.role, m.gender, m.age);
+  if(!m.avatar || m.avatar==='👶') m.avatar = autoAv; // upgrade stale default
+  var avatars = [
+    // Babies & Children
+    '👼','👶','🧒','👧','👦',
+    // Adults
+    '👩','👨','🧑',
+    // Middle-aged / Parents
+    '👩','👨',
+    // Seniors
+    '👵','👴','🧓',
+    // Special
+    '🧑‍⚕️','👩‍⚕️','👨‍⚕️'
+  ];
+  // Deduplicate while preserving order
+  avatars = avatars.filter(function(a,i){ return avatars.indexOf(a)===i; });
   var roles   = ['Child','Spouse','Parent','Sibling','Grandparent','Elder','Me','Other'];
   var genders = ['male','female','other'];
 
@@ -2587,7 +2603,9 @@ function editFamilyMember(id){
   ov.innerHTML = '<div style="background:#fff;border-radius:22px 22px 0 0;padding:20px 18px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">'
     + '<div style="width:32px;height:3px;background:#eee;border-radius:2px;margin:0 auto 16px"></div>'
     + '<div style="font-size:16px;font-weight:800;color:var(--g6);margin-bottom:16px">'+(isSelf?'Edit Your Profile':'Edit Family Member')+'</div>'
-    + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:8px">AVATAR</div>'
+    + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">AVATAR</div>'
+    + '<div style="background:#F0F4FF;border-radius:11px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px"><span style="font-size:26px" id="av-suggested">'+autoAv+'</span><div><div style="font-size:12px;font-weight:700;color:var(--bd)">Suggested for '+(m.role||'Member')+' · '+(m.gender||'')+'</div><div style="font-size:11px;color:var(--g4);margin-top:2px">Tap any emoji below to change</div></div></div>'
+
     + '<div id="av-pick" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'+avHtml+'</div>'
     + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:6px">NAME</div>'
     + '<input id="em-name" value="'+(m.name||'')+'" placeholder="Enter full name" style="width:100%;border:1.5px solid var(--g2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box;outline:none;color:var(--g6)"/>'
@@ -2619,15 +2637,65 @@ function saveMemberEdit(id, btn){
   if(id==='self'){
     U.name=name; U.age=age; U.gender=gender;
     var s=(U.members||[]).find(function(m){ return m.id==='self'; });
-    if(s){ s.name=name; s.age=age; s.gender=gender; if(avatar) s.avatar=avatar; }
+    if(s){ s.name=name; s.age=age; s.gender=gender; s.avatar=avatar||smartAvatar('me',gender,age); }
     saveUser(); ov.remove(); rHome(); return;
   }
   var m=(U.members||[]).find(function(x){ return x.id===id; });
   if(!m){ ov.remove(); return; }
   m.name=name; m.age=age; m.gender=gender; m.role=role;
-  if(avatar) m.avatar=avatar;
+  // If user didn't tap an avatar in the picker, apply the smart default for their role+gender+age
+  m.avatar = avatar || smartAvatar(role, gender, age);
   saveUser(); ov.remove();
   if((U.activeMember||'self')===id) rHome(); else rFamily();
+}
+
+/* Returns the best-fit emoji for a member based on role + gender + age */
+function smartAvatar(role, gender, age){
+  var r = (role||'').toLowerCase();
+  var g = (gender||'').toLowerCase();
+  var a = parseInt(age)||0;
+
+  if(r==='me'){
+    if(g==='female') return '👩';
+    if(g==='male')   return '👨';
+    return '🧑';
+  }
+  if(r==='child' || r==='baby'){
+    if(a<=1)          return '👼';
+    if(a<=4)          return '👶';
+    if(g==='female')  return a<=12 ? '👧' : '👩';
+    if(g==='male')    return a<=12 ? '👦' : '👨';
+    return a<=12 ? '🧒' : '🧑';
+  }
+  if(r==='spouse' || r==='partner'){
+    if(g==='female') return '👩';
+    if(g==='male')   return '👨';
+    return '🧑';
+  }
+  if(r==='parent' || r==='father' || r==='mother'){
+    if(g==='female') return a>=60 ? '👵' : '👩';
+    if(g==='male')   return a>=60 ? '👴' : '👨';
+    return a>=60 ? '🧓' : '🧑';
+  }
+  if(r==='grandparent' || r==='grandfather' || r==='grandmother'){
+    if(g==='female') return '👵';
+    if(g==='male')   return '👴';
+    return '🧓';
+  }
+  if(r==='sibling' || r==='brother' || r==='sister'){
+    if(g==='female') return a<18 ? '👧' : '👩';
+    if(g==='male')   return a<18 ? '👦' : '👨';
+    return a<18 ? '🧒' : '🧑';
+  }
+  if(r==='elder'){
+    if(g==='female') return '👵';
+    if(g==='male')   return '👴';
+    return '🧓';
+  }
+  // Other / fallback
+  if(g==='female') return '👩';
+  if(g==='male')   return '👨';
+  return '🧑';
 }
 
 function addFamilyMember(){
