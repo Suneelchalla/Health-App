@@ -22,6 +22,8 @@ let medSchedule = [];
 let waterSchedule = null;
 let lastFiredMed = {};      // { slot: 'YYYY-MM-DD' }
 let lastFiredWater = 0;     // timestamp ms
+let tipsSchedule = null;    // { hour, minute }
+let lastFiredTips = '';     // 'YYYY-MM-DD'
 
 /* ── Helpers ── */
 function dateStr(d) { return d.toISOString().split('T')[0]; }
@@ -62,6 +64,47 @@ function focusApp(url) {
   });
 }
 
+
+/* ── Health tips data (used by SW to fire tip-of-day notifications) ── */
+const SW_TIPS = [
+  {t:'Drink water first thing',b:'Rehydrate before your morning tea — your body loses water overnight.'},
+  {t:'Walk after meals',b:'A 10-minute walk after eating reduces post-meal blood sugar spikes by up to 30%.'},
+  {t:'Eat the rainbow',b:'3+ colours on your plate = 3+ different nutrients. Variety is key to balanced nutrition.'},
+  {t:'Sleep 7–9 hours',b:'Chronic sleep deprivation raises blood pressure and weakens immunity. Prioritise rest.'},
+  {t:'Stretch every morning',b:'5 minutes of gentle stretching after waking improves circulation and reduces stiffness.'},
+  {t:'Box breathing for stress',b:'Inhale 4s → hold 4s → exhale 4s → hold 4s. Activates calm within 60 seconds.'},
+  {t:'Snack on nuts',b:'A handful of almonds or walnuts provides healthy fats, protein and magnesium — ideal for a mid-day snack.'},
+  {t:'Stand up every hour',b:'Sitting for long periods increases cardiovascular risk. Move for 2 minutes each hour.'},
+  {t:'No screens before bed',b:'Blue light delays melatonin by up to 3 hours. Switch off screens 1 hour before sleep.'},
+  {t:'Annual health check-up',b:'A basic blood panel catches silent problems like high sugar or cholesterol before they become serious.'},
+  {t:'Know your urine colour',b:'Pale yellow = well hydrated. Dark yellow = drink more water. Simple and reliable.'},
+  {t:'Eat fermented foods',b:'Curd, idli, buttermilk provide probiotics that support gut bacteria and immunity.'},
+  {t:'Limit sugar in drinks',b:'Replace cola with coconut water, nimbu pani or buttermilk — same satisfaction, far less sugar.'},
+  {t:'Strength train twice a week',b:'Bodyweight exercises like squats and push-ups maintain muscle mass and protect bones.'},
+  {t:'Morning sunlight walk',b:'20 minutes outdoors in morning sun resets your body clock and boosts Vitamin D.'},
+  {t:'5 minutes of gratitude',b:'Write 3 things you are grateful for each morning — rewires the brain toward positivity.'},
+  {t:'Wash hands properly',b:'20 seconds with soap removes 99% of pathogens. Most effective step to prevent infections.'},
+  {t:'Avoid eating late',b:'Finish dinner 2–3 hours before bed to improve digestion and support restful sleep.'},
+  {t:'Fixed wake-up time',b:'Same wake time daily — even weekends — strengthens your body clock and sleep quality.'},
+  {t:'Nature resets the mind',b:'Just 20 minutes in a park measurably reduces cortisol and improves focus for hours.'},
+  {t:'Cook with less salt',b:'Reduce salt by a quarter teaspoon per week — you will stop noticing the difference within 3 weeks.'},
+  {t:'Celebrate small wins',b:'Acknowledging daily accomplishments activates the brain reward circuit and builds motivation.'},
+  {t:'Limit caffeine after 2 PM',b:'Caffeine has a 5–6 hour half-life. Your 3 PM coffee is still active at 8 PM affecting sleep.'},
+  {t:'Eat seasonal fruits',b:'Seasonal fruits are fresher, richer in nutrients and far cheaper than off-season varieties.'},
+  {t:'Dental check every 6 months',b:'Gum disease bacteria are linked to heart disease. Clean teeth = healthier body.'},
+  {t:'Include more fibre',b:'25–30g of fibre daily from vegetables and legumes supports gut health and lowers cholesterol.'},
+  {t:'Cool room for better sleep',b:'18–20°C is the ideal sleep temperature — a cooler room helps your body fall into deeper sleep.'},
+  {t:'Yoga for joint health',b:'Regular yoga reduces cortisol, improves flexibility and protects joints in all age groups.'},
+  {t:'Mindfulness for 10 minutes',b:'10 minutes of daily mindfulness reduces anxiety as effectively as mild medication over time.'},
+  {t:'Limit news to once a day',b:'Constant news causes elevated anxiety. Check once at a fixed time and then consciously stop.'},
+];
+
+function getTodayTipSW(){
+  const d = new Date();
+  const seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  return SW_TIPS[seed % SW_TIPS.length];
+}
+
 /* ── checkAlarms ────────────────────────────────────────────────────────────
  *
  * Bug 4 fix: old code used `m < 2` — the SW had to wake within the first
@@ -99,6 +142,16 @@ function checkAlarms() {
         'water-reminder',
         [{ action: 'drank', title: '✅ I Drank!' }]
       );
+    }
+  }
+
+  // Tips of the day notification
+  if (tipsSchedule && lastFiredTips !== t) {
+    const m2 = now.getMinutes();
+    if (h === tipsSchedule.hour && m2 >= (tipsSchedule.minute || 0)) {
+      lastFiredTips = t;
+      const tip = getTodayTipSW();
+      notify('💡 ' + tip.t, tip.b, 'tips-daily', []);
     }
   }
 }
@@ -171,6 +224,11 @@ self.addEventListener('message', e => {
     lastFiredWater = 0;
   }
   if (e.data.type === 'CLEAR_MED_SCHEDULE') { medSchedule = []; lastFiredMed = {}; }
+  if (e.data.type === 'SET_TIPS_SCHEDULE') {
+    tipsSchedule = { hour: e.data.hour || 8, minute: e.data.minute || 0 };
+    lastFiredTips = '';
+  }
+  if (e.data.type === 'CLEAR_TIPS_SCHEDULE') { tipsSchedule = null; lastFiredTips = ''; }
   if (e.data.type === 'CLEAR_WATER_SCHEDULE') { waterSchedule = null; lastFiredWater = 0; }
 
   // Page can request an immediate alarm check (sent on every app open)
