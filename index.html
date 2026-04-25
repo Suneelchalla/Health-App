@@ -4042,7 +4042,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 </div>
 
 <script>
-  // Register Service Worker — only on real hosting (not preview/iframe)
+  // Register Service Worker — only on real HTTPS hosting (not preview/iframe)
   if('serviceWorker' in navigator){
     const isRealHost = location.hostname !== 'www.claudeusercontent.com' &&
                        !location.hostname.includes('claude.ai') &&
@@ -4050,7 +4050,18 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     if(isRealHost){
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(r => console.log('SW registered:', r.scope))
+          .then(r => {
+            console.log('SW registered:', r.scope);
+            // Bug 1 fix: force the new SW to activate immediately if an old one is waiting
+            if(r.waiting) r.waiting.postMessage({type:'SKIP_WAITING'});
+            r.addEventListener('updatefound', () => {
+              const newSW = r.installing;
+              if(newSW) newSW.addEventListener('statechange', () => {
+                if(newSW.state === 'installed' && navigator.serviceWorker.controller)
+                  newSW.postMessage({type:'SKIP_WAITING'});
+              });
+            });
+          })
           .catch(e => console.warn('SW registration failed:', e));
       });
     }
@@ -4227,32 +4238,16 @@ function fireNotification(title, body, tag){
   }catch(e){}
 }
 
-let _reminderTimers=[];
-function clearAllReminderTimers(){ _reminderTimers.forEach(t=>clearTimeout(t)); _reminderTimers=[]; }
-
+/* Bug 2 fix: setTimeout-based reminders removed.
+ * Android suspends JS timers whenever the screen locks or the user switches apps,
+ * so setTimeout(fn, 8h) is never reliable on mobile.
+ * The Service Worker's checkAlarms() loop is now the sole alarm source.
+ * scheduleAllMedReminders() is kept as a stub so existing callers don't break,
+ * but it only pushes the schedule into the SW — it no longer sets any timers. */
+function clearAllReminderTimers(){ /* no-op — timers removed */ }
 function scheduleAllMedReminders(){
-  clearAllReminderTimers();
-  const enabled=loadKey('hv_reminders_on')==='1';
-  if(!enabled) return;
-  if(Notification.permission!=='granted') return;
-  const meds=getMeds();
-  const slots=[{key:'morning',hour:8,label:'🌅 Morning'},
-               {key:'afternoon',hour:14,label:'☀️ Afternoon'},
-               {key:'night',hour:21,label:'🌙 Night'}];
-  const now=new Date();
-  slots.forEach(slot=>{
-    const due=meds.filter(m=>m[slot.key]);
-    if(!due.length) return;
-    const fireAt=new Date();
-    fireAt.setHours(slot.hour,0,0,0);
-    if(fireAt<=now) return; // already past today
-    const ms=fireAt-now;
-    const t=setTimeout(()=>{
-      const names=due.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ');
-      fireNotification(`${slot.label} Medicines Due`,names,'med-'+slot.key);
-    },ms);
-    _reminderTimers.push(t);
-  });
+  // Delegate entirely to the Service Worker
+  pushReminderScheduleToSW();
 }
 
 function rReminders(){
@@ -4304,23 +4299,12 @@ async function toggleReminders(sw){
 }
 
 /* ══ 4. WATER TRACKER ══ */
-let _waterTimer=null;
+/* Bug 2 fix: setInterval water timer removed — killed by Android when app is backgrounded.
+ * Water reminders are now handled entirely by the Service Worker's checkAlarms(). */
+let _waterTimer = null; // kept for toggleWaterReminder compatibility
 function scheduleWaterReminder(){
-  if(_waterTimer) clearInterval(_waterTimer);
-  const on=loadKey('hv_water_on')==='1';
-  if(!on || Notification.permission!=='granted') return;
-  const interval=parseInt(loadKey('hv_water_interval')||'60')*60000;
-  _waterTimer=setInterval(()=>{
-    const h=new Date().getHours();
-    const start=parseInt(loadKey('hv_water_start')||'8');
-    const end=parseInt(loadKey('hv_water_end')||'22');
-    if(h>=start && h<end){
-      const log=getWaterLog();
-      const glasses=(log[today()]||0);
-      const goal=parseInt(loadKey('hv_water_goal')||'8');
-      if(glasses<goal) fireNotification('💧 Time to Drink Water!',`You've had ${glasses} of ${goal} glasses today. Stay hydrated!`,'water');
-    }
-  },interval);
+  // Delegate entirely to the Service Worker
+  pushWaterScheduleToSW();
 }
 function rWater(){
   const log=getWaterLog();
@@ -4397,7 +4381,10 @@ async function toggleWaterReminder(sw){
     fireNotification('💧 Water Reminders On','You\'ll get hourly reminders to drink water.','water-setup');
   } else {
     saveKey('hv_water_on','0');
-    if(_waterTimer){ clearInterval(_waterTimer); _waterTimer=null; }
+    // Push cleared schedule to SW so it stops firing water reminders
+    navigator.serviceWorker && navigator.serviceWorker.ready.then(reg=>{
+      reg.active && reg.active.postMessage({type:'CLEAR_WATER_SCHEDULE'});
+    }).catch(()=>{});
   }
   rWater();
 }
@@ -4829,29 +4816,41 @@ function rInsurance(){
 // ── STARTUP: schedule reminders on app open ─────────
 (function initReminders(){
   if(loadKey('hv_reminders_on')==='1' && Notification.permission==='granted'){
+    // Bug 2 fix: scheduleAllMedReminders() now only calls pushReminderScheduleToSW()
+    // No more setTimeout() — the SW handles all alarm firing
     scheduleAllMedReminders();
-    pushReminderScheduleToSW();
   }
   if(loadKey('hv_water_on')==='1' && Notification.permission==='granted'){
-    scheduleWaterReminder();
     pushWaterScheduleToSW();
   }
-  // Listen for SW-fired "mark taken" action
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.addEventListener('message', e=>{
-      if(e.data && e.data.type==='MED_TAKEN'){
-        // Mark the relevant medicine slot as taken for today
-        const taken=getTakenToday();
-        // tag format is 'med-morning' / 'med-afternoon' / 'med-night'
-        const slot=e.data.tag?.replace('med-','');
-        getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
-        setTakenToday(taken);
-      }
-      if(e.data && e.data.type==='WATER_DRUNK'){
-        addWaterGlass();
-      }
-    });
-  }
+
+  if(!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.ready.then(reg=>{
+    // Tell the SW to immediately check alarms in case any were missed while app was closed
+    if(reg.active) reg.active.postMessage({type:'CHECK_ALARMS'});
+
+    // Bonus fix: register Periodic Background Sync so Chrome on Android wakes the SW
+    // roughly every hour even when the app is fully closed.
+    // Requires: HTTPS + PWA installed to home screen + user granted notification permission
+    if('periodicSync' in reg && Notification.permission==='granted'){
+      reg.periodicSync.register('hv-alarms', { minInterval: 60 * 60 * 1000 })
+        .catch(()=>{}); // silently ignore if permission not granted or API unavailable
+    }
+  }).catch(()=>{});
+
+  // Listen for SW-fired action broadcasts
+  navigator.serviceWorker.addEventListener('message', e=>{
+    if(e.data && e.data.type==='MED_TAKEN'){
+      const taken=getTakenToday();
+      const slot=e.data.tag?.replace('med-','');
+      getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
+      setTakenToday(taken);
+    }
+    if(e.data && e.data.type==='WATER_DRUNK'){
+      addWaterGlass();
+    }
+  });
 })();
 
 // Push full reminder schedule into the Service Worker so it can fire
