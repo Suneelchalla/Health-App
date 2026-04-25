@@ -5616,6 +5616,30 @@ function toggleMedTaken(slotId, el){
     const bar=widget.querySelector('[style*="height:3px"] > div');
     if(bar) bar.style.width=pct+'%';
   }
+  // Tell the SW which slots are fully taken so it won't fire those notifications
+  syncTakenSlotsToSW();
+}
+
+// Build per-slot taken status and push to SW so it skips already-taken slots
+function syncTakenSlotsToSW(){
+  if(!('serviceWorker' in navigator)) return;
+  const meds    = getMeds().filter(m=>m.active!==false);
+  const taken   = getTakenToday();
+  const slotKeys= ['morning','afternoon','night'];
+  // A slot is fully done if every medicine in that slot has been marked taken
+  const doneSots = slotKeys.filter(slot=>{
+    const slotMeds = meds.filter(m=>m[slot]);
+    if(!slotMeds.length) return false; // no meds in this slot
+    return slotMeds.every(m=>taken.includes(m.id+'-'+slot[0]));
+  });
+  navigator.serviceWorker.ready.then(reg=>{
+    if(reg.active) reg.active.postMessage({
+      type: 'SET_TAKEN_SLOTS',
+      date: today(),
+      takenSlots: doneSots,
+      clientId: getClientId()
+    });
+  }).catch(()=>{});
 }
 
 /* ══ 2. SWIPE TO DELETE ══ */
@@ -6335,7 +6359,7 @@ function getClientId(){
 // clientId ensures only THIS user's tab receives the notifications.
 function pushReminderScheduleToSW(){
   if(!('serviceWorker' in navigator)) return;
-  const meds=getMeds();
+  const meds=getMeds().filter(m=>m.active!==false);
   const schedule=[];
   [{slot:'morning',hour:8},{slot:'afternoon',hour:14},{slot:'night',hour:21}].forEach(({slot,hour})=>{
     const due=meds.filter(m=>m[slot]);
@@ -6344,6 +6368,8 @@ function pushReminderScheduleToSW(){
   navigator.serviceWorker.ready.then(reg=>{
     if(reg.active) reg.active.postMessage({ type:'SET_MED_SCHEDULE', schedule, clientId: getClientId() });
   }).catch(()=>{});
+  // Also push current taken state so SW can skip already-taken slots
+  syncTakenSlotsToSW();
 }
 
 function pushWaterScheduleToSW(){
