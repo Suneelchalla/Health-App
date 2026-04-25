@@ -141,6 +141,10 @@ body.dark .qa .ql{color:#E0E0E0}
 .pgo.on{background:var(--blue);color:#fff}
 .pb{padding-bottom:30px}
 .p16{padding:0 16px}
+.pwd-wrap{position:relative;display:flex;align-items:center}
+.pwd-wrap .inp{padding-right:42px;width:100%}
+.pwd-eye{position:absolute;right:12px;background:none;border:none;cursor:pointer;color:var(--g4);display:flex;align-items:center;padding:4px;-webkit-tap-highlight-color:transparent}
+.pwd-eye:active{color:var(--blue)}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:2px}
 
 /* PWA INSTALL BANNER */
@@ -627,6 +631,19 @@ if(loadKey('hv_oai_key')) window._OPENAI_KEY = loadKey('hv_oai_key');
 const AUTH = ['splash','login','onboard'];
 
 function goProfile(){ go('profile'); }
+// Navigation history stack for back-button support
+const _navHistory = [];
+
+function goBack(){
+  if(_navHistory.length > 1){
+    _navHistory.pop(); // remove current
+    const prev = _navHistory.pop(); // get previous
+    go(prev);
+  } else {
+    go('home');
+  }
+}
+
 function go(s) {
   const isAuth = AUTH.includes(s);
   TB.style.display = isAuth ? 'none' : 'flex';
@@ -635,6 +652,9 @@ function go(s) {
     const e = $('T-'+t); if(e) e.className = 'tab'+(t===s?' on':'');
   });
   SCR.scrollTop = 0;
+  // Track history (cap at 20 to avoid memory bloat)
+  _navHistory.push(s);
+  if(_navHistory.length > 20) _navHistory.shift();
   // Map screen name → function name string, resolved at call time via window[]
   // This allows functions defined in later <script> blocks to be found correctly
   const map = {
@@ -670,6 +690,17 @@ function rSplash(){
 }
 
 /* ══ LOGIN ══ */
+/* ── Password eye-toggle helper ──────────────────── */
+function togglePwd(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.innerHTML = show
+    ? '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+    : '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+
 let loginMode='login';
 function rLogin(){
   SCR.innerHTML=`<div class="sc" style="height:100%;overflow-y:auto;display:flex;flex-direction:column">
@@ -690,7 +721,7 @@ function renderLF(m){
   const c=$('lf');
   if(m==='login') c.innerHTML=`
     <div class="fld"><div class="flbl">Email or Phone</div><input class="inp" id="fe" type="email" placeholder="you@example.com"/></div>
-    <div class="fld"><div class="flbl">Password</div><input class="inp" id="fp" type="password" placeholder="Your password"/></div>
+    <div class="fld"><div class="flbl">Password</div><div class="pwd-wrap"><input class="inp" id="fp" type="password" placeholder="Your password"/><button class="pwd-eye" onclick="togglePwd('fp',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <button class="btn" style="margin-top:6px" onclick="doLogin()">Sign In</button>
     <div style="text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:11px;font-weight:700">Forgot password?</div>
     <div class="or-div"><span>or continue with</span></div>
@@ -699,8 +730,8 @@ function renderLF(m){
   else c.innerHTML=`
     <div class="fld"><div class="flbl">Full Name</div><input class="inp" id="fn" type="text" placeholder="Your full name"/></div>
     <div class="fld"><div class="flbl">Email</div><input class="inp" id="fe" type="email" placeholder="you@example.com"/></div>
-    <div class="fld"><div class="flbl">Password</div><input class="inp" id="fp" type="password" placeholder="Min 6 characters"/></div>
-    <div class="fld"><div class="flbl">Confirm Password</div><input class="inp" id="fp2" type="password" placeholder="Repeat password"/></div>
+    <div class="fld"><div class="flbl">Password</div><div class="pwd-wrap"><input class="inp" id="fp" type="password" placeholder="Min 6 characters"/><button class="pwd-eye" onclick="togglePwd('fp',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+    <div class="fld"><div class="flbl">Confirm Password</div><div class="pwd-wrap"><input class="inp" id="fp2" type="password" placeholder="Repeat password"/><button class="pwd-eye" onclick="togglePwd('fp2',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px"><input type="checkbox" id="fc" style="margin-top:3px;cursor:pointer"/><label for="fc" style="font-size:11px;color:var(--g5);line-height:1.5;cursor:pointer">I agree to the <span style="color:var(--blue);font-weight:700">Terms</span> and <span style="color:var(--blue);font-weight:700">Privacy Policy</span>. My health data is encrypted and never shared without consent.</label></div>
     <button class="btn" style="margin-top:4px" onclick="doSignup()">Create Account</button>
     <div class="or-div"><span>or</span></div>
@@ -2009,7 +2040,7 @@ function deleteReport(id){
 function rVault(){
   const vault = getVaultItems();
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Health Vault</div><div class="hdr-s">Complete medical history</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Health Vault</div><div class="bk-s">Complete medical history</div></div></div>
   <div class="p16">
     <div style="display:flex;gap:8px;margin-bottom:14px">
       <div onclick="go('skin')" style="flex:1;background:var(--pkl);border-radius:10px;padding:11px;text-align:center;cursor:pointer">
@@ -2130,6 +2161,7 @@ function rEmergency(){
   const medList=meds.length>0?meds.map(m=>`${m.name} ${m.dosage||''}`).join(', '):'None recorded';
   const nm=U.name||'User',g=U.gender==='female'?'Female':U.gender==='male'?'Male':'Other',age=U.age||'--',blood=U.blood||'--',allergy=U.allergies||'None recorded',ec=U.ecName||'Not set',ecp=U.ecPhone||'--';
   SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Emergency</div><div class="bk-s">Quick access to emergency help</div></div></div>
   <div class="emfh"><div class="emfp">⚠️ EMERGENCY ALERT</div><div class="emft">Seek Emergency Care Now</div><div class="emfs">Your symptoms may need immediate attention. Do not delay — call now or go to the nearest hospital.</div></div>
   <div class="p16">
     <button class="emb" style="margin-top:14px" onclick="window.location.href='tel:108'">📞 Call 108 — Ambulance</button>
@@ -2217,7 +2249,7 @@ function rChatbot(){
     chatHistory=[{role:'bot',text:'Hello! I\'m your HealthVault assistant 👋\n\nI work completely offline — no internet or API key needed. I can help with general health questions on topics like:\n\n💊 Medicines (paracetamol, ibuprofen…)\n🩸 Lab values (cholesterol, HbA1c, vitamin D…)\n❤️ Lifestyle (diet, exercise, sleep, stress…)\n\nNote: I provide educational info only — always consult a doctor for personal health decisions.',time:'Now'}];
   }
   SCR.innerHTML=`<div class="sc" style="height:100%;display:flex;flex-direction:column">
-  <div class="hdr" style="flex-shrink:0"><div class="hdr-t">Health Assistant</div><div class="hdr-s">Offline · No API needed · Educational only</div></div>
+  <div class="hdr" style="flex-shrink:0"><div style="display:flex;align-items:center;gap:10px"><div class="bk" onclick="goBack()">←</div><div><div class="hdr-t">Health Assistant</div><div class="hdr-s">Offline · No API needed · Educational only</div></div></div></div>
   <div class="iban ibl" style="flex-shrink:0"><span>💡</span><span>Works offline using a built-in health reference database. Not a substitute for medical advice.</span></div>
   <div class="chat-suggest" style="flex-shrink:0">
     ${['What causes fever?','Explain LDL cholesterol','Is paracetamol safe?','Blood pressure tips','What is HbA1c?','Exercise tips'].map(s=>`<button class="cs-btn" onclick="sendChat('${s}')">${s}</button>`).join('')}
@@ -2347,7 +2379,7 @@ function rInsurance(){
   const exps = getExpenses();
   const total = exps.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Insurance & Expenses</div><div class="hdr-s">Track claims, bills & reimbursements</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Insurance & Expenses</div><div class="bk-s">Track claims, bills & reimbursements</div></div></div>
   <div class="p16" style="padding-top:14px">
     <div class="lgrid" style="margin:0 0 14px">
       <div class="ls"><div class="lsv" style="color:var(--g6)">₹ ${total.toLocaleString('en-IN')}</div><div class="lsl">Total spent</div></div>
@@ -2413,7 +2445,7 @@ function rVaccines(){
   const due = vacs.filter(v=>v.status==='due').length;
   const overdue = vacs.filter(v=>v.status==='overdue').length;
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Vaccination Tracker</div><div class="hdr-s">Immunisation record and schedule</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Vaccination Tracker</div><div class="bk-s">Immunisation record and schedule</div></div></div>
   <div class="lgrid" style="margin:14px">
     <div class="ls"><div class="lsv" style="color:var(--green)">${done}</div><div class="lsl">Up to date</div></div>
     <div class="ls"><div class="lsv" style="color:var(--amber)">${due}</div><div class="lsl">Due soon</div></div>
@@ -2482,13 +2514,8 @@ function clearGeminiKey(){}
 async function callGemini(){ return null; }
 async function callGPT(){ return null; }
 async function getAISymptomAnalysis(){ return null; }
-async function appsScriptPost(){ return {}; }
-async function saveAllToSheets(){}
-async function saveVitalToSheets(){}
-async function saveMedToSheets(){}
-async function saveProfileToSheets(){}
-async function manualCloudSync(){ alert('Cloud sync is not available in offline mode. Your data is saved locally on this device.'); }
-async function loadUserFromCloud(){ return null; }
+// NOTE: appsScriptPost, manualCloudSync, loadUserFromCloud, saveAllToSheets are
+// defined earlier in the file (the real implementations). Do NOT stub them here.
 function handleRxFile(){}
 async function doRxOCR(){ go('scan'); }
 function renderOCRResult(){}
@@ -2548,7 +2575,7 @@ function rFamily(){
   }).join('');
 
   SCR.innerHTML = '<div class="sc">'
-    + '<div class="hdr"><div class="hdr-t">Family Profiles</div><div class="hdr-s">Tap a member to view their health dashboard</div></div>'
+    + '<div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Family Profiles</div><div class="bk-s">Tap a member to view their health dashboard</div></div></div>'
     + '<div style="padding:14px">'
     + rows
     + '<div class="card" style="border:1.5px dashed var(--g3);background:var(--g1);text-align:center;cursor:pointer;margin-top:4px" onclick="addFamilyMember()">'
@@ -3394,7 +3421,7 @@ function rMore(){
 function rNearby(){
   const cats=['All','Hospitals','Clinics','Pharmacies','Labs'];
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Nearby Care</div><div class="hdr-s">Opens Google Maps with your location</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Nearby Care</div><div class="bk-s">Opens Google Maps with your location</div></div></div>
   <div class="nc-map" id="nc-map-area" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;min-height:120px">
     <div style="font-size:28px">📍</div>
     <div id="nc-loc-status" style="font-size:13px;font-weight:700;color:#0D47A1">Getting your location…</div>
@@ -3440,7 +3467,7 @@ function rActivity(){
   const todayKm=hist.filter(w=>w.date===new Date().toDateString()).reduce((s,w)=>s+w.km,0);
   const weekKm=hist.slice(-7).reduce((s,w)=>s+w.km,0);
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Activity Tracker</div><div class="hdr-s">${today2}</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Activity Tracker</div><div class="bk-s">${today2}</div></div></div>
   <div class="p16" style="padding-top:16px">
     <div class="card" style="cursor:default;border:2px solid var(--blue);padding:20px;text-align:center;margin-bottom:16px">
       <div style="font-size:13px;font-weight:700;color:var(--g5);margin-bottom:12px">🏃 GPS Walk Tracker</div>
@@ -3499,7 +3526,7 @@ function savePhotos(arr){ try{ localStorage.setItem('hv_photos', JSON.stringify(
 function rSkin(){
   const photos = getPhotos().filter(p=>p.cat==='skin');
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Skin & Wound Tracker</div><div class="hdr-s">Photo progress — stored permanently on device</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Skin & Wound Tracker</div><div class="bk-s">Photo progress — stored permanently on device</div></div></div>
   <div class="iban iby"><span>ℹ️</span><span>Photos stored permanently on this device. Never deleted automatically. Consult a dermatologist for diagnosis.</span></div>
   <div class="p16" style="padding-top:14px">
     <input type="file" id="skin-photo-inp" accept="image/*" capture="environment" style="display:none" onchange="addSkinPhoto(this)"/>
@@ -3585,7 +3612,7 @@ function getDocPhotos(){ return getPhotos().filter(p=>p.cat==='doc'); }
 function rDocLocker(){
   const allDocCats=['All','Prescription','Lab Report','Insurance','Discharge','Certificate','Other'];
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Document Locker</div><div class="hdr-s">Photos stored permanently — never auto-deleted</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Document Locker</div><div class="bk-s">Photos stored permanently — never auto-deleted</div></div></div>
   <div class="iban ibl"><span>🔐</span><span>All photos stored permanently on this device. Never deleted automatically.</span></div>
   <div class="p16" style="padding-top:14px">
     <button class="btn" style="margin-top:0;margin-bottom:12px" onclick="showAddDocModal()">📎 Add Document / Photo</button>
@@ -3744,7 +3771,7 @@ function rVitals(){
   };
 
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Vitals Tracker</div><div class="hdr-s">Log and monitor your health readings</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Vitals Tracker</div><div class="bk-s">Log and monitor your health readings</div></div></div>
   <div class="p16" style="padding-top:14px">
 
     <!-- Quick log cards -->
@@ -3844,7 +3871,7 @@ function deleteVital(id){
 /* ══ SEARCH ══ */
 function rSearch(){
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Search</div><div class="hdr-s">Search medicines, reports, vault entries</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Search</div><div class="bk-s">Search medicines, reports, vault entries</div></div></div>
   <div style="padding:12px 14px">
     <div class="srch" style="margin:0 0 14px">
       <svg width="16" height="16" fill="none" stroke="var(--g4)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -3959,7 +3986,7 @@ function rHealthScore(){
   ];
 
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Health Score</div><div class="hdr-s">Your health data completeness score</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Health Score</div><div class="bk-s">Your health data completeness score</div></div></div>
   <div class="p16" style="padding-top:20px">
 
     <!-- Big score circle -->
@@ -4024,7 +4051,7 @@ function rFoodInt(){
     ]},
   ];
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Food & Medicine</div><div class="hdr-s">Dietary interactions to watch for</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Food & Medicine</div><div class="bk-s">Dietary interactions to watch for</div></div></div>
   <div class="iban iby"><span>🍽️</span><span>These interactions are educational. Your pharmacist can advise on your specific medicines and diet.</span></div>
   <div class="p16">
     <div style="display:flex;gap:8px;margin:14px 0 12px;flex-wrap:wrap">
@@ -4326,13 +4353,15 @@ async function requestNotifPermission(){
 }
 function fireNotification(title, body, tag){
   if(Notification.permission!=='granted') return;
+  // Use a path relative to the current page origin+path so it works on any hostname
+  const iconPath = (location.pathname.replace(/\/[^/]*$/, '') || '') + '/icon-192.png';
   try{
     if('serviceWorker' in navigator && navigator.serviceWorker.controller){
       navigator.serviceWorker.ready.then(reg=>{
-        reg.showNotification(title,{body,icon:'/Health-App/icon-192.png',tag:tag||'hv',badge:'/Health-App/icon-192.png',vibrate:[200,100,200]});
+        reg.showNotification(title,{body,icon:iconPath,tag:tag||'hv',badge:iconPath,vibrate:[200,100,200]});
       });
     } else {
-      new Notification(title,{body,icon:'/Health-App/icon-192.png',tag:tag||'hv'});
+      new Notification(title,{body,icon:iconPath,tag:tag||'hv'});
     }
   }catch(e){}
 }
@@ -4350,16 +4379,27 @@ function scheduleAllMedReminders(){
                {key:'afternoon',hour:14,label:'☀️ Afternoon'},
                {key:'night',hour:21,label:'🌙 Night'}];
   const now=new Date();
+
+  // If SW is active it handles notifications independently — page-side
+  // setTimeout is still set as a fallback for browsers without SW support,
+  // but we don't fire if the SW will handle it to avoid duplicates.
+  const swActive = 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
+
   slots.forEach(slot=>{
     const due=meds.filter(m=>m[slot.key]);
     if(!due.length) return;
     const fireAt=new Date();
     fireAt.setHours(slot.hour,0,0,0);
-    if(fireAt<=now) return; // already past today
+    // If today's slot already passed, schedule for tomorrow
+    if(fireAt<=now) fireAt.setDate(fireAt.getDate()+1);
     const ms=fireAt-now;
     const t=setTimeout(()=>{
-      const names=due.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ');
-      fireNotification(`${slot.label} Medicines Due`,names,'med-'+slot.key);
+      // Re-arm for tomorrow before firing
+      scheduleAllMedReminders();
+      if(!swActive){
+        const names=getMeds().filter(m=>m[slot.key]).map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ');
+        if(names) fireNotification(`${slot.label} Medicines Due`,names,'med-'+slot.key);
+      }
     },ms);
     _reminderTimers.push(t);
   });
@@ -4369,7 +4409,7 @@ function rReminders(){
   const on=loadKey('hv_reminders_on')==='1';
   const meds=getMeds();
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">Medicine Reminders</div><div class="hdr-s">Daily alerts for your medicines</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Medicine Reminders</div><div class="bk-s">Daily alerts for your medicines</div></div></div>
   <div class="p16" style="padding-top:16px">
     <div class="card" style="cursor:default;border:2px solid ${on?'var(--green)':'var(--g2)'}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -4419,6 +4459,9 @@ function scheduleWaterReminder(){
   if(_waterTimer) clearInterval(_waterTimer);
   const on=loadKey('hv_water_on')==='1';
   if(!on || Notification.permission!=='granted') return;
+  // If SW is controlling the page it handles water reminders — skip page-side timer
+  // to prevent double notifications. The interval is still set in case SW is absent.
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller) return;
   const interval=parseInt(loadKey('hv_water_interval')||'60')*60000;
   _waterTimer=setInterval(()=>{
     const h=new Date().getHours();
@@ -4442,7 +4485,7 @@ function rWater(){
   const dash=circumference*(pct/100);
   const hist=Object.entries(log).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,7);
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">💧 Water Tracker</div><div class="hdr-s">Stay hydrated · ${glasses}/${goal} glasses today</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">💧 Water Tracker</div><div class="bk-s">Stay hydrated · ${glasses}/${goal} glasses today</div></div></div>
   <div class="p16" style="padding-top:20px">
     <div style="text-align:center;margin-bottom:20px">
       <div class="water-ring">
@@ -4519,7 +4562,7 @@ function rAppointments(){
   const upcoming=appts.filter(a=>a.datetime>=now);
   const past=appts.filter(a=>a.datetime<now);
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">📅 Appointments</div><div class="hdr-s">Doctor visits & reminders</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">📅 Appointments</div><div class="bk-s">Doctor visits & reminders</div></div></div>
   <div class="p16" style="padding-top:14px">
     <button class="btn" style="margin-top:0" onclick="showAddAppt()">+ Schedule Appointment</button>
     <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Upcoming (${upcoming.length})</div>
@@ -4567,17 +4610,18 @@ function showAddAppt(existingId){
     <div class="fld"><div class="flbl">Hospital / Clinic</div><input class="inp" id="appt-hosp" placeholder="e.g. Apollo Hospital, Chennai" value="${ex?ex.hospital:''}"/></div>
     <div class="fld"><div class="flbl">Date & Time *</div><input class="inp" id="appt-dt" type="datetime-local" value="${ex?ex.datetime.slice(0,16):defDT}"/></div>
     <div class="fld"><div class="flbl">Notes</div><input class="inp" id="appt-notes" placeholder="e.g. Bring blood reports, fasting required" value="${ex?ex.notes:''}"/></div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px;background:var(--gl);border-radius:10px;cursor:pointer" onclick="this.querySelector('input').click()">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px;background:var(--gl);border-radius:10px;cursor:pointer" onclick="if(event.target.tagName!=='INPUT'){document.getElementById('appt-rem').click();}">
       <input type="checkbox" id="appt-rem" style="width:18px;height:18px;cursor:pointer" ${ex&&ex.reminder?'checked':''}/>
-      <label for="appt-rem" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">🔔 Remind me 1 hour before</label>
+      <label for="appt-rem" onclick="event.stopPropagation()" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">🔔 Remind me 1 hour before</label>
     </div>
-    <button class="btn" onclick="saveAppt('${existingId||''}')">✅ ${ex?'Update':'Save'} Appointment</button>
+    <button class="btn" onclick="saveAppt(${existingId?`'${existingId}'`:'null'})">✅ ${ex?'Update':'Save'} Appointment</button>
     <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
   </div>`;
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
 }
 function saveAppt(existingId){
+  existingId = existingId || null;
   const doc=document.getElementById('appt-doc')?.value.trim();
   if(!doc){alert('Please enter the doctor name.');return;}
   const dt=document.getElementById('appt-dt')?.value;
@@ -4594,10 +4638,31 @@ function saveAppt(existingId){
   if(existingId){ const i=appts.findIndex(a=>a.id===existingId); if(i>=0)appts[i]=appt; else appts.push(appt); }
   else appts.push(appt);
   saveAppointments(appts);
-  // Schedule reminder notification
-  if(appt.reminder && Notification.permission==='granted'){
-    const ms=new Date(appt.datetime)-Date.now()-3600000;
-    if(ms>0){ setTimeout(()=>fireNotification(`📅 Appointment in 1 hour`,`Dr. ${appt.doctor} · ${appt.hospital}`,'appt-'+appt.id),ms); }
+  // Schedule reminder — push to SW so it survives tab close
+  if(appt.reminder){
+    if(Notification.permission==='granted'){
+      const ms=new Date(appt.datetime)-Date.now()-3600000;
+      if(ms>0){
+        // Store in SW via message so reminder survives page close
+        if('serviceWorker' in navigator){
+          navigator.serviceWorker.ready.then(reg=>{
+            if(reg.active) reg.active.postMessage({
+              type:'SET_APPT_REMINDER',
+              id: appt.id,
+              fireAt: new Date(appt.datetime).getTime()-3600000,
+              title:`📅 Appointment in 1 hour`,
+              body:`Dr. ${appt.doctor}${appt.hospital?' · '+appt.hospital:''}`
+            });
+          }).catch(()=>{});
+        }
+        // Page-side fallback (works while app is open)
+        setTimeout(()=>fireNotification(`📅 Appointment in 1 hour`,`Dr. ${appt.doctor}${appt.hospital?' · '+appt.hospital:''}`,'appt-'+appt.id),ms);
+      }
+    } else {
+      requestNotifPermission().then(granted=>{
+        if(!granted) alert('Please allow notifications to receive appointment reminders.');
+      });
+    }
   }
   document.querySelector('[style*="position:fixed"]')?.remove();
   rAppointments();
@@ -4612,7 +4677,7 @@ function deleteAppt(id){
 /* ══ 6. MENSTRUAL CYCLE TRACKER ══ */
 function rMenstrual(){
   if(U.gender!=='female'){
-    SCR.innerHTML=`<div class="sc"><div class="hdr"><div class="hdr-t">Cycle Tracker</div></div><div class="p16" style="padding-top:30px;text-align:center"><div style="font-size:48px;margin-bottom:14px">🌸</div><div style="font-size:15px;font-weight:700;color:var(--g6);margin-bottom:8px">Not available</div><div style="font-size:13px;color:var(--g4);margin-bottom:20px">Cycle tracking is available when your profile gender is set to Female.</div><button class="btn" onclick="go('profile')">Go to Profile</button><button class="btn2" onclick="go('more')">Back to More</button></div></div>`;
+    SCR.innerHTML=`<div class="sc"><div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Cycle Tracker</div></div></div><div class="p16" style="padding-top:30px;text-align:center"><div style="font-size:48px;margin-bottom:14px">🌸</div><div style="font-size:15px;font-weight:700;color:var(--g6);margin-bottom:8px">Not available</div><div style="font-size:13px;color:var(--g4);margin-bottom:20px">Cycle tracking is available when your profile gender is set to Female.</div><button class="btn" onclick="go('profile')">Go to Profile</button><button class="btn2" onclick="goBack()">Go Back</button></div></div>`;
     return;
   }
   const cycles=getCycles();
@@ -4661,7 +4726,7 @@ function rMenstrual(){
     calHTML+=`<div class="${cls}" onclick="logPeriodDay('${ds}')" title="${ds}">${title}</div>`;
   }
   SCR.innerHTML=`<div class="sc">
-  <div class="hdr"><div class="hdr-t">🌸 Cycle Tracker</div><div class="hdr-s">Period tracking & fertility predictions</div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">🌸 Cycle Tracker</div><div class="bk-s">Period tracking & fertility predictions</div></div></div>
   <div class="iban iby"><span>🔒</span><span>All data stored privately on this device only. Never shared.</span></div>
   <div class="p16" style="padding-top:14px">
     ${lastStart?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px">
@@ -4936,36 +5001,20 @@ function rInsurance(){
   },50);
 }
 
-// ── STARTUP: schedule reminders on app open ─────────
-(function initReminders(){
-  if(loadKey('hv_reminders_on')==='1' && Notification.permission==='granted'){
-    scheduleAllMedReminders();
-    pushReminderScheduleToSW();
-  }
-  if(loadKey('hv_water_on')==='1' && Notification.permission==='granted'){
-    scheduleWaterReminder();
-    pushWaterScheduleToSW();
-  }
-  // Listen for SW-fired "mark taken" action
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.addEventListener('message', e=>{
-      if(e.data && e.data.type==='MED_TAKEN'){
-        // Mark the relevant medicine slot as taken for today
-        const taken=getTakenToday();
-        // tag format is 'med-morning' / 'med-afternoon' / 'med-night'
-        const slot=e.data.tag?.replace('med-','');
-        getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
-        setTakenToday(taken);
-      }
-      if(e.data && e.data.type==='WATER_DRUNK'){
-        addWaterGlass();
-      }
-    });
-  }
-})();
+// ── PER-USER CLIENT ID ─────────────────────────────
+// Each browser/device gets a unique ID stored in localStorage.
+// This is sent with every SW schedule message so the SW can fire
+// notifications only to the correct user's tab, preventing leakage
+// to other users on shared hosting.
+function getClientId(){
+  let id = loadKey('hv_client_id');
+  if(!id){ id = 'hv_' + Date.now() + '_' + Math.random().toString(36).slice(2,9); saveKey('hv_client_id', id); }
+  return id;
+}
 
 // Push full reminder schedule into the Service Worker so it can fire
-// notifications independently when the page/tab is closed
+// notifications independently when the page/tab is closed.
+// clientId ensures only THIS user's tab receives the notifications.
 function pushReminderScheduleToSW(){
   if(!('serviceWorker' in navigator)) return;
   const meds=getMeds();
@@ -4975,7 +5024,7 @@ function pushReminderScheduleToSW(){
     if(due.length) schedule.push({ slot, hour, names: due.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', ') });
   });
   navigator.serviceWorker.ready.then(reg=>{
-    if(reg.active) reg.active.postMessage({ type:'SET_MED_SCHEDULE', schedule });
+    if(reg.active) reg.active.postMessage({ type:'SET_MED_SCHEDULE', schedule, clientId: getClientId() });
   }).catch(()=>{});
 }
 
@@ -4986,10 +5035,72 @@ function pushWaterScheduleToSW(){
   const end=parseInt(loadKey('hv_water_end')||'22');
   const goal=parseInt(loadKey('hv_water_goal')||'8');
   navigator.serviceWorker.ready.then(reg=>{
-    if(reg.active) reg.active.postMessage({ type:'SET_WATER_SCHEDULE', interval, start, end, goal });
+    if(reg.active) reg.active.postMessage({ type:'SET_WATER_SCHEDULE', interval, start, end, goal, clientId: getClientId() });
   }).catch(()=>{});
 }
 
+// ── STARTUP: schedule reminders on app open ─────────
+(function initReminders(){
+  if(loadKey('hv_reminders_on')==='1' && Notification.permission==='granted'){
+    scheduleAllMedReminders();
+    // Push schedule to SW — wait until SW is active (may not be on first install)
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(()=>{
+        pushReminderScheduleToSW();
+        // Also re-push when a new SW takes control (e.g. after update or first install)
+        navigator.serviceWorker.addEventListener('controllerchange', ()=> pushReminderScheduleToSW());
+      }).catch(()=>{});
+    }
+  }
+  if(loadKey('hv_water_on')==='1' && Notification.permission==='granted'){
+    // Push water schedule to SW first (no double-fire: scheduleWaterReminder() skips when SW active)
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(()=>{
+        pushWaterScheduleToSW();
+        navigator.serviceWorker.addEventListener('controllerchange', ()=> pushWaterScheduleToSW());
+      }).catch(()=>{});
+    }
+    scheduleWaterReminder(); // fallback for non-SW browsers
+  }
+  if(loadKey('hv_tips_notif_on')==='1' && Notification.permission==='granted'){
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(()=> pushTipsScheduleToSW()).catch(()=>{});
+    }
+  }
+  // Listen for SW-fired actions and targeted notifications
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message', e=>{
+      if(!e.data) return;
+      // SHOW_NOTIFICATION: SW asks this tab to show a notification.
+      // Only show if the clientId matches this browser session (multi-user isolation).
+      if(e.data.type==='SHOW_NOTIFICATION'){
+        if(e.data.clientId !== getClientId()) return; // not for this user
+        if(Notification.permission==='granted'){
+          const iconPath=(location.pathname.replace(/\/[^/]*$/,'')||'')+'/icon-192.png';
+          navigator.serviceWorker.ready.then(reg=>{
+            reg.showNotification(e.data.title,{
+              body:e.data.body, icon:iconPath, badge:iconPath,
+              tag:e.data.tag, vibrate:[200,100,200], renotify:true,
+              actions:e.data.actions||[]
+            });
+          }).catch(()=>{});
+        }
+        return;
+      }
+      if(e.data.type==='MED_TAKEN'){
+        if(e.data.clientId && e.data.clientId !== getClientId()) return;
+        const taken=getTakenToday();
+        const slot=e.data.tag?.replace('med-','');
+        getMeds().filter(m=>m[slot]).forEach(m=>{ const sid=m.id+'-'+slot[0]; if(!taken.includes(sid)) taken.push(sid); });
+        setTakenToday(taken);
+      }
+      if(e.data.type==='WATER_DRUNK'){
+        if(e.data.clientId && e.data.clientId !== getClientId()) return;
+        addWaterGlass();
+      }
+    });
+  }
+})();
 
 /* ══════════════════════════════════════════════════
    HEALTH TIPS TAB — v1.0
@@ -5216,7 +5327,7 @@ async function toggleTipsNotif(sw){
   } else {
     saveKey('hv_tips_notif_on', '0');
     navigator.serviceWorker && navigator.serviceWorker.ready.then(reg => {
-      reg.active && reg.active.postMessage({type: 'CLEAR_TIPS_SCHEDULE'});
+      reg.active && reg.active.postMessage({type: 'CLEAR_TIPS_SCHEDULE', clientId: getClientId()});
     }).catch(()=>{});
   }
   rTips();
@@ -5234,7 +5345,8 @@ function pushTipsScheduleToSW(){
     if(reg.active) reg.active.postMessage({
       type: 'SET_TIPS_SCHEDULE',
       hour: h,
-      minute: m || 0
+      minute: m || 0,
+      clientId: getClientId()
     });
   }).catch(()=>{});
 }
