@@ -18,7 +18,7 @@
  *  Bonus — periodicsync handler for Chrome-on-Android background wakeups
  */
 
-const CACHE_NAME = 'healthvault-v8';
+const CACHE_NAME = 'healthvault-v9';
 const ASSETS = [
   '/Health-App/', '/Health-App/index.html',
   '/Health-App/manifest.json', '/Health-App/icon-192.png', '/Health-App/icon-512.png'
@@ -38,9 +38,11 @@ function getClientState(clientId) {
       medSchedule: [],
       waterSchedule: null,
       tipsSchedule: null,
+      vacReminders: [],       // [{ memberId, memberName, vacId, vacName, dueDate, reminderDate }]
       lastFiredMed: {},
       lastFiredWater: Date.now(), // Bug 7: not 0
-      lastFiredTips: ''
+      lastFiredTips: '',
+      lastFiredVac: {}        // { 'memberId_vacId': 'YYYY-MM-DD' } — prevent double-fire per day
     });
   }
   return clientSchedules.get(clientId);
@@ -178,6 +180,23 @@ function checkAlarms() {
         notifyClient(clientId, '💡 ' + tip.t, tip.b, 'tips-daily', []);
       }
     }
+
+    // Vaccine reminders — fire at 9 AM on the reminderDate (3 days before due)
+    if (state.vacReminders && state.vacReminders.length > 0 && h >= 9) {
+      for (const rem of state.vacReminders) {
+        if (rem.reminderDate !== t) continue;         // not today
+        const firedKey = rem.memberId + '_' + rem.vacId;
+        if (state.lastFiredVac[firedKey] === t) continue; // already fired today
+        state.lastFiredVac[firedKey] = t;
+        notifyClient(
+          clientId,
+          '💉 Vaccine Due in 3 Days',
+          `${rem.memberName}: ${rem.vacName} is due on ${rem.dueDate}`,
+          'vac-' + rem.memberId + '-' + rem.vacId,
+          []
+        );
+      }
+    }
   }
 }
 
@@ -230,6 +249,15 @@ self.addEventListener('message', e => {
   if (e.data.type === 'SET_TIPS_SCHEDULE' && state) { state.tipsSchedule = { hour: e.data.hour || 8, minute: e.data.minute || 0 }; state.lastFiredTips = ''; }
   if (e.data.type === 'CLEAR_TIPS_SCHEDULE' && state) { state.tipsSchedule = null; state.lastFiredTips = ''; }
   if (e.data.type === 'CLEAR_WATER_SCHEDULE' && state) { state.waterSchedule = null; }
+  if (e.data.type === 'SET_VAC_REMINDERS' && state) {
+    state.vacReminders = e.data.reminders || [];
+    // Clear fired cache for any reminders that have new dates
+    state.lastFiredVac = {};
+  }
+  if (e.data.type === 'CLEAR_VAC_REMINDERS' && state) {
+    state.vacReminders = [];
+    state.lastFiredVac = {};
+  }
   if (e.data.type === 'CHECK_ALARMS') checkAlarms();
 });
 
