@@ -5742,38 +5742,157 @@ function scheduleAllMedReminders(){
 }
 
 function rReminders(){
-  const on=loadKey('hv_reminders_on')==='1';
-  const meds=getMeds();
-  SCR.innerHTML=`<div class="sc">
-  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Medicine Reminders</div><div class="bk-s">Daily alerts for your medicines</div></div></div>
-  <div class="p16" style="padding-top:16px">
-    <div class="card" style="cursor:default;border:2px solid ${on?'var(--green)':'var(--g2)'}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--g6)">Daily Medicine Alerts</div>
-          <div style="font-size:11px;color:var(--g4);margin-top:2px">Reminds you at 8AM, 2PM and 9PM</div>
-        </div>
-        <div onclick="toggleReminders(this)" style="width:46px;height:26px;background:${on?'var(--green)':'var(--g2)'};border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0" id="rem-sw">
-          <div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>
-        </div>
-      </div>
-      ${on?'<div style="font-size:11px;color:var(--green);font-weight:700">✅ Reminders active</div>':'<div style="font-size:11px;color:var(--g4)">Tap to enable — you\'ll be asked for notification permission</div>'}
-    </div>
-    ${Notification.permission==='denied'?`<div style="background:var(--rl);border-radius:10px;padding:11px;font-size:12px;color:#C5221F;margin-bottom:12px">⚠️ Notifications are blocked. Please go to your browser/phone settings → Site permissions → Allow notifications for this app.</div>`:''}
-    <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Your Medicine Schedule</div>
-    ${['morning','afternoon','night'].map(slot=>{
-      const slotMeds=meds.filter(m=>m[slot]);
-      const icons={morning:'🌅 8:00 AM',afternoon:'☀️ 2:00 PM',night:'🌙 9:00 PM'};
-      return `<div style="background:${slotMeds.length?'#fff':'var(--g1)'};border-radius:11px;padding:12px;border:.5px solid var(--g2);margin-bottom:9px">
-        <div style="font-size:12px;font-weight:700;color:var(--g5);margin-bottom:8px">${icons[slot]}</div>
-        ${slotMeds.length?slotMeds.map(m=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:.5px solid var(--g2)"><span style="font-size:14px">💊</span><span style="font-size:12px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage||''}</span><span style="font-size:10px;color:var(--g4);margin-left:auto">${m.food||''}</span></div>`).join(''):
-        '<div style="font-size:11px;color:var(--g4)">No medicines at this time</div>'}
-      </div>`;
-    }).join('')}
-    <button class="btn" style="margin-top:6px" onclick="go('scan')">+ Add Medicine</button>
-    <div class="pb"></div>
-  </div></div>`;
+  const medOn   = loadKey('hv_reminders_on')==='1';
+  const waterOn = loadKey('hv_water_on')==='1';
+  const tipsOn  = loadKey('hv_tips_notif_on')==='1';
+  const tipsTime= loadKey('hv_tips_notif_time')||'08:00';
+  const waterInterval = loadKey('hv_water_interval')||'60';
+  const waterStart    = loadKey('hv_water_start')||'8';
+  const waterEnd      = loadKey('hv_water_end')||'22';
+  const waterGoal     = loadKey('hv_water_goal')||'8';
+  const meds = getMeds().filter(m=>m.active!==false);
+  const perm = (typeof Notification!=='undefined') ? Notification.permission : 'default';
+
+  function toggle(id){
+    const isOn = loadKey(id)==='1';
+    const div = document.createElement('div');
+    div.style.cssText='width:46px;height:26px;background:'+(isOn?'var(--green)':'var(--g2)')+';border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0';
+    div.onclick = function(){ remToggle(id); };
+    const knob = document.createElement('div');
+    knob.style.cssText='position:absolute;top:3px;'+(isOn?'right:3px':'left:3px')+';width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)';
+    div.appendChild(knob);
+    return div.outerHTML;
+  }
+
+  const deniedBanner = perm==='denied'
+    ? '<div style="background:var(--rl);border-radius:11px;padding:12px 14px;font-size:12px;color:#C5221F;margin-bottom:14px;line-height:1.5">⚠️ <b>Notifications blocked.</b> Go to your phone Settings → Browser → Notifications → Allow for this site.</div>'
+    : '';
+
+  SCR.innerHTML='<div class="sc">'
+    +'<div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Reminders & Notifications</div><div class="bk-s">Manage all your health alerts</div></div></div>'
+    +'<div class="p16" style="padding-top:14px">'
+    + deniedBanner
+
+    // ── Medicine reminders
+    +'<div class="card" style="cursor:default;margin-bottom:12px;border:1.5px solid '+(medOn?'var(--green)':'var(--g2)')+'">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+    +'<div style="width:40px;height:40px;background:var(--gl);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💊</div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">Medicine Reminders</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:1px">🌅 8:00 AM · ☀️ 2:00 PM · 🌙 9:00 PM</div></div>'
+    +toggle('hv_reminders_on')+'</div>'
+    +(medOn?'<div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:8px">✅ Active — fires only for untaken medicines</div>':'')
+    +'<div style="font-size:11px;color:var(--g4);margin-bottom:8px">Medicines in schedule:</div>'
+    +['morning','afternoon','night'].map(slot=>{
+        const slotMeds=meds.filter(m=>m[slot]);
+        const label={morning:'🌅 Morning (8 AM)',afternoon:'☀️ Afternoon (2 PM)',night:'🌙 Night (9 PM)'}[slot];
+        return '<div style="font-size:11px;color:var(--g5);margin-bottom:3px"><b>'+label+':</b> '
+          +(slotMeds.length?slotMeds.map(m=>m.name+(m.dosage?' '+m.dosage:'')).join(', '):'<span style="color:var(--g3)">none</span>')
+          +'</div>';
+      }).join('')
+    +'<button onclick="go(&quot;scan&quot;)" style="margin-top:8px;background:var(--bl);color:var(--blue);border:none;border-radius:9px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Medicine</button>'
+    +'</div>'
+
+    // ── Water reminders
+    +'<div class="card" style="cursor:default;margin-bottom:12px;border:1.5px solid '+(waterOn?'#1A73E8':'var(--g2)')+'">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+    +'<div style="width:40px;height:40px;background:#E3F2FD;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💧</div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">Water / Hydration</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:1px">Every '+waterInterval+' min · '+waterStart+':00 AM to '+waterEnd+':00</div></div>'
+    +toggle('hv_water_on')+'</div>'
+    +(waterOn?'<div style="font-size:11px;color:#1A73E8;font-weight:700;margin-bottom:10px">✅ Active</div>':'')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--g4);margin-bottom:4px">Reminder every</div>'
+    +'<select id="rem-wint" onchange="remSaveWater()" style="width:100%;border:1px solid var(--g2);border-radius:8px;padding:7px;font-size:12px;font-family:inherit;background:#fff">'
+    +[30,45,60,90,120].map(v=>'<option value="'+v+'"'+(waterInterval===String(v)?' selected':'')+'>'+v+' min</option>').join('')
+    +'</select></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--g4);margin-bottom:4px">Daily goal</div>'
+    +'<select id="rem-wgoal" onchange="remSaveWater()" style="width:100%;border:1px solid var(--g2);border-radius:8px;padding:7px;font-size:12px;font-family:inherit;background:#fff">'
+    +[6,7,8,9,10,12].map(v=>'<option value="'+v+'"'+(waterGoal===String(v)?' selected':'')+'>'+v+' glasses</option>').join('')
+    +'</select></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--g4);margin-bottom:4px">Start time</div>'
+    +'<select id="rem-wstart" onchange="remSaveWater()" style="width:100%;border:1px solid var(--g2);border-radius:8px;padding:7px;font-size:12px;font-family:inherit;background:#fff">'
+    +[6,7,8,9,10].map(v=>'<option value="'+v+'"'+(waterStart===String(v)?' selected':'')+'>'+v+':00 AM</option>').join('')
+    +'</select></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--g4);margin-bottom:4px">Stop time</div>'
+    +'<select id="rem-wend" onchange="remSaveWater()" style="width:100%;border:1px solid var(--g2);border-radius:8px;padding:7px;font-size:12px;font-family:inherit;background:#fff">'
+    +[20,21,22,23].map(v=>'<option value="'+v+'"'+(waterEnd===String(v)?' selected':'')+'>'+v+':00</option>').join('')
+    +'</select></div></div>'
+    +'</div>'
+
+    // ── Daily health tip
+    +'<div class="card" style="cursor:default;margin-bottom:12px;border:1.5px solid '+(tipsOn?'var(--amber)':'var(--g2)')+'">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+    +'<div style="width:40px;height:40px;background:var(--al);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💡</div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">Daily Health Tip</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:1px">One wellness tip every day at '+tipsTime+'</div></div>'
+    +toggle('hv_tips_notif_on')+'</div>'
+    +(tipsOn?'<div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:10px">✅ Active</div>':'')
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--g4);margin-bottom:4px">Delivery time</div>'
+    +'<input type="time" id="rem-ttime" value="'+tipsTime+'" onchange="remSaveTips()" style="border:1px solid var(--g2);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;background:#fff;width:100%;box-sizing:border-box"/>'
+    +'</div></div>'
+
+    // ── Appointment reminders info
+    +'<div class="card" style="cursor:default;margin-bottom:12px;background:var(--g1);border:.5px solid var(--g2)">'
+    +'<div style="display:flex;align-items:center;gap:12px">'
+    +'<div style="width:40px;height:40px;background:#E8F0FE;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📅</div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">Appointment Reminders</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:1px">Set when adding an appointment · 1 hr before</div></div>'
+    +'<button onclick="go(&quot;appointments&quot;)" style="background:var(--blue);color:#fff;border:none;border-radius:9px;padding:7px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Manage</button>'
+    +'</div></div>'
+
+    // ── Vaccine reminders info
+    +'<div class="card" style="cursor:default;background:var(--g1);border:.5px solid var(--g2)">'
+    +'<div style="display:flex;align-items:center;gap:12px">'
+    +'<div style="width:40px;height:40px;background:#E8F0FE;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💉</div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--g6)">Vaccine Reminders</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:1px">Auto-fires 3 days before each due vaccine</div></div>'
+    +'<button onclick="go(&quot;vaccines&quot;)" style="background:var(--blue);color:#fff;border:none;border-radius:9px;padding:7px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">View</button>'
+    +'</div></div>'
+
+    +'<div class="pb"></div></div></div>';
 }
+
+// ── Reminder toggle helper ────────────────────────────────────────────────────
+async function remToggle(key){
+  const isOn = loadKey(key)==='1';
+  if(!isOn){
+    // Request permission if not yet granted
+    if(typeof Notification!=='undefined' && Notification.permission!=='granted'){
+      const granted = await requestNotifPermission();
+      if(!granted){ alert('Please allow notifications in your browser/phone settings to use reminders.'); return; }
+    }
+    saveKey(key, '1');
+    if(key==='hv_reminders_on'){ scheduleAllMedReminders(); pushReminderScheduleToSW(); fireNotification('💊 Medicine Reminders On','You will be reminded at 8AM, 2PM & 9PM.','hv-med-setup'); }
+    if(key==='hv_water_on')    { scheduleWaterReminder();   pushWaterScheduleToSW();    fireNotification('💧 Water Reminders On','Stay hydrated! Reminders are now active.','hv-water-setup'); }
+    if(key==='hv_tips_notif_on'){ if(typeof pushTipsScheduleToSW==='function') pushTipsScheduleToSW(); fireNotification('💡 Daily Tips On','You will get a health tip every day.','hv-tips-setup'); }
+  } else {
+    saveKey(key, '0');
+    if(key==='hv_reminders_on'){ clearAllReminderTimers(); if('serviceWorker' in navigator) navigator.serviceWorker.ready.then(r=>r.active?.postMessage({type:'CLEAR_MED_SCHEDULE',clientId:getClientId()})); }
+    if(key==='hv_water_on')    { if(_waterTimer) clearInterval(_waterTimer); _waterTimer=null; if('serviceWorker' in navigator) navigator.serviceWorker.ready.then(r=>r.active?.postMessage({type:'CLEAR_WATER_SCHEDULE',clientId:getClientId()})); }
+    if(key==='hv_tips_notif_on'){ if('serviceWorker' in navigator) navigator.serviceWorker.ready.then(r=>r.active?.postMessage({type:'CLEAR_TIPS_SCHEDULE',clientId:getClientId()})); }
+  }
+  rReminders();
+}
+
+function remSaveWater(){
+  const interval = document.getElementById('rem-wint')?.value   || '60';
+  const goal     = document.getElementById('rem-wgoal')?.value  || '8';
+  const start    = document.getElementById('rem-wstart')?.value || '8';
+  const end      = document.getElementById('rem-wend')?.value   || '22';
+  saveKey('hv_water_interval', interval);
+  saveKey('hv_water_goal',     goal);
+  saveKey('hv_water_start',    start);
+  saveKey('hv_water_end',      end);
+  if(loadKey('hv_water_on')==='1'){ scheduleWaterReminder(); pushWaterScheduleToSW(); }
+}
+
+function remSaveTips(){
+  const val = document.getElementById('rem-ttime')?.value || '08:00';
+  saveKey('hv_tips_notif_time', val);
+  if(loadKey('hv_tips_notif_on')==='1' && typeof pushTipsScheduleToSW==='function') pushTipsScheduleToSW();
+}
+
 async function toggleReminders(sw){
   const on=loadKey('hv_reminders_on')==='1';
   if(!on){
@@ -6048,8 +6167,13 @@ function rMenstrual(){
     fertileStart=fs.toISOString().split('T')[0];
     fertileEnd=ovulDay;
   }
-  // Build calendar (current month)
-  const now=new Date(); const yr=now.getFullYear(); const mo=now.getMonth();
+  // Build calendar — use navigation state (default = current month)
+  if(typeof window._calViewYear === 'undefined' || typeof window._calViewMonth === 'undefined'){
+    const now_=new Date();
+    window._calViewYear = now_.getFullYear();
+    window._calViewMonth = now_.getMonth();
+  }
+  const yr=window._calViewYear; const mo=window._calViewMonth;
   const firstDay=new Date(yr,mo,1).getDay();
   const daysInMonth=new Date(yr,mo+1,0).getDate();
   // Mark period days — use actual end if given, else estimate from flow type
@@ -6090,7 +6214,12 @@ function rMenstrual(){
       <div style="background:#FCE4EC;border-radius:11px;padding:11px;text-align:center;border:1px solid #F48FB1"><div style="font-size:18px">🔮</div><div style="font-size:10px;font-weight:700;color:#880E4F;margin-top:4px">Next Period</div><div style="font-size:11px;color:#880E4F">${nextPeriod?fmtDate(nextPeriod):'—'}</div></div>
       <div style="background:#EDE7FE;border-radius:11px;padding:11px;text-align:center;border:1px solid #CE93D8"><div style="font-size:18px">🌿</div><div style="font-size:10px;font-weight:700;color:#4A148C;margin-top:4px">Cycle Length</div><div style="font-size:11px;color:#4A148C">${avgLen} days avg</div></div>
     </div>`:''}
-    <div style="font-size:13px;font-weight:700;color:var(--g6);margin-bottom:10px">${now.toLocaleString('en-IN',{month:'long',year:'numeric'})}</div>
+    <!-- Month navigation -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button onclick="cycleCalNav(-1)" style="background:var(--g1);border:.5px solid var(--g2);border-radius:10px;padding:7px 14px;font-size:16px;cursor:pointer;font-family:inherit;color:var(--g6)">‹</button>
+      <div style="font-size:14px;font-weight:700;color:var(--g6)">${new Date(yr,mo,1).toLocaleString('en-IN',{month:'long',year:'numeric'})}</div>
+      <button onclick="cycleCalNav(1)" ${yr===new Date().getFullYear()&&mo===new Date().getMonth()?'disabled style="opacity:.35;cursor:default"':''} style="background:var(--g1);border:.5px solid var(--g2);border-radius:10px;padding:7px 14px;font-size:16px;cursor:pointer;font-family:inherit;color:var(--g6)">›</button>
+    </div>
     <div class="cycle-cal">${calHTML}</div>
     <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
       <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--red);border-radius:50%;display:inline-block"></span>Period</span>
@@ -6110,8 +6239,26 @@ function rMenstrual(){
     <div class="pb"></div>
   </div></div>`;
 }
+function cycleCalNav(dir){
+  // Navigate months: dir=-1 for prev, +1 for next
+  // Don't allow going past current month
+  const now = new Date();
+  let m = (window._calViewMonth||0) + dir;
+  let y = window._calViewYear||now.getFullYear();
+  if(m < 0){ m = 11; y--; }
+  else if(m > 11){ m = 0; y++; }
+  // Cap at current month
+  if(y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth())){
+    y = now.getFullYear(); m = now.getMonth();
+  }
+  window._calViewYear = y;
+  window._calViewMonth = m;
+  rMenstrual();
+}
+
 function logPeriodDay(ds){
-  // If tapping today or future — offer to start logging
+  // Only allow logging past/today dates
+  if(ds > today()) return;
   showLogPeriod(ds);
 }
 function showLogPeriod(preDate){
