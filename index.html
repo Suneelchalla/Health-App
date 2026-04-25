@@ -206,7 +206,7 @@ body.dark .qa .ql{color:#E0E0E0}
 .bt-opt.on .btl{color:var(--bd)}.bt-opt .bts{font-size:10px;color:var(--g4);margin-top:1px}
 
 /* HOME */
-.hh{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:16px 18px 32px;color:#fff;position:relative;overflow:hidden}
+.hh{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:16px 18px 28px;color:#fff;position:relative}
 .hh::before{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:rgba(255,255,255,.07);border-radius:50%}
 .sos{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);border-radius:22px;padding:6px 12px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:4px}
 .hgreet{font-size:12px;opacity:.85;margin-bottom:2px}
@@ -214,7 +214,7 @@ body.dark .qa .ql{color:#E0E0E0}
 .hstats{display:flex;gap:9px;position:relative;z-index:1}
 .hstat{background:rgba(255,255,255,.14);border-radius:12px;padding:8px 11px;border:1px solid rgba(255,255,255,.2);cursor:pointer;flex:1}
 .hstat .sv{font-size:15px;font-weight:700}.hstat .sl{font-size:10px;opacity:.8}
-.hbody{padding:0 14px;margin-top:-22px}
+.hbody{padding:12px 14px 0}
 .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
 .qa{background:var(--w);border-radius:var(--rs);padding:13px 11px;box-shadow:var(--ss);border:.5px solid var(--g2);cursor:pointer;display:flex;flex-direction:column;gap:5px}
 .qa:active{transform:scale(.97);background:var(--g1)}
@@ -1582,7 +1582,7 @@ function rHome(){
     </div>
   </div>
   <div class="hbody">
-    ${alertHTML ? `<div style="margin-top:6px">${alertHTML}</div>` : ''}
+    ${alertHTML ? `<div style="margin-bottom:10px">${alertHTML}</div>` : ''}
     ${progressHTML}
     ${upcomingHTML}
     ${renderTodayMedWidget()}
@@ -5336,32 +5336,64 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 
 (function startApp(){
   const saved = loadUser();
+
+  // Case 1: fully valid saved session — go home immediately
   if(saved && saved.name && saved.members){
     U = saved;
     runDailyCleanup();
     go('home');
     return;
   }
+
+  // Case 2: saved user exists but may be missing members (older app version)
+  // Fix members array if missing then go home — no cloud call needed
+  if(saved && saved.name){
+    U = saved;
+    if(!U.members || !U.members.length){
+      U.members = [{
+        id:'self', name:U.name, role:'Me',
+        age:U.age||'', gender:U.gender||'', avatar:'🧑',
+        color:'#E8F0FE', textColor:'#0D47A1'
+      }];
+      try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+    }
+    runDailyCleanup();
+    go('home');
+    return;
+  }
+
+  // Case 3: no saved session but we have a last email — try cloud with 4s timeout
   const lastEmail = loadKey('hv_last_email');
   if(lastEmail){
     TB.style.display='none'; SN.style.display='none';
-    SCR.innerHTML=`<div class="splash">
-      <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
-      <div class="sp-name">HealthVault</div>
-      <div class="sp-tag" style="margin-top:24px;font-size:13px">Restoring your session…</div>
-    </div>`;
+    SCR.innerHTML='<div class="splash sc"><div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div><div class="sp-name">HealthVault</div><div class="sp-tag" style="margin-top:24px;font-size:13px">Restoring your session…</div></div>';
+    let resolved = false;
+    // 4-second timeout — if cloud is slow or offline, go to splash
+    const timer = setTimeout(function(){
+      if(!resolved){ resolved=true; go('splash'); }
+    }, 4000);
     loadUserFromCloud(lastEmail).then(function(cloudUser){
-      if(cloudUser && cloudUser.name && cloudUser.members){
+      if(resolved) return;
+      resolved = true;
+      clearTimeout(timer);
+      if(cloudUser && cloudUser.name){
         U = cloudUser;
+        if(!U.members || !U.members.length){
+          U.members = [{id:'self',name:U.name,role:'Me',age:U.age||'',gender:U.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
+        }
         try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
         runDailyCleanup();
         go('home');
       } else {
         go('splash');
       }
-    }).catch(function(){ go('splash'); });
+    }).catch(function(){
+      if(!resolved){ resolved=true; clearTimeout(timer); go('splash'); }
+    });
     return;
   }
+
+  // Case 4: fresh install
   go('splash');
 })();
 
