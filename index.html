@@ -2438,18 +2438,105 @@ function saveExpense(){
 }
 function deleteExpense(id){ if(!confirm('Delete this expense?')) return; saveExpenses(getExpenses().filter(e=>e.id!==id)); rInsurance(); }
 
-/* ══ VACCINATION — real localStorage ══ */
+/* ══ VACCINATION — India Immunisation Schedule ══ */
+
+/* India NIS mandatory + recommended child vaccines with due offsets from birth.
+   offset: days from date of birth when vaccine is due.
+   doses: total doses in series. catch: latest acceptable catch-up age in months. */
+const INDIA_VAC_SCHEDULE = [
+  // At birth
+  { id:'bcg',    name:'BCG',                     detail:'Tuberculosis prevention',                    offset:0,    doses:1,  catch:12 },
+  { id:'hepb0',  name:'Hepatitis B (Birth dose)', detail:'Hepatitis B — within 24 hrs of birth',       offset:0,    doses:1,  catch:1  },
+  { id:'opv0',   name:'OPV (Birth dose)',          detail:'Oral Polio Vaccine — birth dose',            offset:0,    doses:1,  catch:2  },
+  // 6 weeks
+  { id:'dtpw1',  name:'DTP-wP / Pentavalent 1',  detail:'Diphtheria, Tetanus, Pertussis, Hib, HepB',  offset:42,   doses:3,  catch:12 },
+  { id:'opv1',   name:'OPV 1',                    detail:'Oral Polio Vaccine dose 1',                  offset:42,   doses:3,  catch:12 },
+  { id:'ipv1',   name:'IPV 1',                    detail:'Inactivated Polio Vaccine dose 1',           offset:42,   doses:2,  catch:12 },
+  { id:'rotav1', name:'Rotavirus 1',              detail:'Rotavirus diarrhoea prevention — dose 1',    offset:42,   doses:3,  catch:8  },
+  { id:'pcv1',   name:'PCV 1',                    detail:'Pneumococcal Conjugate Vaccine — dose 1',    offset:42,   doses:3,  catch:12 },
+  // 10 weeks
+  { id:'dtpw2',  name:'DTP-wP / Pentavalent 2',  detail:'Diphtheria, Tetanus, Pertussis, Hib, HepB',  offset:70,   doses:3,  catch:12 },
+  { id:'opv2',   name:'OPV 2',                    detail:'Oral Polio Vaccine dose 2',                  offset:70,   doses:3,  catch:12 },
+  { id:'rotav2', name:'Rotavirus 2',              detail:'Rotavirus diarrhoea prevention — dose 2',    offset:70,   doses:3,  catch:8  },
+  { id:'pcv2',   name:'PCV 2',                    detail:'Pneumococcal Conjugate Vaccine — dose 2',    offset:70,   doses:3,  catch:12 },
+  // 14 weeks
+  { id:'dtpw3',  name:'DTP-wP / Pentavalent 3',  detail:'Diphtheria, Tetanus, Pertussis, Hib, HepB',  offset:98,   doses:3,  catch:12 },
+  { id:'opv3',   name:'OPV 3',                    detail:'Oral Polio Vaccine dose 3',                  offset:98,   doses:3,  catch:12 },
+  { id:'ipv2',   name:'IPV 2',                    detail:'Inactivated Polio Vaccine dose 2',           offset:98,   doses:2,  catch:12 },
+  { id:'rotav3', name:'Rotavirus 3',              detail:'Rotavirus diarrhoea prevention — dose 3',    offset:98,   doses:3,  catch:8  },
+  { id:'pcv3',   name:'PCV 3',                    detail:'Pneumococcal Conjugate Vaccine — dose 3',    offset:98,   doses:3,  catch:12 },
+  // 6 months
+  { id:'hepb6',  name:'Hepatitis B (6M)',         detail:'Hepatitis B dose — if not given at 6wk',     offset:180,  doses:1,  catch:18 },
+  // 9 months
+  { id:'mr1',    name:'MR / MMR 1',               detail:'Measles-Rubella (MR) or MMR dose 1',         offset:270,  doses:2,  catch:18 },
+  { id:'je1',    name:'Japanese Encephalitis 1',  detail:'JE Vaccine dose 1 (endemic areas)',           offset:270,  doses:2,  catch:18 },
+  // 12 months
+  { id:'hepA1',  name:'Hepatitis A 1',            detail:'Hepatitis A — dose 1',                       offset:365,  doses:2,  catch:24 },
+  { id:'varic1', name:'Varicella 1',              detail:'Chickenpox vaccine — dose 1',                offset:365,  doses:2,  catch:24 },
+  // 15 months
+  { id:'mmr2',   name:'MMR 2',                    detail:'Measles, Mumps, Rubella booster',             offset:456,  doses:2,  catch:24 },
+  { id:'pcvb',   name:'PCV Booster',              detail:'Pneumococcal Conjugate booster',              offset:456,  doses:1,  catch:24 },
+  { id:'varic2', name:'Varicella 2',              detail:'Chickenpox vaccine — dose 2',                offset:456,  doses:2,  catch:60 },
+  // 16–18 months
+  { id:'dtpb',   name:'DTP Booster 1 + OPV B1',  detail:'DTP first booster + OPV booster 1',          offset:490,  doses:1,  catch:30 },
+  { id:'je2',    name:'Japanese Encephalitis 2',  detail:'JE Vaccine booster dose 2',                  offset:490,  doses:2,  catch:30 },
+  // 18 months
+  { id:'hepA2',  name:'Hepatitis A 2',            detail:'Hepatitis A — dose 2 (booster)',              offset:548,  doses:2,  catch:36 },
+  // 2 years
+  { id:'typhoid',name:'Typhoid (TCV)',             detail:'Typhoid Conjugate Vaccine',                  offset:730,  doses:1,  catch:60 },
+  // 4–6 years
+  { id:'dtpb2',  name:'DTP Booster 2 + OPV B2',  detail:'DTP second booster + OPV booster 2',         offset:1825, doses:1,  catch:84 },
+  // 10–12 years
+  { id:'tdv',    name:'Td Vaccine (10 yr)',        detail:'Tetanus-Diphtheria booster at 10 years',     offset:3650, doses:1,  catch:156},
+  { id:'hpv1',   name:'HPV 1 (Girls)',             detail:'Human Papillomavirus — dose 1 (girls)',      offset:3650, doses:2,  catch:156},
+  { id:'hpv2',   name:'HPV 2 (Girls)',             detail:'Human Papillomavirus — dose 2 (6m later)',   offset:3832, doses:2,  catch:168},
+];
+
+/* Add days to a date string, return new date string */
+function addDays(dateStr, days){
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+/* Days between two date strings */
+function daysBetween(a, b){
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+
+/* Return child-vaccine localStorage key for active member */
+function childVacKey(){
+  return 'hv_childvac_' + activeMemberId();
+}
+function getChildVacData(){ try{ return JSON.parse(localStorage.getItem(childVacKey())||'{}'); }catch(e){ return {}; } }
+function saveChildVacData(obj){ try{ localStorage.setItem(childVacKey(), JSON.stringify(obj)); }catch(e){} }
+
+/* Determine if the active member is a child (role=Child OR age<18) */
+function isChildMember(){
+  const mem = (U.members||[]).find(m => m.id === activeMemberId());
+  if(!mem) return false;
+  const role = (mem.role||'').toLowerCase();
+  const age  = parseInt(mem.age)||0;
+  return role === 'child' || (age > 0 && age < 18);
+}
+
+/* ── rVaccines: auto-switches to child schedule for child profiles ── */
 function rVaccines(){
+  if(isChildMember()){
+    rChildVaccines();
+    return;
+  }
+  // Adult / main profile — original manual tracker
   const vacs = getVaccines();
   const done = vacs.filter(v=>v.status==='done').length;
-  const due = vacs.filter(v=>v.status==='due').length;
-  const overdue = vacs.filter(v=>v.status==='overdue').length;
+  const due  = vacs.filter(v=>v.status==='due').length;
+  const over = vacs.filter(v=>v.status==='overdue').length;
   SCR.innerHTML=`<div class="sc">
   <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Vaccination Tracker</div><div class="bk-s">Immunisation record and schedule</div></div></div>
   <div class="lgrid" style="margin:14px">
     <div class="ls"><div class="lsv" style="color:var(--green)">${done}</div><div class="lsl">Up to date</div></div>
     <div class="ls"><div class="lsv" style="color:var(--amber)">${due}</div><div class="lsl">Due soon</div></div>
-    <div class="ls"><div class="lsv" style="color:var(--red)">${overdue}</div><div class="lsl">Overdue</div></div>
+    <div class="ls"><div class="lsv" style="color:var(--red)">${over}</div><div class="lsl">Overdue</div></div>
     <div class="ls"><div class="lsv" style="color:var(--blue)">${vacs.length}</div><div class="lsl">Total</div></div>
   </div>
   <div class="p16">
@@ -2472,6 +2559,342 @@ function rVaccines(){
     </div>
     <div class="pb"></div>
   </div></div>`;
+}
+
+/* ── Child Immunisation Schedule screen ── */
+function rChildVaccines(){
+  const data     = getChildVacData();      // { dob:'YYYY-MM-DD', records:{ vacId:{date,clinic,notes} } }
+  const dob      = data.dob || '';
+  const records  = data.records || {};
+  const mem      = (U.members||[]).find(m=>m.id===activeMemberId()) || {};
+  const childName= mem.name || 'Child';
+  const today_   = today();
+
+  // Build schedule rows
+  let scheduleHTML = '';
+  if(dob){
+    const groups = [
+      { label:'At Birth',         filter: v => v.offset === 0 },
+      { label:'6 Weeks',          filter: v => v.offset === 42 },
+      { label:'10 Weeks',         filter: v => v.offset === 70 },
+      { label:'14 Weeks',         filter: v => v.offset === 98 },
+      { label:'6 Months',         filter: v => v.offset === 180 },
+      { label:'9 Months',         filter: v => v.offset === 270 },
+      { label:'12 Months',        filter: v => v.offset === 365 },
+      { label:'15 Months',        filter: v => v.offset >= 420 && v.offset <= 470 && v.offset !== 490 },
+      { label:'16–18 Months',     filter: v => v.offset === 490 },
+      { label:'18 Months',        filter: v => v.offset === 548 },
+      { label:'2 Years',          filter: v => v.offset === 730 },
+      { label:'4–6 Years',        filter: v => v.offset === 1825 },
+      { label:'10–12 Years',      filter: v => v.offset >= 3650 },
+    ];
+
+    let totalDone=0, totalDue=0, totalOverdue=0;
+    INDIA_VAC_SCHEDULE.forEach(v=>{
+      const rec = records[v.id];
+      const dueDate = addDays(dob, v.offset);
+      if(rec && rec.date) totalDone++;
+      else if(today_ > dueDate) totalOverdue++;
+      else totalDue++;
+    });
+
+    // Summary bar
+    scheduleHTML += `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px">
+      <div class="ls"><div class="lsv" style="color:var(--green)">${totalDone}</div><div class="lsl">Done</div></div>
+      <div class="ls"><div class="lsv" style="color:var(--amber)">${totalDue}</div><div class="lsl">Upcoming</div></div>
+      <div class="ls"><div class="lsv" style="color:var(--red)">${totalOverdue}</div><div class="lsl">Overdue</div></div>
+    </div>`;
+
+    groups.forEach(grp=>{
+      const groupVacs = INDIA_VAC_SCHEDULE.filter(grp.filter);
+      if(!groupVacs.length) return;
+
+      const dueDate = addDays(dob, groupVacs[0].offset);
+      const daysLeft= daysBetween(today_, dueDate);
+      let groupStatus='';
+      if(groupVacs.every(v=>records[v.id]?.date)) groupStatus='done';
+      else if(today_ > dueDate) groupStatus='overdue';
+      else if(daysLeft<=14) groupStatus='soon';
+      else groupStatus='upcoming';
+
+      const grpColor = groupStatus==='done'?'var(--gl)':groupStatus==='overdue'?'var(--rl)':groupStatus==='soon'?'var(--al)':'#F0F4FF';
+      const grpBorder= groupStatus==='done'?'#A8D5B5':groupStatus==='overdue'?'#F7C1C1':groupStatus==='soon'?'#F9AB00':'#C5D9F8';
+
+      scheduleHTML += `
+      <div style="margin:0 14px 12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <div style="font-size:13px;font-weight:800;color:var(--g6)">${grp.label}</div>
+          <div style="font-size:11px;color:var(--g4)">Due: ${fmtDate(dueDate)}</div>
+        </div>`;
+
+      groupVacs.forEach(v=>{
+        const rec = records[v.id];
+        const given = rec && rec.date;
+        const vacDue = addDays(dob, v.offset);
+        const isOver = !given && today_ > vacDue;
+        const isSoon = !given && !isOver && daysBetween(today_, vacDue) <= 14;
+        const bg    = given ? 'var(--gl)' : isOver ? 'var(--rl)' : isSoon ? 'var(--al)' : grpColor;
+        const border= given ? '#A8D5B5'   : isOver ? '#F7C1C1'   : isSoon ? '#F9AB00'   : grpBorder;
+        const icon  = given ? '✅' : isOver ? '⚠️' : isSoon ? '🔔' : '💉';
+        const statusTxt = given ? `Given on ${fmtDate(rec.date)}${rec.clinic?' · '+rec.clinic:''}` : isOver ? 'Overdue — please vaccinate soon' : isSoon ? `Due in ${daysBetween(today_,vacDue)} days` : `Due ${fmtDate(vacDue)}`;
+        const statusColor= given?'#1B5E20':isOver?'#C5221F':isSoon?'#B06000':'var(--g5)';
+
+        scheduleHTML += `
+        <div style="background:${bg};border:1.5px solid ${border};border-radius:12px;padding:12px 13px;margin-bottom:8px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="font-size:20px;flex-shrink:0;margin-top:1px">${icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:var(--g6)">${v.name}</div>
+              <div style="font-size:11px;color:var(--g5);margin-top:1px">${v.detail}</div>
+              <div style="font-size:11px;font-weight:600;color:${statusColor};margin-top:4px">${statusTxt}</div>
+              ${given && rec.notes ? `<div style="font-size:10px;color:var(--g4);margin-top:2px">📝 ${rec.notes}</div>` : ''}
+            </div>
+            <button data-vid="${v.id}" data-vname="${v.name.replace(/"/g,'&quot;')}" onclick="showVacEntry(this.dataset.vid,this.dataset.vname)" style="background:#fff;border:1.5px solid ${grpBorder};border-radius:9px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;color:var(--g6);white-space:nowrap;flex-shrink:0">${given?'✏️ Edit':'+ Log'}</button>
+          </div>
+        </div>`;
+      });
+
+      scheduleHTML += `</div>`;
+    });
+  } else {
+    scheduleHTML = `
+    <div style="margin:20px 14px">
+      <div style="background:var(--bl);border:1.5px solid #C5D9F8;border-radius:14px;padding:18px;text-align:center">
+        <div style="font-size:36px;margin-bottom:10px">👶</div>
+        <div style="font-size:15px;font-weight:800;color:var(--bd);margin-bottom:6px">Enter Date of Birth</div>
+        <div style="font-size:12px;color:var(--g5);line-height:1.6">Enter ${childName}'s birth date to auto-generate the India NIS vaccination schedule with due dates for each vaccine.</div>
+      </div>
+    </div>`;
+  }
+
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">💉 ${childName}'s Vaccines</div><div class="bk-s">India NIS Immunisation Schedule</div></div></div>
+
+  <!-- DOB Entry / Edit -->
+  <div style="margin:12px 14px;background:#fff;border:.5px solid var(--g2);border-radius:12px;padding:13px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--g5);margin-bottom:4px">DATE OF BIRTH</div>
+        <input type="date" id="child-dob" value="${dob}" max="${today_}"
+          style="width:100%;border:1.5px solid var(--g2);border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;outline:none;color:var(--g6)"
+          onchange="saveChildDOB(this.value)"/>
+      </div>
+      ${dob?`<div style="flex-shrink:0;text-align:right"><div style="font-size:10px;color:var(--g4)">Age</div><div style="font-size:15px;font-weight:800;color:var(--blue)">${calcChildAge(dob)}</div></div>`:''}
+    </div>
+    ${!dob?'<div style="font-size:11px;color:var(--g4);margin-top:7px">📅 Enter date of birth to see the full vaccination schedule with calculated due dates.</div>':''}
+  </div>
+
+  ${scheduleHTML}
+
+  <!-- Vaccine Reminder Toggle -->
+  <div style="margin:0 14px 12px">
+    <div style="background:var(--gl);border:1px solid #A8D5B5;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">🔔</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#1B5E20">Vaccine reminders</div>
+        <div style="font-size:11px;color:#2D7A4F;margin-top:2px">Get notified 3 days before each due vaccine</div>
+      </div>
+      <div onclick="toggleVacReminder(this)"
+           style="width:46px;height:26px;background:${loadKey('hv_vac_reminders_on')==='1'?'var(--green)':'var(--g2)'};border-radius:13px;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0">
+        <div style="position:absolute;top:3px;${loadKey('hv_vac_reminders_on')==='1'?'right:3px':'left:3px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 4px rgba(0,0,0,.25)"></div>
+      </div>
+    </div>
+    ${Notification.permission==='denied'?'<div style="background:var(--rl);border-radius:10px;padding:9px 12px;font-size:11px;color:#C5221F;margin-top:8px">⚠️ Notifications blocked. Enable them in your phone settings → Site permissions → Notifications.</div>':''}
+  </div>
+
+  <div style="margin:0 14px 10px;background:var(--bl);border-radius:11px;padding:11px 13px">
+    <div style="font-size:11px;font-weight:700;color:var(--bd);margin-bottom:3px">ℹ️ About this schedule</div>
+    <div style="font-size:10px;color:var(--g5);line-height:1.6">Based on India's National Immunisation Schedule (NIS) 2024. Due dates are calculated from date of birth. Always consult your paediatrician — schedules may vary by state or child health status.</div>
+  </div>
+  <div class="pb"></div>
+  </div>`;
+}
+
+/* Calculate child's age as readable string */
+function calcChildAge(dob){
+  const ms  = Date.now() - new Date(dob).getTime();
+  const days= Math.floor(ms/86400000);
+  if(days < 30)  return days + 'd';
+  if(days < 365) return Math.floor(days/30) + 'm ' + (days%30) + 'd';
+  const yrs = Math.floor(days/365);
+  const mos = Math.floor((days%365)/30);
+  return yrs + 'y ' + (mos>0?mos+'m':'');
+}
+
+/* Save date of birth and reload the child vaccine screen */
+function saveChildDOB(val){
+  if(!val) return;
+  const data = getChildVacData();
+  data.dob = val;
+  if(!data.records) data.records = {};
+  saveChildVacData(data);
+  // Re-push vaccine reminders to SW whenever DOB changes
+  pushVacRemindersToSW();
+  rChildVaccines();
+}
+
+/* ── Vaccine Reminder Engine ─────────────────────────────────────────────────
+ * Scans ALL child members' schedules and collects upcoming vaccines that are
+ * due in exactly 3 days (i.e. dueDate = today + 3). Fires a notification for
+ * each one. Called at app open and pushed to SW for background firing.
+ */
+function checkVaccineReminders(){
+  if(Notification.permission !== 'granted') return;
+  if(loadKey('hv_vac_reminders_on') !== '1') return;
+
+  const today_ = today();
+  const in3    = addDays(today_, 3);   // reminder fires 3 days before
+
+  (U.members || []).forEach(mem => {
+    // Only child members
+    const role = (mem.role||'').toLowerCase();
+    const age  = parseInt(mem.age)||0;
+    if(role !== 'child' && age >= 18) return;
+
+    const key  = 'hv_childvac_' + mem.id;
+    let data;
+    try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){ data={}; }
+    const dob     = data.dob;
+    const records = data.records || {};
+    if(!dob) return;
+
+    INDIA_VAC_SCHEDULE.forEach(vac => {
+      if(records[vac.id]?.date) return; // already given — skip
+      const dueDate = addDays(dob, vac.offset);
+      if(dueDate !== in3) return;       // not due in exactly 3 days — skip
+
+      // Fire notification
+      const title = `💉 Vaccine Due in 3 Days`;
+      const body  = `${mem.name}: ${vac.name} is due on ${fmtDate(dueDate)}`;
+      fireNotification(title, body, 'vac-' + mem.id + '-' + vac.id);
+    });
+  });
+}
+
+/* Build a flat list of all upcoming (not yet given, due in future) vaccine
+   dates across all child members, for the SW to check each morning. */
+function buildVacReminderList(){
+  const list = [];
+  (U.members || []).forEach(mem => {
+    const role = (mem.role||'').toLowerCase();
+    const age  = parseInt(mem.age)||0;
+    if(role !== 'child' && age >= 18) return;
+
+    const key  = 'hv_childvac_' + mem.id;
+    let data;
+    try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){ data={}; }
+    const dob     = data.dob;
+    const records = data.records || {};
+    if(!dob) return;
+
+    INDIA_VAC_SCHEDULE.forEach(vac => {
+      if(records[vac.id]?.date) return;
+      const dueDate = addDays(dob, vac.offset);
+      if(dueDate < today()) return; // already past
+      list.push({
+        memberId:  mem.id,
+        memberName:mem.name || 'Child',
+        vacId:     vac.id,
+        vacName:   vac.name,
+        dueDate,
+        // reminder fires 3 days before = due date - 3
+        reminderDate: addDays(dueDate, -3)
+      });
+    });
+  });
+  return list;
+}
+
+/* Push the full vaccine reminder list to the SW */
+function pushVacRemindersToSW(){
+  if(!('serviceWorker' in navigator)) return;
+  if(loadKey('hv_vac_reminders_on') !== '1') return;
+  const list = buildVacReminderList();
+  navigator.serviceWorker.ready.then(reg => {
+    if(reg.active) reg.active.postMessage({
+      type: 'SET_VAC_REMINDERS',
+      reminders: list,
+      clientId:  getClientId()
+    });
+  }).catch(()=>{});
+}
+
+/* Show entry overlay to log or edit a specific vaccine */
+function showVacEntry(vacId, vacName){
+  const data   = getChildVacData();
+  const rec    = (data.records||{})[vacId] || {};
+  const ov     = document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:22px 20px 36px;width:100%;max-width:480px">
+    <div style="width:32px;height:3px;background:#eee;border-radius:2px;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:800;color:var(--g6);margin-bottom:4px">💉 ${vacName}</div>
+    <div style="font-size:11px;color:var(--g4);margin-bottom:16px">Tap the vaccine name card for full details</div>
+    <div class="fld">
+      <div class="flbl">Date Given *</div>
+      <input class="inp" type="date" id="ve-date" value="${rec.date||today()}" max="${today()}"/>
+    </div>
+    <div class="fld">
+      <div class="flbl">Hospital / Clinic</div>
+      <input class="inp" id="ve-clinic" placeholder="e.g. Apollo, PHC, Govt Hospital" value="${rec.clinic||''}"/>
+    </div>
+    <div class="fld">
+      <div class="flbl">Batch No. / Notes (optional)</div>
+      <input class="inp" id="ve-notes" placeholder="e.g. Batch AB123, mild fever after" value="${rec.notes||''}"/>
+    </div>
+    <button class="btn" onclick="saveVacEntry('${vacId}',this)">✅ Save Vaccination Record</button>
+    ${rec.date?`<button class="btn2" style="color:var(--red);background:var(--rl);border-color:#F7C1C1" onclick="deleteVacEntry('${vacId}',this)">🗑️ Remove Record</button>`:''}
+    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function saveVacEntry(vacId, btn){
+  const dateVal = document.getElementById('ve-date')?.value;
+  if(!dateVal){ alert('Please enter the date the vaccine was given.'); return; }
+  const data = getChildVacData();
+  if(!data.records) data.records = {};
+  data.records[vacId] = {
+    date:   dateVal,
+    clinic: document.getElementById('ve-clinic')?.value.trim() || '',
+    notes:  document.getElementById('ve-notes')?.value.trim()  || ''
+  };
+  saveChildVacData(data);
+  pushVacRemindersToSW(); // update SW after marking a vaccine done
+  btn.closest('[style*=fixed]').remove();
+  rChildVaccines();
+}
+
+function deleteVacEntry(vacId, btn){
+  if(!confirm('Remove this vaccination record?')) return;
+  const data = getChildVacData();
+  if(data.records) delete data.records[vacId];
+  saveChildVacData(data);
+  pushVacRemindersToSW(); // update SW after removing a record
+  btn.closest('[style*=fixed]').remove();
+  rChildVaccines();
+}
+
+async function toggleVacReminder(sw){
+  const on = loadKey('hv_vac_reminders_on') === '1';
+  if(!on){
+    const granted = await requestNotifPermission();
+    if(!granted){ alert('Please allow notifications to receive vaccine reminders.'); return; }
+    saveKey('hv_vac_reminders_on', '1');
+    pushVacRemindersToSW();
+    fireNotification('💉 Vaccine Reminders On',
+      'You\'ll be notified 3 days before each scheduled vaccine.', 'vac-setup');
+  } else {
+    saveKey('hv_vac_reminders_on', '0');
+    // Tell SW to clear vaccine reminders for this client
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(reg => {
+        if(reg.active) reg.active.postMessage({ type:'CLEAR_VAC_REMINDERS', clientId: getClientId() });
+      }).catch(()=>{});
+    }
+  }
+  rChildVaccines();
 }
 
 function showAddVaccine(){
@@ -2554,6 +2977,7 @@ function rFamily(){
       '<button onclick="switchMember(\''+m.id+'\');go(\'scan\')" style="flex:1;background:var(--g1);border:1px solid var(--g2);border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--g5)">💊 Meds</button>',
       '<button onclick="switchMember(\''+m.id+'\');go(\'lab\')" style="flex:1;background:var(--g1);border:1px solid var(--g2);border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--g5)">🧪 Reports</button>',
       '<button onclick="switchMember(\''+m.id+'\');go(\'vitals\')" style="flex:1;background:var(--g1);border:1px solid var(--g2);border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--g5)">📊 Vitals</button>',
+      ((['child'].includes((m.role||'').toLowerCase()) || (parseInt(m.age)||0) < 18) ? '<button onclick="switchMember(\''+m.id+'\');go(\'vaccines\')" style="flex:1;background:#E8F0FE;border:1px solid #C5D9F8;border-radius:9px;padding:7px;font-size:11px;font-weight:600;cursor:pointer;color:var(--bd)">💉 Vaccines</button>' : ''),
       '<button onclick="deleteFamilyMember(\''+m.id+'\')" style="background:#FFF0F0;border:1px solid #FFCDD2;border-radius:9px;padding:7px 9px;font-size:11px;cursor:pointer;color:#C62828">🗑️</button>',
       '</div>'
     ].join('') : '';
@@ -5065,6 +5489,16 @@ function pushWaterScheduleToSW(){
   if(loadKey('hv_tips_notif_on')==='1' && Notification.permission==='granted'){
     if('serviceWorker' in navigator){
       navigator.serviceWorker.ready.then(()=> pushTipsScheduleToSW()).catch(()=>{});
+    }
+  }
+  // Vaccine reminders — check on every app open + push schedule to SW
+  if(loadKey('hv_vac_reminders_on')==='1' && Notification.permission==='granted'){
+    checkVaccineReminders(); // immediate check for today
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(()=>{
+        pushVacRemindersToSW();
+        navigator.serviceWorker.addEventListener('controllerchange', ()=> pushVacRemindersToSW());
+      }).catch(()=>{});
     }
   }
   // Listen for SW-fired actions and targeted notifications
