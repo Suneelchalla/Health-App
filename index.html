@@ -212,13 +212,55 @@ body.dark .qa .ql{color:#E0E0E0}
 .hgreet{font-size:12px;opacity:.85;margin-bottom:2px}
 .hname{font-size:21px;font-weight:800;margin-bottom:12px;letter-spacing:-.3px}
 .hstats{display:flex;gap:9px;position:relative;z-index:1}
-.hstat{background:rgba(255,255,255,.14);border-radius:12px;padding:8px 11px;border:1px solid rgba(255,255,255,.2)}
+.hstat{background:rgba(255,255,255,.14);border-radius:12px;padding:8px 11px;border:1px solid rgba(255,255,255,.2);cursor:pointer;flex:1}
 .hstat .sv{font-size:15px;font-weight:700}.hstat .sl{font-size:10px;opacity:.8}
 .hbody{padding:0 14px;margin-top:-16px}
 .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
 .qa{background:var(--w);border-radius:var(--rs);padding:13px 11px;box-shadow:var(--ss);border:.5px solid var(--g2);cursor:pointer;display:flex;flex-direction:column;gap:5px}
 .qa:active{transform:scale(.97);background:var(--g1)}
 .qa .qi{font-size:20px}.qa .ql{font-size:12px;font-weight:700;color:var(--g6)}.qa .qs{font-size:10px;color:var(--g4)}
+/* Smart alert cards */
+.h-alert{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;margin-bottom:8px;cursor:pointer;border:1px solid transparent}
+.h-alert:active{opacity:.88}
+.h-alert-ico{font-size:18px;flex-shrink:0;width:28px;text-align:center}
+.h-alert-body{flex:1;min-width:0}
+.h-alert-title{font-size:12px;font-weight:700;line-height:1.3}
+.h-alert-sub{font-size:11px;margin-top:1px;opacity:.85}
+.h-alert.amber{background:#FEF7E0;border-color:#F9AB00}.h-alert.amber .h-alert-title{color:#7B4700}.h-alert.amber .h-alert-sub{color:#9A5A00}
+.h-alert.blue{background:#E8F0FE;border-color:#C5D9F8}.h-alert.blue .h-alert-title{color:#0D47A1}.h-alert.blue .h-alert-sub{color:#1A5BB5}
+.h-alert.green{background:#E6F4EA;border-color:#A8D5B5}.h-alert.green .h-alert-title{color:#1B5E20}.h-alert.green .h-alert-sub{color:#2D7A4F}
+.h-alert.red{background:#FCE8E6;border-color:#F7C1C1}.h-alert.red .h-alert-title{color:#C5221F}.h-alert.red .h-alert-sub{color:#A01B18}
+/* Progress widget */
+.h-progress-card{background:var(--w);border-radius:var(--r);padding:13px 14px;box-shadow:var(--ss);border:.5px solid var(--g2);margin-bottom:10px}
+.h-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.h-progress-row:last-child{margin-bottom:0}
+.h-prog-label{font-size:12px;font-weight:600;color:var(--g6);width:90px;flex-shrink:0}
+.h-prog-bar{flex:1;height:7px;background:var(--g2);border-radius:4px;overflow:hidden}
+.h-prog-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.h-prog-val{font-size:11px;font-weight:700;color:var(--g5);width:36px;text-align:right;flex-shrink:0}
+/* Upcoming widget */
+.h-upcoming{background:var(--w);border-radius:var(--r);box-shadow:var(--ss);border:.5px solid var(--g2);overflow:hidden;margin-bottom:10px}
+.h-upcoming-hdr{padding:10px 14px;border-bottom:.5px solid var(--g2);font-size:13px;font-weight:700;color:var(--g6);display:flex;justify-content:space-between;align-items:center}
+.h-upcoming-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:.5px solid var(--g2);cursor:pointer}
+.h-upcoming-item:last-child{border-bottom:none}
+.h-upcoming-item:active{background:var(--g1)}
+.h-upcoming-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.h-upcoming-text{flex:1;font-size:12px;font-weight:600;color:var(--g6);line-height:1.4}
+.h-upcoming-days{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;flex-shrink:0}
+/* Vitals snapshot */
+.h-vitals-row{display:flex;gap:8px;margin-bottom:10px}
+.h-vital-card{flex:1;background:var(--w);border-radius:11px;padding:10px 11px;box-shadow:var(--ss);border:.5px solid var(--g2);cursor:pointer;text-align:center}
+.h-vital-card:active{background:var(--g1)}
+.h-vital-icon{font-size:18px;margin-bottom:3px}
+.h-vital-val{font-size:15px;font-weight:800;color:var(--g6)}
+.h-vital-label{font-size:9px;color:var(--g4);margin-top:1px}
+/* Doctor visit summary */
+.visit-summary{background:var(--w);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.visit-summary-hdr{background:linear-gradient(135deg,#0D47A1,#1565C0);padding:14px 16px;color:#fff}
+.visit-summary-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:.5px solid var(--g2)}
+.visit-summary-row:last-child{border-bottom:none}
+.visit-summary-label{font-size:11px;font-weight:700;color:var(--g4);width:80px;flex-shrink:0;padding-top:1px}
+.visit-summary-val{font-size:12px;color:var(--g6);flex:1;line-height:1.6}
 .med-chip{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;margin-bottom:7px}
 .med-chip:last-child{margin-bottom:0}
 
@@ -669,7 +711,7 @@ function go(s) {
     vitals:'rVitals', search:'rSearch', healthscore:'rHealthScore',
     menstrual:'rMenstrual', appointments:'rAppointments',
     water:'rWater', reminders:'rReminders',
-    tips:'rTips'
+    tips:'rTips', doctorvisit:'rDoctorVisit'
   };
   if(map[s] && typeof window[map[s]]==='function') window[map[s]]();
   else if(map[s]) console.warn('Screen function not yet defined:',map[s]);
@@ -1163,28 +1205,194 @@ function rHome(){
   }
 
   // ── MAIN USER HOME ────────────────────────────────────────────
+  const greet=(function(){const h=new Date().getHours();return h<12?'Good morning 🌅':h<17?'Good afternoon ☀️':h<21?'Good evening 🌇':'Good night 🌙';})();
+  const famBar = U.members?.length>1
+    ? `<div style="padding:12px 14px 0"><div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:8px">FAMILY</div></div>${familyScrollBar(true)}`
+    : '';
+
+  // ── Collect data for smart widgets ──────────────────
+  const hMeds        = getMeds();
+  const allSlots     = [];
+  hMeds.forEach(m=>{
+    if(m.morning)   allSlots.push(m.id+'-m');
+    if(m.afternoon) allSlots.push(m.id+'-a');
+    if(m.night)     allSlots.push(m.id+'-n');
+    if(!m.morning&&!m.afternoon&&!m.night) allSlots.push(m.id+'-d');
+  });
+  const taken        = getTakenToday();
+  const takenCount   = allSlots.filter(s=>taken.includes(s)).length;
+  const totalSlots   = allSlots.length;
+  const medPct       = totalSlots ? Math.round((takenCount/totalSlots)*100) : 0;
+
+  const waterLog     = getWaterLog();
+  const glassesToday = waterLog[today()]||0;
+  const waterGoal    = parseInt(loadKey('hv_water_goal')||'8');
+  const waterOn      = loadKey('hv_water_on')==='1';
+  const waterPct     = Math.min(Math.round((glassesToday/waterGoal)*100),100);
+
+  const hVitals      = getVitals();
+  const latestBP     = hVitals.filter(v=>v.type==='bp').slice(-1)[0];
+  const latestSugar  = hVitals.filter(v=>v.type==='sugar').slice(-1)[0];
+  const latestWeight = hVitals.filter(v=>v.type==='weight').slice(-1)[0];
+  const hasVitals    = !!(latestBP||latestSugar||latestWeight);
+
+  const now_         = new Date();
+  const appts        = getAppointments().filter(a=>new Date(a.datetime)>now_).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const nextAppt     = appts[0];
+
+  // ── Smart alert cards (contextual, only shown when relevant) ──
+  const alerts = [];
+
+  // Medicine adherence alert
+  if(totalSlots>0 && now_.getHours()>=8){
+    if(medPct===100){
+      alerts.push({type:'green',icon:'✅',title:'All medicines taken today!',sub:'Great job staying on track.',action:"go('scan')"});
+    } else if(now_.getHours()>=20 && medPct<100){
+      alerts.push({type:'amber',icon:'⚠️',title:`${totalSlots-takenCount} medicine${totalSlots-takenCount>1?'s':''} not yet taken today`,sub:'Tap to mark them as taken before bed.',action:"go('scan')"});
+    } else if(now_.getHours()>=14 && medPct===0){
+      alerts.push({type:'amber',icon:'💊',title:'No medicines marked taken today',sub:'Tap to log your morning dose.',action:"go('scan')"});
+    }
+  }
+
+  // Upcoming appointment in ≤3 days
+  if(nextAppt){
+    const daysLeft = Math.round((new Date(nextAppt.datetime)-now_)/(1000*60*60*24));
+    if(daysLeft<=3){
+      const when = daysLeft===0?'Today':daysLeft===1?'Tomorrow':`In ${daysLeft} days`;
+      const time = new Date(nextAppt.datetime).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+      alerts.push({type:'blue',icon:'📅',title:`Appointment ${when} — Dr. ${nextAppt.doctor}`,sub:`${time}${nextAppt.hospital?' · '+nextAppt.hospital:''}`,action:"go('appointments')"});
+    }
+  }
+
+  // Vaccine due in ≤3 days (any child member)
+  (U.members||[]).forEach(mem=>{
+    const role=(mem.role||'').toLowerCase();
+    if(role!=='child'&&(parseInt(mem.age)||0)>=18) return;
+    let vacData={};
+    try{vacData=JSON.parse(localStorage.getItem('hv_childvac_'+mem.id)||'{}');}catch(e){}
+    if(!vacData.dob) return;
+    INDIA_VAC_SCHEDULE.forEach(vac=>{
+      if(vacData.records?.[vac.id]?.date) return;
+      const dueDate=addDays(vacData.dob,vac.offset);
+      const daysLeft=Math.round((new Date(dueDate)-now_)/(1000*60*60*24));
+      if(daysLeft>=0&&daysLeft<=3){
+        alerts.push({type:'blue',icon:'💉',title:`${vac.name} due in ${daysLeft===0?'today':daysLeft+' days'}`,sub:`For ${mem.name} · Due ${fmtDate(dueDate)}`,action:"go('vaccines')"});
+      }
+    });
+  });
+
+  // Water — only show if water reminders are on and goal not met after midday
+  if(waterOn && glassesToday<waterGoal && now_.getHours()>=12){
+    alerts.push({type:'blue',icon:'💧',title:`${glassesToday} of ${waterGoal} glasses — keep hydrating`,sub:'Tap to log a glass of water.',action:"go('water')"});
+  }
+
+  const alertHTML = alerts.slice(0,3).map(a=>
+    `<div class="h-alert ${a.type}" onclick="go('${a.action.replace(/go\('|'\)/g,'')}')" >
+      <div class="h-alert-ico">${a.icon}</div>
+      <div class="h-alert-body">
+        <div class="h-alert-title">${a.title}</div>
+        <div class="h-alert-sub">${a.sub}</div>
+      </div>
+      <div style="font-size:14px;opacity:.5">›</div>
+    </div>`
+  ).join('');
+
+  // ── Progress bars ────────────────────────────────────
+  const showMedProgress  = totalSlots > 0;
+  const showWaterProgress= waterOn;
+  const progressHTML = (showMedProgress||showWaterProgress) ? `
+  <div class="h-progress-card">
+    <div style="font-size:12px;font-weight:700;color:var(--g6);margin-bottom:10px">Today's Progress</div>
+    ${showMedProgress?`
+    <div class="h-progress-row" onclick="go('scan')" style="cursor:pointer">
+      <div class="h-prog-label">💊 Medicines</div>
+      <div class="h-prog-bar"><div class="h-prog-fill" style="width:${medPct}%;background:${medPct===100?'var(--green)':'var(--blue)'}"></div></div>
+      <div class="h-prog-val" style="color:${medPct===100?'var(--green)':'var(--blue)'}">${takenCount}/${totalSlots}</div>
+    </div>`:''}
+    ${showWaterProgress?`
+    <div class="h-progress-row" onclick="go('water')" style="cursor:pointer">
+      <div class="h-prog-label">💧 Hydration</div>
+      <div class="h-prog-bar"><div class="h-prog-fill" style="width:${waterPct}%;background:${waterPct>=100?'var(--green)':'#1A73E8'}"></div></div>
+      <div class="h-prog-val" style="color:${waterPct>=100?'var(--green)':'#1A73E8'}">${glassesToday}/${waterGoal}</div>
+    </div>`:''}
+  </div>` : '';
+
+  // ── Upcoming section (appointments + child vaccines in next 7 days) ──
+  const upcomingItems = [];
+  appts.slice(0,2).forEach(a=>{
+    const daysLeft=Math.round((new Date(a.datetime)-now_)/(1000*60*60*24));
+    const when=daysLeft===0?'Today':daysLeft===1?'Tomorrow':`${daysLeft}d`;
+    upcomingItems.push({
+      dot:'var(--blue)',text:`Dr. ${a.doctor}${a.hospital?' · '+a.hospital:''}`,
+      days:when,daysBg:'var(--bl)',daysColor:'var(--bd)',action:"go('appointments')"
+    });
+  });
+  (U.members||[]).forEach(mem=>{
+    const role=(mem.role||'').toLowerCase();
+    if(role!=='child'&&(parseInt(mem.age)||0)>=18) return;
+    let vacData={};
+    try{vacData=JSON.parse(localStorage.getItem('hv_childvac_'+mem.id)||'{}');}catch(e){}
+    if(!vacData.dob) return;
+    INDIA_VAC_SCHEDULE.forEach(vac=>{
+      if(vacData.records?.[vac.id]?.date) return;
+      const dueDate=addDays(vacData.dob,vac.offset);
+      const daysLeft=Math.round((new Date(dueDate)-now_)/(1000*60*60*24));
+      if(daysLeft>=0&&daysLeft<=7){
+        upcomingItems.push({dot:'var(--amber)',text:`${vac.name} — ${mem.name}`,days:daysLeft===0?'Today':`${daysLeft}d`,daysBg:'var(--al)',daysColor:'#B06000',action:"go('vaccines')"});
+      }
+    });
+  });
+  const upcomingHTML = upcomingItems.length ? `
+  <div class="h-upcoming">
+    <div class="h-upcoming-hdr">📋 Upcoming <span style="font-size:11px;font-weight:400;color:var(--g4)">${upcomingItems.length} item${upcomingItems.length>1?'s':''}</span></div>
+    ${upcomingItems.slice(0,4).map(it=>`
+    <div class="h-upcoming-item" onclick="${it.action}">
+      <div class="h-upcoming-dot" style="background:${it.dot}"></div>
+      <div class="h-upcoming-text">${it.text}</div>
+      <div class="h-upcoming-days" style="background:${it.daysBg};color:${it.daysColor}">${it.days}</div>
+    </div>`).join('')}
+  </div>` : '';
+
+  // ── Vitals snapshot (only if user has recorded at least one) ──
+  const vitalsHTML = hasVitals ? `
+  <div style="margin-bottom:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--g6)">Recent Vitals</div>
+      <button onclick="go('vitals')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 0">+ Log →</button>
+    </div>
+    <div class="h-vitals-row">
+      ${latestBP?`<div class="h-vital-card" onclick="go('vitals')"><div class="h-vital-icon">❤️</div><div class="h-vital-val" style="font-size:13px">${latestBP.value}</div><div class="h-vital-label">Blood Pressure</div></div>`:''}
+      ${latestSugar?`<div class="h-vital-card" onclick="go('vitals')"><div class="h-vital-icon">🩸</div><div class="h-vital-val">${latestSugar.value}</div><div class="h-vital-label">Blood Sugar</div></div>`:''}
+      ${latestWeight?`<div class="h-vital-card" onclick="go('vitals')"><div class="h-vital-icon">⚖️</div><div class="h-vital-val">${latestWeight.value}</div><div class="h-vital-label">Weight (kg)</div></div>`:''}
+    </div>
+  </div>` : '';
+
+  // ── Header stats (dynamic) ───────────────────────────
+  const statMedLabel = totalSlots>0 ? `${takenCount}/${totalSlots} taken` : `${hMeds.length} saved`;
+  const statApptLabel= nextAppt ? `Next: ${new Date(nextAppt.datetime).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}` : `${reports.length} reports`;
+  const statWaterLabel= waterOn ? `${glassesToday}/${waterGoal} 💧` : `${U.age||'--'} yrs`;
+
+  // ── Quick action grid — contextual ──────────────────
+  const cycleOrMenstrual = U.gender==='female'
+    ? `<div class="qa" onclick="go('menstrual')"><div class="qi">🌸</div><div class="ql">Cycle Tracker</div><div class="qs">Period &amp; fertility</div></div>`
+    : `<div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity</div><div class="qs">Steps &amp; fitness</div></div>`;
+
   const mainRepRows = recentReports.length===0
-    ? '<div class="card" style="cursor:default;text-align:center;color:var(--g4);font-size:13px">No reports yet. Tap + Add to log a report.</div>'
-    : recentReports.map(r=>{
-        const badge = r.abnormal>0 ? r.abnormal+' Abnormal' : 'Normal';
-        const cls   = r.abnormal>0 ? 'by' : 'bg';
-        const lab   = r.lab||'—';
+    ? ''
+    : `<div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="sec" style="margin-bottom:8px">Recent Reports</div>
+        <button onclick="go('lab')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">View all →</button>
+      </div>
+      ${recentReports.map(r=>{
+        const badge=r.abnormal>0?r.abnormal+' Abnormal':'Normal';
+        const cls=r.abnormal>0?'by':'bg';
         return `<div class="card" onclick="go('lab')"><div class="crow">
           <div class="ic" style="background:#EDE7F6">🧪</div>
           <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--g6)">${r.name}</div>
-          <div style="font-size:11px;color:var(--g4)">${fmtDate(r.date)} · ${lab}</div></div>
+          <div style="font-size:11px;color:var(--g4)">${fmtDate(r.date)} · ${r.lab||'—'}</div></div>
           <div class="badge ${cls}">${badge}</div>
         </div></div>`;
-      }).join('');
-
-  const greet=(function(){const h=new Date().getHours();return h<12?'Good morning 🌅':h<17?'Good afternoon ☀️':h<21?'Good evening 🌇':'Good night 🌙';})();
-  const gStr = U.gender==='female'?'F':U.gender==='male'?'M':'X';
-  const famBar = U.members?.length>1
-    ? `<div style="padding:12px 14px 0"><div style="font-size:12px;font-weight:700;color:var(--g4);margin-bottom:8px">VIEWING PROFILE FOR</div></div>${familyScrollBar(true)}`
-    : '';
-  const cycleOrVitals = U.gender==='female'
-    ? `<div class="qa" onclick="go('menstrual')"><div class="qi">🌸</div><div class="ql">Cycle Tracker</div><div class="qs">Period &amp; fertility</div></div>`
-    : `<div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Vitals</div><div class="qs">BP, sugar, weight</div></div>`;
+      }).join('')}`;
 
   SCR.innerHTML=`<div class="sc">
   ${famBar}
@@ -1193,40 +1401,31 @@ function rHome(){
     <div class="hname">Hello, ${first}</div>
     <button class="sos" onclick="go('emergency')">🆘 SOS</button>
     <div class="hstats">
-      <div class="hstat"><div class="sv">${todayMeds.length}</div><div class="sl">Medicines</div></div>
-      <div class="hstat"><div class="sv">${reports.length}</div><div class="sl">Reports</div></div>
-      <div class="hstat"><div class="sv">${gStr}·${U.age||'--'}</div><div class="sl">Profile</div></div>
+      <div class="hstat" onclick="go('scan')"><div class="sv">${statMedLabel}</div><div class="sl">Medicines</div></div>
+      <div class="hstat" onclick="go('appointments')"><div class="sv">${statApptLabel}</div><div class="sl">${nextAppt?'Appointment':'Reports'}</div></div>
+      <div class="hstat" onclick="${waterOn?"go('water')":"go('profile')"}"><div class="sv">${statWaterLabel}</div><div class="sl">${waterOn?'Hydration':'Age'}</div></div>
     </div>
   </div>
   <div class="hbody">
+    ${alertHTML ? `<div style="margin-top:4px">${alertHTML}</div>` : ''}
+    ${progressHTML}
+    ${upcomingHTML}
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="sec" style="margin-bottom:8px">Today's Medicines</div>
+      <button onclick="go('reminders')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">🔔 Set reminders</button>
+    </div>
+    ${renderTodayMedWidget()}
+    ${vitalsHTML}
     <div class="sec">Quick Actions</div>
     <div class="qa-grid">
       <div class="qa" onclick="go('body')"><div class="qi">🫀</div><div class="ql">Body Explorer</div><div class="qs">Tap any body part</div></div>
       <div class="qa" onclick="go('symptom')"><div class="qi">✅</div><div class="ql">Symptom Checker</div><div class="qs">Local analysis</div></div>
       <div class="qa" onclick="go('scan')"><div class="qi">💊</div><div class="ql">Add Medicine</div><div class="qs">Manual or photo</div></div>
-      <div class="qa" onclick="go('lab')"><div class="qi">🧪</div><div class="ql">Lab Reports</div><div class="qs">Add &amp; track results</div></div>
-      <div class="qa" onclick="go('vitals')"><div class="qi">📊</div><div class="ql">Log Vitals</div><div class="qs">BP, sugar, SpO2</div></div>
-      <div class="qa" onclick="go('nearby')"><div class="qi">📍</div><div class="ql">Nearby Care</div><div class="qs">Hospital, clinic</div></div>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div class="sec" style="margin-bottom:8px">Today's Medicines</div>
-      <button onclick="go('reminders')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">🔔 Reminders</button>
-    </div>
-    ${renderTodayMedWidget()}
-    <div class="sec">More Features</div>
-    <div class="qa-grid">
-      <div class="qa" onclick="go('family')"><div class="qi">👨‍👩‍👧</div><div class="ql">Family</div><div class="qs">All members</div></div>
-      <div class="qa" onclick="go('activity')"><div class="qi">🏃</div><div class="ql">Activity</div><div class="qs">Steps &amp; fitness</div></div>
+      <div class="qa" onclick="go('lab')"><div class="qi">🧪</div><div class="ql">Lab Reports</div><div class="qs">Add &amp; track</div></div>
       <div class="qa" onclick="go('appointments')"><div class="qi">📅</div><div class="ql">Appointments</div><div class="qs">Doctor visits</div></div>
-      ${cycleOrVitals}
-      <div class="qa" onclick="go('water')"><div class="qi">💧</div><div class="ql">Hydration</div><div class="qs">Water reminders</div></div>
-      <div class="qa" onclick="go('healthscore')"><div class="qi">🏆</div><div class="ql">Health Score</div><div class="qs">Your score</div></div>
-      <div class="qa" onclick="go('search')"><div class="qi">🔍</div><div class="ql">Search</div><div class="qs">Find anything</div></div>
-      <div class="qa" onclick="go('emergency')"><div class="qi">🆘</div><div class="ql">Emergency</div><div class="qs">SOS &amp; info</div></div>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div class="sec" style="margin-bottom:8px">Recent Reports</div>
-      <button onclick="go('lab')" style="font-size:11px;font-weight:700;color:var(--blue);background:none;border:none;cursor:pointer;margin-right:2px;padding:4px 8px">+ Add</button>
+      <div class="qa" onclick="go('nearby')"><div class="qi">📍</div><div class="ql">Nearby Care</div><div class="qs">Hospitals, clinics</div></div>
+      ${cycleOrMenstrual}
+      <div class="qa" onclick="go('water')"><div class="qi">💧</div><div class="ql">Hydration</div><div class="qs">Water tracker</div></div>
     </div>
     ${mainRepRows}
     <div class="pb"></div>
@@ -2206,44 +2405,6 @@ function rEmergency(){
 }
 
 /* ══ INTERACTIONS — reads real medicines ══ */
-function rInteractions(){
-  const meds = getMeds();
-  const medNames = meds.map(m=>`${m.name}${m.dosage?' '+m.dosage:''}`);
-  SCR.innerHTML=`<div class="sc">
-  <div class="brow"><div class="bk" onclick="go('more')">←</div><div><div class="bk-t">Drug Interactions</div><div class="bk-s">Check medicine safety combinations</div></div></div>
-  <div class="iban iby"><span>⚠️</span><span>Educational reference only. Always consult your pharmacist or doctor before changing medicines.</span></div>
-  <div class="p16">
-    <div class="sec" style="padding:0;margin-top:14px">Your Current Medicines</div>
-    <div class="card" style="cursor:default">
-      ${medNames.length===0?'<div style="color:var(--g4);font-size:13px;text-align:center">No medicines saved. Add medicines in the Medicines tab.</div>':''}
-      <div style="display:flex;flex-wrap:wrap" id="int-tags">
-        ${medNames.map(m=>`<span class="med-tag">${m}<span onclick="this.parentElement.remove()">×</span></span>`).join('')}
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px"><input class="inp" id="med-add" placeholder="Add a medicine to check…" style="flex:1;padding:9px 12px;font-size:12px"/><button class="btn-sm" style="background:var(--blue);color:#fff" onclick="addMedTag()">Add</button></div>
-    </div>
-    <div class="sec" style="padding:0">Common Interactions Reference</div>
-    <div class="int-level int-mild"><div class="int-sev">✅</div><div><div class="int-t">Paracetamol + Vitamin D3</div><div class="int-s">No known interaction. Safe to take together.</div></div></div>
-    <div class="int-level int-mod"><div class="int-sev">⚠️</div><div><div class="int-t">Cetirizine + Alcohol</div><div class="int-s">Moderate — increases sedation. Avoid alcohol.</div></div></div>
-    <div class="int-level int-sev-c"><div class="int-sev">⛔</div><div><div class="int-t">Warfarin + Aspirin</div><div class="int-s">Severe — serious bleeding risk. Do not combine without specialist supervision.</div></div></div>
-    <div class="int-level int-mod"><div class="int-sev">⚠️</div><div><div class="int-t">Metformin + Alcohol</div><div class="int-s">Risk of lactic acidosis. Avoid alcohol with Metformin.</div></div></div>
-    <div class="int-level int-sev-c"><div class="int-sev">⛔</div><div><div class="int-t">Statins + Grapefruit</div><div class="int-s">Grapefruit increases statin levels — risk of muscle damage.</div></div></div>
-    <div class="int-level int-mild"><div class="int-sev">ℹ️</div><div><div class="int-t">Ibuprofen + Paracetamol</div><div class="int-s">Generally safe short-term. Avoid regular concurrent use.</div></div></div>
-    <div class="card" style="background:#E6F4EA;border:1px solid #A8D5B5;cursor:default;margin-top:4px"><div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:5px">ℹ️ About this checker</div><div style="font-size:11px;color:#2D7A4F;line-height:1.5">Built-in reference data. Always disclose all medicines to your doctor and pharmacist before making any changes.</div></div>
-    <div class="pb"></div>
-  </div></div>`;
-}
-function addMedTag(){
-  const inp=document.getElementById('med-add');
-  if(!inp||!inp.value.trim()) return;
-  const wrap=document.getElementById('int-tags');
-  if(!wrap) return;
-  const tag=document.createElement('span');
-  tag.className='med-tag';
-  tag.innerHTML=inp.value.trim()+'<span onclick="this.parentElement.remove()" style="margin-left:4px;font-size:14px;cursor:pointer">×</span>';
-  wrap.appendChild(tag);
-  inp.value='';
-}
-
 /* ══ CHATBOT — local FAQ engine (no API) ══ */
 const LOCAL_FAQ = [
   { q:['fever','temperature','38','39'], a:'A fever above 38°C in adults usually indicates the body fighting an infection. Stay hydrated, rest, and take paracetamol for comfort. Seek medical care if fever exceeds 39.5°C, lasts more than 3 days, or comes with severe headache, stiff neck, or rash.' },
@@ -3852,6 +4013,7 @@ function setV(type,val,el){ if(type==='sex') setSex(val); }
 /* ══ MORE MENU ══ */
 function rMore(){
   const items=[
+    {i:'🩺',t:'Doctor\'s Visit Summary',s:'Generate a summary for your next visit',sc:'doctorvisit',c:'var(--tl)'},
     {i:'👨‍👩‍👧',t:'Family Profiles',s:'Manage child, spouse, parent',sc:'family',c:'#E8F0FE'},
     {i:'⚗️',t:'Drug Interactions',s:'Real-time check on your medicines',sc:'interactions',c:'var(--pl)'},
     {i:'💬',t:'Health Assistant',s:'Offline Q&A — no API needed',sc:'chatbot',c:'var(--tl)'},
@@ -3882,6 +4044,188 @@ function rMore(){
 }
 
 /* ══ NEARBY CARE ══ */
+/* ══ DOCTOR'S VISIT SUMMARY ══ */
+function rDoctorVisit(){
+  const meds      = getMeds();
+  const reports   = getReports();
+  const vitals    = getVitals();
+  const appts     = getAppointments().filter(a=>new Date(a.datetime)>new Date()).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const nextAppt  = appts[0];
+  const vaccines  = getVaccines();
+
+  // Latest vitals per type
+  const latestV = {};
+  vitals.forEach(v=>{ if(!latestV[v.type]||v.date>latestV[v.type].date) latestV[v.type]=v; });
+  const vitalsHtml = Object.keys(latestV).length
+    ? Object.values(latestV).map(v=>`${v.label||v.type}: <b>${v.value}</b> (${fmtDate(v.date)})`).join(' · ')
+    : 'None recorded';
+
+  // Active medicines
+  const medList = meds.length
+    ? meds.map(m=>{
+        const times=[m.morning?'Morning':'',m.afternoon?'Afternoon':'',m.night?'Night':''].filter(Boolean).join('/');
+        return `${m.name}${m.dosage?' '+m.dosage:''} — ${times||'As directed'}${m.food?' ('+m.food+')':''}`;
+      }).join('\n')
+    : 'None recorded';
+
+  // Recent abnormal lab values
+  const abnormalTests = [];
+  reports.slice(-5).forEach(r=>{
+    (r.results||[]).filter(t=>t.status!=='NORMAL').forEach(t=>{
+      abnormalTests.push(`${t.name}: ${t.value} ${t.unit} [${t.status}] — ${r.name} (${fmtDate(r.date)})`);
+    });
+  });
+
+  // Recent symptoms from vault
+  const recentSymptoms = getVaultItems().filter(v=>v.type==='symptom').slice(0,3)
+    .map(v=>`${v.title} (${fmtDate(v.date)})`);
+
+  // Next appointment details
+  const apptLine = nextAppt
+    ? `Dr. ${nextAppt.doctor} · ${nextAppt.specialty||'General'} · ${new Date(nextAppt.datetime).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})} at ${new Date(nextAppt.datetime).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}${nextAppt.hospital?' · '+nextAppt.hospital:''}`
+    : 'No upcoming appointment';
+
+  // Generate printable text for sharing
+  const summaryText = `HealthVault — Doctor's Visit Summary
+Generated: ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}
+
+PATIENT
+Name: ${U.name||'—'} | Age: ${U.age||'—'} | Gender: ${U.gender||'—'} | Blood Group: ${U.blood||'—'}
+Allergies: ${U.allergies||'None'} | Conditions: ${U.conditions||'None'}
+
+NEXT APPOINTMENT
+${apptLine}
+
+CURRENT MEDICINES (${meds.length})
+${medList}
+
+RECENT VITALS
+${vitalsHtml.replace(/<b>|<\/b>/g,'')}
+
+${abnormalTests.length?'ABNORMAL LAB VALUES\n'+abnormalTests.join('\n')+'\n':''}
+${recentSymptoms.length?'RECENT SYMPTOMS\n'+recentSymptoms.join('\n')+'\n':''}
+EMERGENCY CONTACT
+${U.ecName||'—'} (${U.ecRel||'—'}) · ${U.ecPhone||'—'}
+
+Generated by HealthVault`;
+
+  SCR.innerHTML=`<div class="sc">
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Doctor's Visit Summary</div><div class="bk-s">One-page health overview for your doctor</div></div></div>
+
+  <!-- Action buttons -->
+  <div style="padding:12px 14px 0;display:flex;gap:8px">
+    <button onclick="shareDoctorSummary()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📤 Share / Copy</button>
+    <button onclick="printDoctorSummary()" style="flex:1;background:var(--g1);color:var(--g6);border:1px solid var(--g2);border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🖨️ Print</button>
+  </div>
+
+  <!-- Summary card -->
+  <div style="margin:12px 14px 0" id="doctor-summary-card">
+    <div class="visit-summary">
+      <div class="visit-summary-hdr">
+        <div style="font-size:15px;font-weight:800;letter-spacing:-.2px">🩺 Visit Summary</div>
+        <div style="font-size:11px;opacity:.8;margin-top:3px">${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})} · Generated by HealthVault</div>
+        ${nextAppt?`<div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:9px;padding:8px 11px;font-size:12px"><b>📅 Next:</b> Dr. ${nextAppt.doctor}${nextAppt.hospital?' · '+nextAppt.hospital:''} — ${new Date(nextAppt.datetime).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})} at ${new Date(nextAppt.datetime).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true})}</div>`:''}
+      </div>
+
+      <!-- Patient info -->
+      <div class="visit-summary-row">
+        <div class="visit-summary-label">Patient</div>
+        <div class="visit-summary-val"><b>${U.name||'—'}</b> · ${U.age||'—'} yrs · ${U.gender||'—'} · Blood group: ${U.blood||'—'}</div>
+      </div>
+
+      <!-- Allergies / Conditions -->
+      <div class="visit-summary-row">
+        <div class="visit-summary-label">Allergies</div>
+        <div class="visit-summary-val" style="color:${U.allergies?'#C5221F':'var(--g4)'}">⚠️ ${U.allergies||'None reported'}</div>
+      </div>
+      ${U.conditions?`<div class="visit-summary-row">
+        <div class="visit-summary-label">Conditions</div>
+        <div class="visit-summary-val">${U.conditions}</div>
+      </div>`:''}
+
+      <!-- Medicines -->
+      <div class="visit-summary-row">
+        <div class="visit-summary-label">Medicines<br><span style="font-size:10px;font-weight:400">(${meds.length} active)</span></div>
+        <div class="visit-summary-val">
+          ${meds.length?meds.map(m=>{
+            const times=[m.morning?'M':'',m.afternoon?'A':'',m.night?'N':''].filter(Boolean).join('-');
+            return `<div style="padding:3px 0;border-bottom:.5px solid var(--g2)">
+              <span style="font-weight:700">${m.name}${m.dosage?' '+m.dosage:''}</span>
+              <span style="color:var(--g4)"> · ${times||'As directed'} · ${m.food||''}${m.doctor?' · Dr.'+m.doctor:''}</span>
+            </div>`;
+          }).join(''):'<span style="color:var(--g4)">None recorded</span>'}
+        </div>
+      </div>
+
+      <!-- Vitals -->
+      ${Object.keys(latestV).length?`<div class="visit-summary-row">
+        <div class="visit-summary-label">Recent Vitals</div>
+        <div class="visit-summary-val">
+          ${Object.values(latestV).map(v=>`<div style="padding:2px 0"><span style="font-weight:700">${v.label||v.type}:</span> ${v.value} <span style="color:var(--g4)">(${fmtDate(v.date)})</span></div>`).join('')}
+        </div>
+      </div>`:''}
+
+      <!-- Abnormal labs -->
+      ${abnormalTests.length?`<div class="visit-summary-row">
+        <div class="visit-summary-label" style="color:#C5221F">⚠️ Abnormal Labs</div>
+        <div class="visit-summary-val">
+          ${abnormalTests.map(t=>`<div style="padding:2px 0;color:#C5221F;font-size:11px">${t}</div>`).join('')}
+        </div>
+      </div>`:''}
+
+      <!-- Recent symptoms -->
+      ${recentSymptoms.length?`<div class="visit-summary-row">
+        <div class="visit-summary-label">Symptoms</div>
+        <div class="visit-summary-val">
+          ${recentSymptoms.map(s=>`<div style="padding:2px 0;font-size:11px">${s}</div>`).join('')}
+        </div>
+      </div>`:''}
+
+      <!-- Emergency contact -->
+      <div class="visit-summary-row">
+        <div class="visit-summary-label">Emergency</div>
+        <div class="visit-summary-val">${U.ecName||'—'} (${U.ecRel||'—'}) · ${U.ecPhone||'—'}</div>
+      </div>
+    </div>
+
+    <div style="background:var(--gl);border-radius:11px;padding:10px 13px;margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:#1B5E20;margin-bottom:3px">💡 How to use this</div>
+      <div style="font-size:11px;color:#2D7A4F;line-height:1.6">Show this screen to your doctor or tap Share to send the text summary via WhatsApp / SMS. Tap Print to open the print dialog.</div>
+    </div>
+  </div>
+  <div class="pb"></div>
+  </div>`;
+
+  // Store summary text for sharing
+  window._doctorSummaryText = summaryText;
+}
+
+function shareDoctorSummary(){
+  const text = window._doctorSummaryText || '';
+  if(navigator.share){
+    navigator.share({ title:'My Health Summary — HealthVault', text }).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>alert('✅ Summary copied to clipboard! Paste it in WhatsApp or SMS.'));
+  } else {
+    const ta=document.createElement('textarea');
+    ta.value=text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    alert('✅ Summary copied! Paste it anywhere.');
+  }
+}
+
+function printDoctorSummary(){
+  const text = (window._doctorSummaryText||'').replace(/\n/g,'<br>');
+  const win = window.open('','_blank');
+  if(!win) return;
+  win.document.write(`<!DOCTYPE html><html><head><title>Doctor Visit Summary — HealthVault</title>
+  <meta charset="UTF-8">
+  <style>body{font-family:Arial,sans-serif;font-size:13px;line-height:1.7;margin:32px;color:#202124}h2{color:#0D47A1}b{color:#202124}@media print{body{margin:16px}}</style>
+  </head><body><h2>🩺 Doctor's Visit Summary</h2><p>${text}</p>
+  <script>window.onload=function(){window.print();window.close();}<\/script></body></html>`);
+  win.document.close();
+}
+
 function rNearby(){
   const cats=['All','Hospitals','Clinics','Pharmacies','Labs'];
   SCR.innerHTML=`<div class="sc">
@@ -5028,7 +5372,10 @@ function rAppointments(){
   SCR.innerHTML=`<div class="sc">
   <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">📅 Appointments</div><div class="bk-s">Doctor visits & reminders</div></div></div>
   <div class="p16" style="padding-top:14px">
-    <button class="btn" style="margin-top:0" onclick="showAddAppt()">+ Schedule Appointment</button>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn" style="margin-top:0;flex:1" onclick="showAddAppt()">+ Schedule Appointment</button>
+      <button onclick="go('doctorvisit')" style="flex:1;background:var(--tl);color:#00695C;border:1px solid #80CBC4;border-radius:13px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:0">🩺 Visit Summary</button>
+    </div>
     <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Upcoming (${upcoming.length})</div>
     ${upcoming.length?upcoming.map(a=>apptCard(a,false)).join(''):'<div style="text-align:center;padding:16px;color:var(--g4);font-size:13px;background:var(--g1);border-radius:11px">No upcoming appointments. Tap + to add one.</div>'}
     ${past.length?`<div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Past (${past.length})</div>${past.slice().reverse().slice(0,5).map(a=>apptCard(a,true)).join('')}`:''}
