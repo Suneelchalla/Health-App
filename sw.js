@@ -1,57 +1,94 @@
 /**
- * HealthVault Service Worker v6 — Android notification fixes
+ * HealthVault Service Worker v8 — Multi-user isolation + all previous fixes
  *
- * Fixes applied:
- *  Bug 2 — removed setTimeout-based alarms from page; SW is now the only alarm source
- *  Bug 3 — replaced unreliable setInterval inside activate with checkAlarms() called
- *           on every SW lifecycle event so alarms fire even after the SW was terminated
- *  Bug 4 — changed m<2 window to "fire on or after due hour, once per day" so a
- *           sleeping SW never permanently misses an alarm
- *  Bug 5 — icon path made relative to SW scope so it resolves correctly on any host
- *  Bonus  — periodicsync handler added for Chrome-on-Android background wakeups
+ * KEY FIX (v8) — Multi-user notification isolation:
+ *  Schedules are stored per-clientId so User A's medicine/water/tips reminders
+ *  never fire on User B's device even when both use the same hosted URL.
+ *  Each browser session generates a unique clientId (stored in localStorage)
+ *  which is sent with every SET_* message and stored in a per-client Map in
+ *  the SW. checkAlarms() targets notifications to the originating client only.
+ *
+ * Previous fixes (v6/v7):
+ *  Bug 2 — removed setTimeout-based alarms from page
+ *  Bug 3 — checkAlarms() called on every SW lifecycle event
+ *  Bug 4 — medicine alarms: "on or after due hour, once per day"
+ *  Bug 5 — icon path relative to SW scope (any hostname)
+ *  Bug 6 — tips alarm: "on or after due hour" (not exact-hour match)
+ *  Bug 7 — lastFiredWater = Date.now() on init (not 0) — prevents post-restart spam
+ *  Bonus — periodicsync handler for Chrome-on-Android background wakeups
  */
 
-const CACHE_NAME = 'healthvault-v6';
+const CACHE_NAME = 'healthvault-v8';
 const ASSETS = [
   '/Health-App/', '/Health-App/index.html',
   '/Health-App/manifest.json', '/Health-App/icon-192.png', '/Health-App/icon-512.png'
 ];
 
-/* ── Persistent schedule (survives SW restarts via globals reset each wakeup) ── */
-let medSchedule = [];
-let waterSchedule = null;
-let lastFiredMed = {};      // { slot: 'YYYY-MM-DD' }
-let lastFiredWater = 0;     // timestamp ms
-let tipsSchedule = null;    // { hour, minute }
-let lastFiredTips = '';     // 'YYYY-MM-DD'
+/* ── Per-client schedule store ──────────────────────────────────────────────
+ * Map<clientId, { medSchedule, waterSchedule, tipsSchedule,
+ *                 lastFiredMed, lastFiredWater, lastFiredTips }>
+ * This is the core of the multi-user fix: each user's browser gets a unique
+ * clientId and their schedules are stored separately.
+ */
+const clientSchedules = new Map();
+
+function getClientState(clientId) {
+  if (!clientSchedules.has(clientId)) {
+    clientSchedules.set(clientId, {
+      medSchedule: [],
+      waterSchedule: null,
+      tipsSchedule: null,
+      lastFiredMed: {},
+      lastFiredWater: Date.now(), // Bug 7: not 0
+      lastFiredTips: ''
+    });
+  }
+  return clientSchedules.get(clientId);
+}
 
 /* ── Helpers ── */
 function dateStr(d) { return d.toISOString().split('T')[0]; }
 
-/**
- * Resolve icon URL relative to the SW scope so it works on any deployment path.
- * Bug 5 fix: hardcoded /Health-App/icon-192.png caused 404 on other hosts.
- */
 function iconUrl(name) {
-  return self.registration.scope + name;
+  return self.registration.scope + name; // Bug 5: relative to scope
 }
 
-function notify(title, body, tag, actions) {
-  return self.registration.showNotification(title, {
+/**
+ * Fire notification to a specific client's user only.
+ * When the target tab is open we postMessage it to show its own notification
+ * (avoiding cross-user leakage). When no tab is open we use showNotification
+ * which is safe because background sync only runs for the scheduled user.
+ */
+async function notifyClient(clientId, title, body, tag, actions) {
+  const opts = {
     body,
     icon: iconUrl('icon-192.png'),
     badge: iconUrl('icon-192.png'),
     tag,
     vibrate: [200, 100, 200],
     renotify: true,
-    data: { url: self.registration.scope, tag },
+    data: { url: self.registration.scope, tag, clientId },
     actions: actions || []
-  }).catch(() => {});
+  };
+  try {
+    const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const appClients = allClients.filter(c => c.url.includes('/Health-App/'));
+    if (appClients.length === 0) {
+      // No tab open — show system notification (background wakeup)
+      await self.registration.showNotification(title, opts);
+    } else {
+      // Tab(s) open — ask each app client to show via postMessage;
+      // the page only shows it if clientId matches its own
+      appClients.forEach(c => c.postMessage({ type: 'SHOW_NOTIFICATION', clientId, title, body, tag, actions: actions || [] }));
+    }
+  } catch (_) {
+    self.registration.showNotification(title, opts).catch(() => {});
+  }
 }
 
-function broadcast(msg) {
+function broadcastToClient(clientId, msg) {
   self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-    .then(cs => cs.forEach(c => c.postMessage(msg)))
+    .then(cs => cs.forEach(c => c.postMessage({ ...msg, clientId })))
     .catch(() => {});
 }
 
@@ -64,8 +101,7 @@ function focusApp(url) {
   });
 }
 
-
-/* ── Health tips data (used by SW to fire tip-of-day notifications) ── */
+/* ── Health tips data ── */
 const SW_TIPS = [
   {t:'Drink water first thing',b:'Rehydrate before your morning tea — your body loses water overnight.'},
   {t:'Walk after meals',b:'A 10-minute walk after eating reduces post-meal blood sugar spikes by up to 30%.'},
@@ -99,59 +135,48 @@ const SW_TIPS = [
   {t:'Limit news to once a day',b:'Constant news causes elevated anxiety. Check once at a fixed time and then consciously stop.'},
 ];
 
-function getTodayTipSW(){
+function getTodayTipSW() {
   const d = new Date();
-  const seed = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+  const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
   return SW_TIPS[seed % SW_TIPS.length];
 }
 
-/* ── checkAlarms ────────────────────────────────────────────────────────────
- *
- * Bug 4 fix: old code used `m < 2` — the SW had to wake within the first
- * 2 minutes of the alarm hour, which Android never guarantees.
- *
- * New logic: fire as soon as the SW wakes up ON OR AFTER the due hour,
- * but only ONCE per calendar day per slot. This means if the SW wakes at
- * 8:47 AM it still fires the 8:00 AM alarm correctly.
- */
+/* ── checkAlarms — iterates all per-client schedules ── */
 function checkAlarms() {
   const now = new Date();
   const h = now.getHours();
   const t = dateStr(now);
   const labels = { morning: '🌅 Morning', afternoon: '☀️ Afternoon', night: '🌙 Night' };
 
-  for (const entry of medSchedule) {
-    if (h >= entry.hour && lastFiredMed[entry.slot] !== t) {
-      lastFiredMed[entry.slot] = t;
-      notify(
-        `${labels[entry.slot] || '💊'} Medicines Due`,
-        entry.names,
-        'med-' + entry.slot,
-        [{ action: 'taken', title: '✅ Mark as Taken' }]
-      );
+  for (const [clientId, state] of clientSchedules.entries()) {
+    // Medicine alarms (Bug 4: on-or-after, once per day)
+    for (const entry of state.medSchedule) {
+      if (h >= entry.hour && state.lastFiredMed[entry.slot] !== t) {
+        state.lastFiredMed[entry.slot] = t;
+        notifyClient(clientId, `${labels[entry.slot] || '💊'} Medicines Due`, entry.names,
+          'med-' + entry.slot, [{ action: 'taken', title: '✅ Mark as Taken' }]);
+      }
     }
-  }
 
-  if (waterSchedule && h >= waterSchedule.start && h < waterSchedule.end) {
-    const intMs = waterSchedule.interval * 60000;
-    if (Date.now() - lastFiredWater >= intMs) {
-      lastFiredWater = Date.now();
-      notify(
-        '💧 Time to Drink Water!',
-        `Stay hydrated — aim for ${waterSchedule.goal} glasses today.`,
-        'water-reminder',
-        [{ action: 'drank', title: '✅ I Drank!' }]
-      );
+    // Water reminders
+    if (state.waterSchedule && h >= state.waterSchedule.start && h < state.waterSchedule.end) {
+      const intMs = state.waterSchedule.interval * 60000;
+      if (Date.now() - state.lastFiredWater >= intMs) {
+        state.lastFiredWater = Date.now();
+        notifyClient(clientId, '💧 Time to Drink Water!',
+          `Stay hydrated — aim for ${state.waterSchedule.goal} glasses today.`,
+          'water-reminder', [{ action: 'drank', title: '✅ I Drank!' }]);
+      }
     }
-  }
 
-  // Tips of the day notification
-  if (tipsSchedule && lastFiredTips !== t) {
-    const m2 = now.getMinutes();
-    if (h === tipsSchedule.hour && m2 >= (tipsSchedule.minute || 0)) {
-      lastFiredTips = t;
-      const tip = getTodayTipSW();
-      notify('💡 ' + tip.t, tip.b, 'tips-daily', []);
+    // Tips of the day (Bug 6: on-or-after, once per day)
+    if (state.tipsSchedule && state.lastFiredTips !== t) {
+      if (h > state.tipsSchedule.hour ||
+          (h === state.tipsSchedule.hour && now.getMinutes() >= (state.tipsSchedule.minute || 0))) {
+        state.lastFiredTips = t;
+        const tip = getTodayTipSW();
+        notifyClient(clientId, '💡 ' + tip.t, tip.b, 'tips-daily', []);
+      }
     }
   }
 }
@@ -165,110 +190,71 @@ self.addEventListener('install', e => {
   );
 });
 
-/* ── Activate ────────────────────────────────────────────────────────────────
- *
- * Bug 3 fix: REMOVED setInterval(checkAlarms, 60000) from here.
- * Android terminates the SW freely and destroys any setInterval with it.
- * Instead, checkAlarms() is called at the top of every event handler so it
- * runs each time Android wakes the SW for any reason.
- */
+/* ── Activate ── */
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      ))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
       .then(() => checkAlarms())
   );
 });
 
-/* ── Fetch — piggyback alarm check on every network wakeup ─────────────────
- *
- * Bug 3 fix (part 2): each time Android wakes the SW to handle a fetch,
- * we call checkAlarms(). Fetch events are the most frequent SW wakeup trigger
- * on Android, so this catches most cases where the app is in use.
- */
+/* ── Fetch ── */
 self.addEventListener('fetch', e => {
   checkAlarms();
-
   if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
-
   e.respondWith(
     fetch(e.request)
-      .then(res => {
-        const c = res.clone();
-        caches.open(CACHE_NAME).then(ca => ca.put(e.request, c));
-        return res;
-      })
+      .then(res => { const c = res.clone(); caches.open(CACHE_NAME).then(ca => ca.put(e.request, c)); return res; })
       .catch(() => caches.match(e.request))
   );
 });
 
-/* ── Message — receive schedule updates from the page ── */
+/* ── Message ── */
 self.addEventListener('message', e => {
   if (!e.data) return;
   checkAlarms();
+  const clientId = e.data.clientId;
+  const state = clientId ? getClientState(clientId) : null;
 
-  if (e.data.type === 'SET_MED_SCHEDULE') {
-    medSchedule = e.data.schedule || [];
-    lastFiredMed = {};
+  if (e.data.type === 'SET_MED_SCHEDULE' && state) {
+    state.medSchedule = e.data.schedule || [];
+    state.lastFiredMed = {};
   }
-  if (e.data.type === 'SET_WATER_SCHEDULE') {
-    waterSchedule = {
-      interval: e.data.interval || 60,
-      start: e.data.start || 8,
-      end: e.data.end || 22,
-      goal: e.data.goal || 8
-    };
-    lastFiredWater = 0;
+  if (e.data.type === 'SET_WATER_SCHEDULE' && state) {
+    state.waterSchedule = { interval: e.data.interval || 60, start: e.data.start || 8, end: e.data.end || 22, goal: e.data.goal || 8 };
+    state.lastFiredWater = Date.now(); // Bug 7: not 0
   }
-  if (e.data.type === 'CLEAR_MED_SCHEDULE') { medSchedule = []; lastFiredMed = {}; }
-  if (e.data.type === 'SET_TIPS_SCHEDULE') {
-    tipsSchedule = { hour: e.data.hour || 8, minute: e.data.minute || 0 };
-    lastFiredTips = '';
-  }
-  if (e.data.type === 'CLEAR_TIPS_SCHEDULE') { tipsSchedule = null; lastFiredTips = ''; }
-  if (e.data.type === 'CLEAR_WATER_SCHEDULE') { waterSchedule = null; lastFiredWater = 0; }
-
-  // Page can request an immediate alarm check (sent on every app open)
+  if (e.data.type === 'CLEAR_MED_SCHEDULE' && state) { state.medSchedule = []; state.lastFiredMed = {}; }
+  if (e.data.type === 'SET_TIPS_SCHEDULE' && state) { state.tipsSchedule = { hour: e.data.hour || 8, minute: e.data.minute || 0 }; state.lastFiredTips = ''; }
+  if (e.data.type === 'CLEAR_TIPS_SCHEDULE' && state) { state.tipsSchedule = null; state.lastFiredTips = ''; }
+  if (e.data.type === 'CLEAR_WATER_SCHEDULE' && state) { state.waterSchedule = null; }
   if (e.data.type === 'CHECK_ALARMS') checkAlarms();
 });
 
-/* ── Periodic Background Sync ───────────────────────────────────────────────
- *
- * Bonus fix: Chrome on Android supports periodicsync, which wakes the SW
- * roughly once per hour even when the app is fully closed.
- * The page registers the tag 'hv-alarms' (see index.html initReminders).
- */
+/* ── Periodic Background Sync ── */
 self.addEventListener('periodicsync', e => {
-  if (e.tag === 'hv-alarms') {
-    e.waitUntil(Promise.resolve().then(() => checkAlarms()));
-  }
+  if (e.tag === 'hv-alarms') e.waitUntil(Promise.resolve().then(() => checkAlarms()));
 });
 
-/* ── Push (server-sent, optional) ── */
+/* ── Push ── */
 self.addEventListener('push', e => {
   checkAlarms();
   if (!e.data) return;
   let d = {};
   try { d = e.data.json(); } catch { d = { title: 'HealthVault', body: e.data.text() }; }
-  e.waitUntil(notify(d.title || 'HealthVault', d.body || '', d.tag || 'hv-push', d.actions || []));
+  e.waitUntil(self.registration.showNotification(d.title || 'HealthVault', {
+    body: d.body || '', icon: iconUrl('icon-192.png'), tag: d.tag || 'hv-push', actions: d.actions || []
+  }));
 });
 
 /* ── Notification click ── */
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
-  if (e.action === 'taken') {
-    broadcast({ type: 'MED_TAKEN', tag: e.notification.tag });
-    e.waitUntil(focusApp(url));
-    return;
-  }
-  if (e.action === 'drank') {
-    broadcast({ type: 'WATER_DRUNK' });
-    e.waitUntil(focusApp(url));
-    return;
-  }
+  const clientId = e.notification.data && e.notification.data.clientId;
+  if (e.action === 'taken') { broadcastToClient(clientId, { type: 'MED_TAKEN', tag: e.notification.tag }); e.waitUntil(focusApp(url)); return; }
+  if (e.action === 'drank') { broadcastToClient(clientId, { type: 'WATER_DRUNK' }); e.waitUntil(focusApp(url)); return; }
   e.waitUntil(focusApp(url));
 });
