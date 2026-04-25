@@ -1,5 +1,5 @@
 /**
- * HealthVault Service Worker v10 — Appointment reminders + all previous fixes
+ * HealthVault Service Worker v11 — Skip taken medicine slots — Appointment reminders + all previous fixes
  *
  * KEY FIX (v8) — Multi-user notification isolation:
  *  Schedules are stored per-clientId so User A's medicine/water/tips reminders
@@ -18,7 +18,7 @@
  *  Bonus — periodicsync handler for Chrome-on-Android background wakeups
  */
 
-const CACHE_NAME = 'healthvault-v10';
+const CACHE_NAME = 'healthvault-v11';
 const ASSETS = [
   '/Health-App/', '/Health-App/index.html',
   '/Health-App/manifest.json', '/Health-App/icon-192.png', '/Health-App/icon-512.png'
@@ -43,7 +43,9 @@ function getClientState(clientId) {
       lastFiredWater: Date.now(), // Bug 7: not 0
       lastFiredTips: '',
       lastFiredVac: {},       // { 'memberId_vacId': 'YYYY-MM-DD' } — prevent double-fire per day
-      apptReminders: []       // [{ id, fireAt, title, body }] — one-time appointment alarms
+      apptReminders: [],      // [{ id, fireAt, title, body }] -- one-time appointment alarms
+      takenSlots: [],         // ['morning','afternoon','night'] -- slots fully taken today
+      takenSlotsDate: ''      // YYYY-MM-DD for takenSlots
     });
   }
   return clientSchedules.get(clientId);
@@ -153,8 +155,15 @@ function checkAlarms() {
 
   for (const [clientId, state] of clientSchedules.entries()) {
     // Medicine alarms (Bug 4: on-or-after, once per day)
+    // Skip slots that the user has already marked as taken today
+    const takenToday = (state.takenSlotsDate === t) ? (state.takenSlots || []) : [];
     for (const entry of state.medSchedule) {
       if (h >= entry.hour && state.lastFiredMed[entry.slot] !== t) {
+        // Don't fire if user already marked this entire slot as taken
+        if (takenToday.includes(entry.slot)) {
+          state.lastFiredMed[entry.slot] = t; // mark fired so it doesn't retry
+          continue;
+        }
         state.lastFiredMed[entry.slot] = t;
         notifyClient(clientId, `${labels[entry.slot] || '💊'} Medicines Due`, entry.names,
           'med-' + entry.slot, [{ action: 'taken', title: '✅ Mark as Taken' }]);
@@ -274,6 +283,14 @@ self.addEventListener('message', e => {
     state.vacReminders = [];
     state.lastFiredVac = {};
   }
+  if (e.data.type === 'SET_TAKEN_SLOTS' && state) {
+    // Store which slots are fully taken today so checkAlarms can skip them
+    state.takenSlotsDate = e.data.date || '';
+    state.takenSlots = e.data.takenSlots || [];
+    // If a slot is now taken and we previously fired it, no action needed
+    // If a slot is taken before firing time, it will be skipped in checkAlarms
+    checkAlarms(); // re-run immediately in case we should cancel a pending notification
+  }
   if (e.data.type === 'SET_APPT_REMINDER' && state) {
     // Remove any existing reminder for this appt id, then add the new one
     state.apptReminders = (state.apptReminders || []).filter(r => r.id !== e.data.id);
@@ -308,7 +325,22 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || self.registration.scope;
   const clientId = e.notification.data && e.notification.data.clientId;
-  if (e.action === 'taken') { broadcastToClient(clientId, { type: 'MED_TAKEN', tag: e.notification.tag }); e.waitUntil(focusApp(url)); return; }
+  if (e.action === 'taken') {
+    // Extract slot from tag (e.g. 'med-morning' -> 'morning')
+    const tag = e.notification.tag || '';
+    const slot = tag.replace('med-', '');
+    // Mark this slot as taken in the SW state so it won't fire again today
+    if (clientId && slot && ['morning','afternoon','night'].includes(slot)) {
+      const state = getClientState(clientId);
+      const t = dateStr(new Date());
+      if (state.takenSlotsDate !== t) { state.takenSlotsDate = t; state.takenSlots = []; }
+      if (!state.takenSlots.includes(slot)) state.takenSlots.push(slot);
+      state.lastFiredMed[slot] = t; // prevent re-fire
+    }
+    broadcastToClient(clientId, { type: 'MED_TAKEN', tag: e.notification.tag });
+    e.waitUntil(focusApp(url));
+    return;
+  }
   if (e.action === 'drank') { broadcastToClient(clientId, { type: 'WATER_DRUNK' }); e.waitUntil(focusApp(url)); return; }
   e.waitUntil(focusApp(url));
 });
