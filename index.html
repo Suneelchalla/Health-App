@@ -1050,7 +1050,98 @@ function saveExpenses(arr){ try{ localStorage.setItem('hv_expenses', JSON.string
 function fmtDate(d){ try{ return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d||''; } }
 function today(){ return new Date().toISOString().split('T')[0]; }
 
-// ── LOCAL SYMPTOM ANALYSIS ENGINE ──────────────────
+/* ── Daily data cleanup ─────────────────────────────────────────────
+   Runs once per day on app open. Clears old hv_taken_* keys (previous
+   days' medicine tick data) and trims water log to 30 days.
+   Today's taken data and water count are always preserved — they only
+   clear naturally when a new date starts, since the key includes the date.
+   Also auto-expires medicines whose duration course has finished. */
+
+/* Parse a duration string like "5 days", "2 weeks", "1 month" into days.
+   Returns null for ongoing/indefinite/unrecognised strings. */
+function parseDurationToDays(str){
+  if(!str) return null;
+  const s = str.toLowerCase().trim();
+  // Ongoing / indefinite — never expire
+  if(/ongoing|indefinite|continue|long.?term|chronic|lifelong|as\s+directed|as\s+needed|prn|sos/.test(s)) return null;
+  const num = parseFloat(s);
+  if(isNaN(num)) return null;
+  if(/week/.test(s)) return Math.round(num * 7);
+  if(/month/.test(s)) return Math.round(num * 30);
+  if(/year/.test(s)) return Math.round(num * 365);
+  if(/day/.test(s) || /tablet|tab|dose/.test(s)) return Math.round(num);
+  // bare number like "5" — assume days
+  if(/^\d+$/.test(s)) return Math.round(num);
+  return null;
+}
+
+function runDailyCleanup(){
+  const t = today();
+  if(loadKey('hv_cleanup_date') === t) return; // already ran today — skip
+  saveKey('hv_cleanup_date', t);
+
+  // 1. Remove stale medicine-taken keys (hv_taken_YYYY-MM-DD) except today
+  try{
+    const toDelete = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('hv_taken_') && k !== 'hv_taken_' + t) toDelete.push(k);
+    }
+    toDelete.forEach(k => localStorage.removeItem(k));
+  }catch(e){}
+
+  // 2. Trim water log — keep only last 30 days to avoid localStorage bloat
+  try{
+    const log = getWaterLog();
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    let changed = false;
+    Object.keys(log).forEach(d => { if(d < cutoffStr){ delete log[d]; changed = true; } });
+    if(changed) saveWaterLog(log);
+  }catch(e){}
+
+  // 3. Auto-expire medicines whose duration course has finished.
+  //    A medicine is expired when: it has a date (start date), a parseable
+  //    duration like "5 days", and today is past startDate + durationDays.
+  //    Medicines with "Ongoing", "As directed", no date, or unparseable
+  //    durations are NEVER auto-expired — they stay active until deleted.
+  try{
+    // Run for the primary user + all family members
+    const memberIds = (U && U.members) ? U.members.map(m => m.id) : ['self'];
+    memberIds.forEach(mid => {
+      const storageKey = mid === 'self'
+        ? (U && U.email ? 'hv_medicines_self' : 'hv_medicines')
+        : 'hv_medicines_' + mid;
+      // Try both key formats (member-keyed and legacy)
+      const keys = [storageKey, 'hv_medicines_' + mid, 'hv_medicines'];
+      let meds = null, usedKey = null;
+      for(const k of keys){
+        try{
+          const raw = localStorage.getItem(k);
+          if(raw){ meds = JSON.parse(raw); usedKey = k; break; }
+        }catch(e){}
+      }
+      if(!meds || !meds.length) return;
+      let changed = false;
+      meds.forEach(m => {
+        if(m.active === false) return; // already inactive
+        if(!m.date) return;           // no start date recorded — can't calculate
+        const days = parseDurationToDays(m.duration);
+        if(!days) return;             // ongoing or unrecognised — don't expire
+        const startDate = new Date(m.date);
+        const endDate   = new Date(startDate);
+        endDate.setDate(endDate.getDate() + days);
+        const endStr = endDate.toISOString().split('T')[0];
+        if(t > endStr){
+          m.active = false;  // course finished — deactivate (not deleted, still in history)
+          m.endedOn = endStr;
+          changed = true;
+        }
+      });
+      if(changed) try{ localStorage.setItem(usedKey, JSON.stringify(meds)); }catch(e){}
+    });
+  }catch(e){}
+}
 const SYMPTOM_DB = {
   head: {
     headache:    { causes:['Tension headache (muscle tightness, stress or poor posture)','Dehydration or low blood sugar','Migraine episode (often one-sided, with light sensitivity)','Sinus congestion or allergies'], care:['Drink 2 glasses of water and rest in a quiet dark room','Apply a cold or warm compress to your forehead or neck','Over-the-counter paracetamol or ibuprofen may help mild headache'], flags:['Sudden thunderclap headache — worst ever','Headache with stiff neck and fever','Vision changes or weakness on one side'], urgency:'See doctor if no improvement in 2 days' },
@@ -1211,7 +1302,7 @@ function rHome(){
     : '';
 
   // ── Collect data for smart widgets ──────────────────
-  const hMeds        = getMeds();
+  const hMeds        = getMeds().filter(m => m.active !== false); // exclude expired courses
   const allSlots     = [];
   hMeds.forEach(m=>{
     if(m.morning)   allSlots.push(m.id+'-m');
@@ -4902,6 +4993,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   if(saved && saved.name && saved.members){
     // Fully logged-in — skip splash entirely
     U = saved;
+    runDailyCleanup(); // clear yesterday's taken/water data on new day
     go('home');
     return;
   }
@@ -4918,6 +5010,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
       if(cloudUser && cloudUser.name && cloudUser.members){
         U = cloudUser;
         try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+        runDailyCleanup();
         go('home');
       } else {
         go('splash');
@@ -5071,10 +5164,13 @@ function setTakenToday(arr){
   try{localStorage.setItem(key,JSON.stringify(arr));}catch(e){}
 }
 function renderTodayMedWidget(){
-  const meds=getMeds();
-  if(!meds.length) return `<div class="med-widget"><div class="med-widget-hdr"><span class="med-widget-t">💊 Today's Medicines</span><span class="med-widget-prog">None added</span></div><div style="padding:14px;text-align:center;font-size:12px;color:var(--g4)">No medicines yet. <span onclick="go('scan')" style="color:var(--blue);font-weight:700;cursor:pointer">+ Add one</span></div></div>`;
+  const allMeds = getMeds();
+  const meds = allMeds.filter(m => m.active !== false); // only active (non-expired) medicines
+  const expiredRecently = allMeds.filter(m => m.active === false && m.endedOn); // course-ended meds
+
+  if(!allMeds.length) return `<div class="med-widget"><div class="med-widget-hdr"><span class="med-widget-t">💊 Today's Medicines</span><span class="med-widget-prog">None added</span></div><div style="padding:14px;text-align:center;font-size:12px;color:var(--g4)">No medicines yet. <span onclick="go('scan')" style="color:var(--blue);font-weight:700;cursor:pointer">+ Add one</span></div></div>`;
+
   const slots=[];
-  const now=new Date().getHours();
   meds.forEach(m=>{
     if(m.morning)   slots.push({id:m.id+'-m', name:m.name, dose:m.dosage||'', slot:'morning',   icon:'🌅', time:'8:00 AM',  slotKey:'m'});
     if(m.afternoon) slots.push({id:m.id+'-a', name:m.name, dose:m.dosage||'', slot:'afternoon', icon:'☀️',  time:'2:00 PM',  slotKey:'a'});
@@ -5084,6 +5180,26 @@ function renderTodayMedWidget(){
   const taken=getTakenToday();
   const takenCount=slots.filter(s=>taken.includes(s.id)).length;
   const pct=slots.length?Math.round((takenCount/slots.length)*100):0;
+
+  const expiredHTML = expiredRecently.length ? `
+    <div style="padding:8px 13px 4px;border-top:.5px solid var(--g2)">
+      <div style="font-size:10px;font-weight:700;color:var(--g4);margin-bottom:6px">✅ COMPLETED COURSES</div>
+      ${expiredRecently.map(m=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.55">
+        <span style="font-size:14px">💊</span>
+        <div style="flex:1;font-size:11px;color:var(--g5);text-decoration:line-through">${m.name} ${m.dosage||''}</div>
+        <span style="font-size:10px;color:var(--green);font-weight:700;text-decoration:none">Course ended ${fmtDate(m.endedOn)}</span>
+      </div>`).join('')}
+    </div>` : '';
+
+  if(!slots.length) return `<div class="med-widget">
+    <div class="med-widget-hdr"><span class="med-widget-t">💊 Today's Medicines</span><span class="med-widget-prog">None active</span></div>
+    ${expiredHTML}
+    <div style="padding:8px 13px;display:flex;gap:8px">
+      <button onclick="go('scan')" style="flex:1;background:var(--bl);color:var(--bd);border:none;border-radius:9px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Medicine</button>
+      <button onclick="go('reminders')" style="flex:1;background:var(--gl);color:#1B5E20;border:none;border-radius:9px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Reminders</button>
+    </div>
+  </div>`;
+
   return `<div class="med-widget">
     <div class="med-widget-hdr">
       <span class="med-widget-t">💊 Today's Medicines</span>
@@ -5101,6 +5217,7 @@ function renderTodayMedWidget(){
         <div class="med-slot-check ${isTaken?'taken':''}" onclick="toggleMedTaken('${s.id}',this)">${isTaken?'✓':''}</div>
       </div>`;
     }).join('')}
+    ${expiredHTML}
     <div style="padding:8px 13px;display:flex;gap:8px">
       <button onclick="go('scan')" style="flex:1;background:var(--bl);color:var(--bd);border:none;border-radius:9px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">+ Add Medicine</button>
       <button onclick="go('reminders')" style="flex:1;background:var(--gl);color:#1B5E20;border:none;border-radius:9px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Reminders</button>
