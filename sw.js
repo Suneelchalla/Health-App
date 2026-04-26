@@ -18,7 +18,7 @@
  *  Bonus — periodicsync handler for Chrome-on-Android background wakeups
  */
 
-const CACHE_NAME = 'healthvault-v11';
+const CACHE_NAME = 'healthvault-v12';
 const ASSETS = [
   '/Health-App/', '/Health-App/index.html',
   '/Health-App/manifest.json', '/Health-App/icon-192.png', '/Health-App/icon-512.png'
