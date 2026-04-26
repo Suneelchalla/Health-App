@@ -686,16 +686,18 @@ function deleteCookie(name){
 
 function saveUser(){
   try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-  // Always write a fast-restore snapshot so app reopens to home, not blank
   try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
-  // Also save to cookie as ultimate fallback (survives Android PWA memory pressure)
+  // Always re-affirm last_email and clear logged_out so startApp restores correctly
+  if(U && U.email && !U.isGuest){
+    try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
+    try{ localStorage.removeItem('hv_logged_out'); }catch(e){}
+  }
+  // Cookie backup — survives Android PWA memory pressure and process kill
   try{
-    // Store full user in cookie (split into chunks if needed, but most users < 4KB)
     const userData = JSON.stringify(U);
     if(userData.length < 3800){
       setCookie('hv_user_backup', userData, 365);
     } else {
-      // Too large for one cookie — store just the essentials
       setCookie('hv_user_backup', JSON.stringify({
         name: U.name, email: U.email, phone: U.phone||'',
         age: U.age, gender: U.gender, blood: U.blood||'',
@@ -706,16 +708,14 @@ function saveUser(){
     }
   }catch(e){}
   if(U && U.email && !U.isGuest){
-    try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
-    // Keep local accounts registry in sync — store a deep copy so changes to U
-    // don't silently mutate the stored userData reference
+    // Keep local accounts registry in sync — store a deep copy
     try{
       const accounts=loadAccounts();
       if(!accounts[U.email]) accounts[U.email]={};
-      accounts[U.email].userData = JSON.parse(JSON.stringify(U)); // deep copy
+      accounts[U.email].userData = JSON.parse(JSON.stringify(U));
       saveAccounts();
     }catch(e){}
-    // Fire-and-forget: push session to Sessions sheet in Google Sheets
+    // Fire-and-forget cloud sync
     const logoutPwd = loadAccounts()[U.email]?.pwd || '';
     const logoutData = Object.assign({}, U);
     if(logoutPwd) logoutData._pwdHash = logoutPwd;
@@ -776,74 +776,77 @@ window.history.pushState({hvScreen:'init'}, '', window.location.href);
 // Handle Android/iOS restoring the app from memory (bfcache).
 // When this happens, JS does NOT re-run — so startApp() never fires again.
 // We detect the restore and navigate to home if the user is logged in.
+// Handle Android/iOS restoring the app from memory (bfcache).
+// JS does NOT re-run on bfcache restore — so startApp() never fires again.
+// We detect the restore and navigate to home if the user is logged in.
 window.addEventListener('pageshow', function(e){
-  if(e.persisted){
-    const loggedOut = localStorage.getItem('hv_logged_out');
-    if(loggedOut === '1') return;
-    const expectedEmail = localStorage.getItem('hv_last_email');
-
-    // Try accounts registry first (most durable)
-    if(expectedEmail){
-      try{
-        const accts = loadAccounts();
-        const acctUser = accts[expectedEmail] && accts[expectedEmail].userData;
-        if(acctUser && acctUser.name){
-          U = JSON.parse(JSON.stringify(acctUser));
-          go('home');
-          return;
-        }
-      }catch(ex){}
-    }
-
-    // Fallback: session snapshot
-    const snap = localStorage.getItem('hv_session_snapshot');
-    if(snap){
-      try{
-        const user = JSON.parse(snap);
-        if(user && user.name && (!expectedEmail || !user.email || user.email === expectedEmail)){
-          U = JSON.parse(JSON.stringify(user));
-          go('home');
-        }
-      }catch(ex){}
-    }
-  }
+  if(!e.persisted) return;
+  if(localStorage.getItem('hv_logged_out') === '1') return;
+  // Already on an app screen — nothing to do
+  if(U && U.name && U.members) return;
+  _tryRestoreToHome();
 });
 
-// Also handle app coming back from background on Android Chrome
+// App comes back from background on Android Chrome
 document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState === 'visible'){
-    const loggedOut = localStorage.getItem('hv_logged_out');
-    if(loggedOut === '1') return;
-    const currentScreen = _navHistory[_navHistory.length - 1] || '';
-    // Only act if we're stuck on an auth screen (not already on home/content)
-    if(!['splash','login','onboard','','init'].includes(currentScreen)) return;
-    const expectedEmail = localStorage.getItem('hv_last_email');
-    if(!expectedEmail) return; // no account registered on this device
-
-    // Try accounts registry first (most durable — survives process kill)
-    try{
-      const accts = loadAccounts();
-      const acctUser = accts[expectedEmail] && accts[expectedEmail].userData;
-      if(acctUser && acctUser.name){
-        U = JSON.parse(JSON.stringify(acctUser));
-        go('home');
-        return;
-      }
-    }catch(ex){}
-
-    // Fallback: session snapshot
-    try{
-      const snap = localStorage.getItem('hv_session_snapshot');
-      if(snap){
-        const user = JSON.parse(snap);
-        if(user && user.name && (!user.email || user.email === expectedEmail)){
-          U = JSON.parse(JSON.stringify(user));
-          go('home');
-        }
-      }
-    }catch(ex){}
-  }
+  if(document.visibilityState !== 'visible') return;
+  if(localStorage.getItem('hv_logged_out') === '1') return;
+  // Only act if stuck on an auth screen
+  const cur = _navHistory[_navHistory.length - 1] || '';
+  if(!['splash','login','onboard','','init'].includes(cur)) return;
+  _tryRestoreToHome();
 });
+
+// Shared restore helper used by both pageshow and visibilitychange
+function _tryRestoreToHome(){
+  function isValid(u){ return u && u.name && u.name !== 'Guest'; }
+
+  function applyUser(u){
+    try{ U = JSON.parse(JSON.stringify(u)); }catch(e){ U = u; }
+    if(!U.members || !U.members.length){
+      U.members = [{id:'self',name:U.name,role:'Me',age:U.age||'',gender:U.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
+    }
+    try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+    try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
+    try{ localStorage.removeItem('hv_logged_out'); }catch(e){}
+    go('home');
+  }
+
+  const expectedEmail = (localStorage.getItem('hv_last_email') || '').toLowerCase();
+
+  // 1. Accounts registry (most durable)
+  try{
+    const accts = loadAccounts();
+    if(expectedEmail && accts[expectedEmail]){
+      const ud = accts[expectedEmail].userData;
+      if(isValid(ud)){ applyUser(ud); return; }
+    }
+    // Any account as fallback
+    const keys = Object.keys(accts);
+    for(let i = 0; i < keys.length; i++){
+      const ud = accts[keys[i]] && accts[keys[i]].userData;
+      if(isValid(ud)){ applyUser(ud); return; }
+    }
+  }catch(e){}
+
+  // 2. hv_user
+  try{
+    const u = loadUser();
+    if(isValid(u)){ applyUser(u); return; }
+  }catch(e){}
+
+  // 3. Snapshot
+  try{
+    const s = localStorage.getItem('hv_session_snapshot');
+    if(s){ const u = JSON.parse(s); if(isValid(u)){ applyUser(u); return; } }
+  }catch(e){}
+
+  // 4. Cookie
+  try{
+    const ck = getCookie('hv_user_backup');
+    if(ck){ const u = JSON.parse(ck); if(isValid(u)){ applyUser(u); return; } }
+  }catch(e){}
+}
 
 function goProfile(){ go('profile'); }
 // Navigation history stack for back-button support
@@ -1438,26 +1441,41 @@ function renderOB(){
 function setU(k,v,el,cls){U[k]=v;(cls?document.querySelectorAll('.'+cls):el.closest('.pills').querySelectorAll('.popt')).forEach(o=>o.classList.remove('on'));el.classList.add('on');}
 function nextOB(){if(obStep<OB_TOTAL-1){obStep++;renderOB();}else finishOB();}
 function finishOB(){
-  if(!U.name)U.name='User';
+  if(!U.name) U.name='User';
   U.members=[{id:'self',name:U.name,role:'Me',age:U.age,gender:U.gender,avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
-  // 1. Save account credentials to local registry FIRST (so saveUser has correct data)
+
+  // 0. Write hv_last_email FIRST — so startApp can find this account on any reopen
+  try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
+  try{ localStorage.removeItem('hv_logged_out'); }catch(e){}
+
+  // 1. Save account credentials to local registry with a DEEP COPY of U
+  //    (so subsequent deletes of _regPwd etc don't corrupt the stored entry)
   if(U.email && U._regPwd){
-    const accounts=loadAccounts();
-    const secQIdx = U._secQIdx !== undefined ? U._secQIdx : null;
-    const secQAns = U._secQAns || '';
-    accounts[U.email]={pwd:U._regPwd, userData:U, secQIdx, secQAns};
+    const accounts = loadAccounts();
+    const secQIdx  = U._secQIdx !== undefined ? U._secQIdx : null;
+    const secQAns  = U._secQAns || '';
+    const snapshot = JSON.parse(JSON.stringify(U)); // deep copy before deleting private fields
+    delete snapshot._regPwd;
+    delete snapshot._secQIdx;
+    delete snapshot._secQAns;
+    accounts[U.email] = { pwd: U._regPwd, userData: snapshot, secQIdx, secQAns };
     saveAccounts();
+    // Now safe to delete from U itself
     delete U._regPwd;
     delete U._secQIdx;
     delete U._secQAns;
   }
-  // 2. Save session to localStorage
+
+  // 2. Write all session keys — hv_user, snapshot, cookie
   saveUser();
-  // 3. Push full profile + session (with pwd hash) to Google Sheets
+
+  // 3. Double-write snapshot to be absolutely sure (saveUser may run before members was set above)
+  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
+
+  // 4. Push to Google Sheets (fire-and-forget)
   const storedPwd = loadAccounts()[U.email]?.pwd || '';
   saveAllToSheets(storedPwd);
-  // Ensure snapshot is written for new users (saveUser() may have run before members was set)
-  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); localStorage.removeItem('hv_logged_out'); }catch(e){}
+
   go('home');
 }
 
@@ -5800,13 +5818,12 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 })();
 
 (function startApp(){
-  // If user explicitly logged out, never auto-restore — go straight to splash
+  // ── Explicitly logged out → show splash ─────────────────────────────────
   if(localStorage.getItem('hv_logged_out') === '1'){
     go('splash');
     return;
   }
 
-  // Helper: ensure user object has a valid members array
   function ensureMembers(user){
     if(!user.members || !user.members.length){
       user.members = [{id:'self',name:user.name,role:'Me',age:user.age||'',
@@ -5815,70 +5832,70 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     return user;
   }
 
-  // Helper: activate a restored user and go home
   function restoreUser(user){
-    U = ensureMembers(JSON.parse(JSON.stringify(user))); // always deep-copy
-    try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-    try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
-    try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
+    U = ensureMembers(JSON.parse(JSON.stringify(user)));
+    try{ localStorage.setItem('hv_user',             JSON.stringify(U)); }catch(e){}
+    try{ localStorage.setItem('hv_session_snapshot',  JSON.stringify(U)); }catch(e){}
+    try{ localStorage.setItem('hv_last_email',         U.email||'');      }catch(e){}
+    try{ localStorage.removeItem('hv_logged_out'); }catch(e){}
+    try{
+      const ud = JSON.stringify(U);
+      if(ud.length < 3800) setCookie('hv_user_backup', ud, 365);
+    }catch(e){}
     runDailyCleanup();
     go('home');
   }
 
-  const expectedEmail = localStorage.getItem('hv_last_email') || null;
+  // isValid: a user object is usable if it has at least a name
+  function isValid(u){ return u && typeof u === 'object' && u.name && u.name !== 'Guest'; }
 
-  // ── SOURCE ORDER (most → least durable) ──────────────────────────────
-  // hv_accounts is the most reliable: it survives process-kill, memory
-  // pressure, and bfcache eviction because it's written on every save.
-  // hv_user / hv_session_snapshot can be missing if Android killed the
-  // process before the write completed.
+  const expectedEmail = (localStorage.getItem('hv_last_email') || '').trim().toLowerCase();
 
-  // 1. Accounts registry keyed by last email — most durable
-  if(expectedEmail){
-    try{
-      const accts = loadAccounts();
-      const acctUser = accts[expectedEmail] && accts[expectedEmail].userData;
-      if(acctUser && acctUser.name){
-        restoreUser(acctUser);
-        return;
-      }
-    }catch(e){}
-  }
+  // ── Try every storage source. First valid result wins. ──────────────────
 
-  // 2. hv_user (primary localStorage key)
+  // 1. hv_accounts registry — most durable, written on every action
   try{
-    const u = loadUser();
-    if(u && u.name && (!expectedEmail || !u.email || u.email === expectedEmail)){
-      restoreUser(u); return;
+    const accts = loadAccounts();
+    // First try the known last-email account
+    if(expectedEmail && accts[expectedEmail]){
+      const ud = accts[expectedEmail].userData;
+      if(isValid(ud)){ restoreUser(ud); return; }
+    }
+    // Fallback: any account in registry (handles case where hv_last_email was cleared)
+    const allKeys = Object.keys(accts);
+    for(let i = 0; i < allKeys.length; i++){
+      const ud = accts[allKeys[i]] && accts[allKeys[i]].userData;
+      if(isValid(ud)){ restoreUser(ud); return; }
     }
   }catch(e){}
 
-  // 3. Session snapshot
+  // 2. hv_user (primary fast-access key)
+  try{
+    const u = loadUser();
+    if(isValid(u)){ restoreUser(u); return; }
+  }catch(e){}
+
+  // 3. hv_session_snapshot
   try{
     const s = localStorage.getItem('hv_session_snapshot');
     if(s){
       const u = JSON.parse(s);
-      if(u && u.name && (!expectedEmail || !u.email || u.email === expectedEmail)){
-        restoreUser(u); return;
-      }
+      if(isValid(u)){ restoreUser(u); return; }
     }
   }catch(e){}
 
-  // 4. Cookie backup (survives Android PWA memory pressure)
+  // 4. Cookie backup (last resort — survives process kill + memory eviction)
   try{
     const ck = getCookie('hv_user_backup');
     if(ck){
       const u = JSON.parse(ck);
-      if(u && u.name && (!expectedEmail || !u.email || u.email === expectedEmail)){
-        restoreUser(u); return;
-      }
+      if(isValid(u)){ restoreUser(u); return; }
     }
   }catch(e){}
 
-  // 5. Nothing found locally at all — truly no account on this device
-  //    Only attempt cloud if we have an email but ALL local stores are empty
-  //    (e.g. user cleared browser data). Do NOT redirect to login on cloud
-  //    failure — show splash instead so user can sign in fresh.
+  // ── Nothing found locally at all ────────────────────────────────────────
+  // Only reach here if the device has truly no account data anywhere.
+  // If we have an email on record, try cloud once — otherwise show splash.
   if(expectedEmail){
     const initSplash = document.getElementById('init-splash');
     if(initSplash){
@@ -5887,22 +5904,21 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     }
     let resolved = false;
     const timer = setTimeout(function(){
-      // Cloud timed out — go to splash (not login), user can tap Get Started
-      if(!resolved){ resolved=true; go('splash'); }
+      if(!resolved){ resolved = true; go('login'); }
     }, 4000);
     loadUserFromCloud(expectedEmail).then(function(cloudUser){
       if(resolved) return;
       resolved = true;
       clearTimeout(timer);
-      if(cloudUser && cloudUser.name){ restoreUser(cloudUser); }
-      else { go('splash'); } // no data found — fresh start
+      if(isValid(cloudUser)){ restoreUser(cloudUser); }
+      else { go('login'); }
     }).catch(function(){
-      if(!resolved){ resolved=true; clearTimeout(timer); go('splash'); }
+      if(!resolved){ resolved = true; clearTimeout(timer); go('login'); }
     });
     return;
   }
 
-  // Truly fresh install — show splash/get-started
+  // Truly fresh install — no account anywhere
   go('splash');
 })();
 
