@@ -770,17 +770,31 @@ window.history.pushState({hvScreen:'init'}, '', window.location.href);
 // We detect the restore and navigate to home if the user is logged in.
 window.addEventListener('pageshow', function(e){
   if(e.persisted){
-    const snap = localStorage.getItem('hv_session_snapshot');
     const loggedOut = localStorage.getItem('hv_logged_out');
+    if(loggedOut === '1') return;
     const expectedEmail = localStorage.getItem('hv_last_email');
-    if(snap && loggedOut !== '1'){
+
+    // Try accounts registry first (most durable)
+    if(expectedEmail){
       try{
-        const user = JSON.parse(snap);
-        // Only restore if email matches the expected active account
-        if(user && user.name && (!expectedEmail || !user.email || user.email === expectedEmail)){
-          U = JSON.parse(JSON.stringify(user)); // deep copy
+        const accts = loadAccounts();
+        const acctUser = accts[expectedEmail] && accts[expectedEmail].userData;
+        if(acctUser && acctUser.name){
+          U = JSON.parse(JSON.stringify(acctUser));
           go('home');
           return;
+        }
+      }catch(ex){}
+    }
+
+    // Fallback: session snapshot
+    const snap = localStorage.getItem('hv_session_snapshot');
+    if(snap){
+      try{
+        const user = JSON.parse(snap);
+        if(user && user.name && (!expectedEmail || !user.email || user.email === expectedEmail)){
+          U = JSON.parse(JSON.stringify(user));
+          go('home');
         }
       }catch(ex){}
     }
@@ -792,16 +806,30 @@ document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible'){
     const loggedOut = localStorage.getItem('hv_logged_out');
     if(loggedOut === '1') return;
-    const snap = localStorage.getItem('hv_session_snapshot');
-    if(!snap) return;
+    const currentScreen = _navHistory[_navHistory.length - 1] || '';
+    // Only act if we're stuck on an auth screen (not already on home/content)
+    if(!['splash','login','onboard','','init'].includes(currentScreen)) return;
     const expectedEmail = localStorage.getItem('hv_last_email');
+    if(!expectedEmail) return; // no account registered on this device
+
+    // Try accounts registry first (most durable — survives process kill)
     try{
-      const user = JSON.parse(snap);
-      const currentScreen = _navHistory[_navHistory.length - 1] || '';
-      // Only restore if on an auth screen AND email matches active account
-      if(user && user.name && ['splash','login','onboard',''].includes(currentScreen)){
-        if(!expectedEmail || !user.email || user.email === expectedEmail){
-          U = JSON.parse(JSON.stringify(user)); // deep copy
+      const accts = loadAccounts();
+      const acctUser = accts[expectedEmail] && accts[expectedEmail].userData;
+      if(acctUser && acctUser.name){
+        U = JSON.parse(JSON.stringify(acctUser));
+        go('home');
+        return;
+      }
+    }catch(ex){}
+
+    // Fallback: session snapshot
+    try{
+      const snap = localStorage.getItem('hv_session_snapshot');
+      if(snap){
+        const user = JSON.parse(snap);
+        if(user && user.name && (!user.email || user.email === expectedEmail)){
+          U = JSON.parse(JSON.stringify(user));
           go('home');
         }
       }
@@ -5740,52 +5768,69 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 
   // Helper: activate a restored user and go home
   function restoreUser(user){
-    U = ensureMembers(user);
+    U = ensureMembers(JSON.parse(JSON.stringify(user))); // always deep-copy
     try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
     try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
+    try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
     runDailyCleanup();
     go('home');
   }
 
-  // Try every local storage location in order — all synchronous, no waiting
   const expectedEmail = localStorage.getItem('hv_last_email') || null;
-  const sources = [
-    // 1. Primary: hv_user
-    function(){ return loadUser(); },
-    // 2. Session snapshot (written on every saveUser call)
-    function(){
-      try{ const s=localStorage.getItem('hv_session_snapshot'); return s?JSON.parse(s):null; }catch(e){ return null; }
-    },
-    // 3. Accounts registry (keyed by last email)
-    function(){
-      try{
-        const email=localStorage.getItem('hv_last_email');
-        if(!email) return null;
-        const accts=loadAccounts();
-        return (accts[email]&&accts[email].userData)||null;
-      }catch(e){ return null; }
-    },
-  ];
 
-  for(const source of sources){
+  // ── SOURCE ORDER (most → least durable) ──────────────────────────────
+  // hv_accounts is the most reliable: it survives process-kill, memory
+  // pressure, and bfcache eviction because it's written on every save.
+  // hv_user / hv_session_snapshot can be missing if Android killed the
+  // process before the write completed.
+
+  // 1. Accounts registry keyed by last email — most durable
+  if(expectedEmail){
     try{
-      const user = source();
-      if(user && user.name){
-        // CRITICAL: if we know which account should be active, only restore
-        // a user whose email matches. This prevents old-user bleed-through.
-        if(expectedEmail && user.email && user.email !== expectedEmail){
-          continue; // skip — belongs to a different account
-        }
-        restoreUser(user);
+      const accts = loadAccounts();
+      const acctUser = accts[expectedEmail] && accts[expectedEmail].userData;
+      if(acctUser && acctUser.name){
+        restoreUser(acctUser);
         return;
       }
     }catch(e){}
   }
 
-  // Nothing local found — try cloud as last resort (only if we have an email)
-  const lastEmail = loadKey('hv_last_email');
-  if(lastEmail){
-    // The HTML already shows the splash logo — just update the text
+  // 2. hv_user (primary localStorage key)
+  try{
+    const u = loadUser();
+    if(u && u.name && (!expectedEmail || !u.email || u.email === expectedEmail)){
+      restoreUser(u); return;
+    }
+  }catch(e){}
+
+  // 3. Session snapshot
+  try{
+    const s = localStorage.getItem('hv_session_snapshot');
+    if(s){
+      const u = JSON.parse(s);
+      if(u && u.name && (!expectedEmail || !u.email || u.email === expectedEmail)){
+        restoreUser(u); return;
+      }
+    }
+  }catch(e){}
+
+  // 4. Cookie backup (survives Android PWA memory pressure)
+  try{
+    const ck = getCookie('hv_user_backup');
+    if(ck){
+      const u = JSON.parse(ck);
+      if(u && u.name && (!expectedEmail || !u.email || u.email === expectedEmail)){
+        restoreUser(u); return;
+      }
+    }
+  }catch(e){}
+
+  // 5. Nothing found locally at all — truly no account on this device
+  //    Only attempt cloud if we have an email but ALL local stores are empty
+  //    (e.g. user cleared browser data). Do NOT redirect to login on cloud
+  //    failure — show splash instead so user can sign in fresh.
+  if(expectedEmail){
     const initSplash = document.getElementById('init-splash');
     if(initSplash){
       const tag = initSplash.querySelector('div:last-child');
@@ -5793,21 +5838,22 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     }
     let resolved = false;
     const timer = setTimeout(function(){
-      if(!resolved){ resolved=true; go('login'); }
-    }, 5000);
-    loadUserFromCloud(lastEmail).then(function(cloudUser){
+      // Cloud timed out — go to splash (not login), user can tap Get Started
+      if(!resolved){ resolved=true; go('splash'); }
+    }, 4000);
+    loadUserFromCloud(expectedEmail).then(function(cloudUser){
       if(resolved) return;
       resolved = true;
       clearTimeout(timer);
       if(cloudUser && cloudUser.name){ restoreUser(cloudUser); }
-      else { go('login'); }
+      else { go('splash'); } // no data found — fresh start
     }).catch(function(){
-      if(!resolved){ resolved=true; clearTimeout(timer); go('login'); }
+      if(!resolved){ resolved=true; clearTimeout(timer); go('splash'); }
     });
     return;
   }
 
-  // Truly fresh install — show splash
+  // Truly fresh install — show splash/get-started
   go('splash');
 })();
 
@@ -5855,7 +5901,28 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     if(isRealHost){
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(r => console.log('SW registered:', r.scope))
+          .then(r => {
+            console.log('SW registered:', r.scope);
+            // Force new SW to activate immediately — skips the "waiting" state
+            // so updated index.html is served on next open instead of old cache
+            if(r.waiting){
+              r.waiting.postMessage({type:'SKIP_WAITING'});
+            }
+            r.addEventListener('updatefound', () => {
+              const newWorker = r.installing;
+              if(newWorker){
+                newWorker.addEventListener('statechange', () => {
+                  if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+                    // New SW installed — reload once to serve fresh files
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                      window.location.reload();
+                    });
+                    newWorker.postMessage({type:'SKIP_WAITING'});
+                  }
+                });
+              }
+            });
+          })
           .catch(e => console.warn('SW registration failed:', e));
       });
     }
