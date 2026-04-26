@@ -179,13 +179,9 @@ body.dark .qa .ql{color:#E0E0E0}
 
 
 /* LOGIN */
-.login-top{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:36px 24px 30px;color:#fff;flex-shrink:0;text-align:center;display:flex;flex-direction:column;align-items:center}
-.login-top-logo{width:72px;height:72px;background:rgba(255,255,255,.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:1.5px solid rgba(255,255,255,.3);animation:loginLogoIn .75s cubic-bezier(0.34,1.56,0.64,1) both}
-.login-top-logo svg{width:38px;height:38px;stroke:#fff;fill:none;stroke-width:2}
-.login-top h1{animation:loginTextIn .45s ease .55s both}
-.login-top p{animation:loginTextIn .45s ease .7s both}
-@keyframes loginLogoIn{0%{transform:scale(0.15) rotate(-20deg);opacity:0}55%{transform:scale(1.18) rotate(4deg);opacity:1}75%{transform:scale(0.93) rotate(-2deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
-@keyframes loginTextIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.login-top{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:36px 24px 30px;color:#fff;flex-shrink:0}
+.login-top-logo{width:50px;height:50px;background:rgba(255,255,255,.2);border-radius:15px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;border:1.5px solid rgba(255,255,255,.3)}
+.login-top-logo svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2}
 .login-top h1{font-size:24px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px}
 .login-top p{font-size:13px;opacity:.84;line-height:1.5}
 .ltabs{display:flex;background:var(--g1);border-radius:11px;padding:3px;gap:2px;margin-bottom:18px;border:.5px solid var(--g2)}
@@ -585,7 +581,7 @@ body.dark .qa .ql{color:#E0E0E0}
 <body>
 <div class="wrap">
   <div class="badge-top">
-    <svg viewBox="0 0 24 24"><path d="M6 7h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M12 11v6M9 14h6" stroke-linecap="round"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg>
     <b>HealthVault</b>
   </div>
   <div class="phone">
@@ -601,7 +597,7 @@ body.dark .qa .ql{color:#E0E0E0}
       <!-- Instant splash shown before JS runs — replaced by startApp() -->
       <div id="init-splash" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#1A73E8,#0D47A1);padding:40px 28px;text-align:center">
         <div style="width:84px;height:84px;background:rgba(255,255,255,.18);border-radius:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid rgba(255,255,255,.3)">
-          <svg viewBox="0 0 24 24" width="46" height="46" stroke="#fff" fill="none" stroke-width="2"><path d="M6 7h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M12 11v6M9 14h6" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24" width="46" height="46" stroke="#fff" fill="none" stroke-width="1.8"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg>
         </div>
         <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:-.5px">HealthVault</div>
         <div style="font-size:14px;color:rgba(255,255,255,.82);margin-top:12px;line-height:1.55">Your complete personal health companion</div>
@@ -830,19 +826,6 @@ function go(s) {
   SN.style.display = isAuth ? 'none' : 'flex';
   // Push browser history entry so swipe-back navigates within app instead of exiting
   if(!isAuth) window.history.pushState({hvScreen:s}, '', window.location.href);
-  // Persist session on every navigation so cookie survives Android full close
-  if(!isAuth && U && U.name){
-    try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-    try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
-    try{
-      const _ud = JSON.stringify(U);
-      setCookie('hv_user_backup', _ud.length < 3800 ? _ud : JSON.stringify({
-        name:U.name,email:U.email,phone:U.phone||'',age:U.age,gender:U.gender,
-        blood:U.blood||'',isGuest:U.isGuest||false,members:U.members,
-        allergies:U.allergies||'',conditions:U.conditions||''
-      }), 365);
-    }catch(e){}
-  }
   ['home','body','scan','lab','tips','more','search','profile','family','appointments'].forEach(t => {
     const e = $('T-'+t); if(e) e.className = 'tab'+(t===s?' on':'');
   });
@@ -874,7 +857,7 @@ function go(s) {
 function rSplash(){
   TB.style.display='none'; SN.style.display='none';
   SCR.innerHTML=`<div class="splash sc">
-  <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M6 7h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M12 11v6M9 14h6" stroke-linecap="round"/></svg></div>
+  <div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
   <div class="sp-name">HealthVault</div>
   <div class="sp-tag">Your complete personal health companion<br>Safe . Private . Smart . Always with you</div>
   <div style="position:relative;z-index:1;margin-top:48px;width:100%">
@@ -900,7 +883,7 @@ let loginMode='login';
 function rLogin(){
   SCR.innerHTML=`<div class="sc" style="height:100%;overflow-y:auto;display:flex;flex-direction:column">
   <div class="login-top">
-    <div class="login-top-logo"><svg viewBox="0 0 24 24" width="38" height="38" stroke="#fff" fill="none" stroke-width="2"><path d="M6 7h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M12 11v6M9 14h6" stroke-linecap="round"/></svg></div>
+    <div class="login-top-logo"><svg viewBox="0 0 24 24" width="26" height="26" stroke="#fff" fill="none" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div>
     <h1>Welcome to HealthVault</h1>
     <p>Your safe space for managing health, medicines, reports and family wellness</p>
   </div>
@@ -918,28 +901,15 @@ function renderLF(m){
     <div class="fld"><div class="flbl">Email or Mobile Number</div><input class="inp" id="fe" type="text" inputmode="email" placeholder="Email or 10-digit mobile number" autocomplete="username"/></div>
     <div class="fld"><div class="flbl">Password</div><div class="pwd-wrap"><input class="inp" id="fp" type="password" placeholder="Your password"/><button class="pwd-eye" onclick="togglePwd('fp',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <button class="btn" style="margin-top:6px" onclick="doLogin()">Sign In</button>
-    <div style="text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:11px;font-weight:700" onclick="showForgotPassword()">Forgot password?</div>
+    <div style="text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:11px;font-weight:700">Forgot password?</div>
     <div class="or-div"><span>or continue with</span></div>
-    <button class="soc-btn" onclick="doGoogle()"><svg viewBox="0 0 24 24" width="19" height="19"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>`;
+    <button class="soc-btn" onclick="doGoogle()"><svg viewBox="0 0 24 24" width="19" height="19"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
+    <div class="guest-lnk" onclick="doGuest()">Continue as Guest (limited features)</div>`;
   else c.innerHTML=`
     <div class="fld"><div class="flbl">Full Name</div><input class="inp" id="fn" type="text" placeholder="Your full name" autocomplete="name"/></div>
     <div class="fld"><div class="flbl">Email or Mobile Number</div><input class="inp" id="fe" type="text" inputmode="email" placeholder="Email or 10-digit mobile number" autocomplete="username"/></div>
     <div class="fld"><div class="flbl">Password</div><div class="pwd-wrap"><input class="inp" id="fp" type="password" placeholder="Min 6 characters"/><button class="pwd-eye" onclick="togglePwd('fp',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <div class="fld"><div class="flbl">Confirm Password</div><div class="pwd-wrap"><input class="inp" id="fp2" type="password" placeholder="Repeat password"/><button class="pwd-eye" onclick="togglePwd('fp2',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-    <div class="fld"><div class="flbl">Security Question</div>
-      <select class="sel" id="fsq">
-        <option value="">-- Choose a question --</option>
-        <option value="pet">What was your first pet's name?</option>
-        <option value="school">What is the name of your first school?</option>
-        <option value="city">In which city were you born?</option>
-        <option value="mother">What is your mother's maiden name?</option>
-        <option value="bestfriend">What is the name of your childhood best friend?</option>
-        <option value="food">What is your favourite food?</option>
-      </select>
-    </div>
-    <div class="fld"><div class="flbl">Your Answer <span style="font-size:10px;color:var(--g4);font-weight:400">(remember this — used to reset password)</span></div>
-      <input class="inp" id="fsa" type="text" placeholder="Your answer (case-insensitive)"/>
-    </div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px"><input type="checkbox" id="fc" style="margin-top:3px;cursor:pointer"/><label for="fc" style="font-size:11px;color:var(--g5);line-height:1.5;cursor:pointer">I agree to the <span style="color:var(--blue);font-weight:700">Terms</span> and <span style="color:var(--blue);font-weight:700">Privacy Policy</span>. My health data is encrypted and never shared without consent.</label></div>
     <button class="btn" style="margin-top:4px" onclick="doSignup()">Create Account</button>
     <div class="or-div"><span>or</span></div>
@@ -1005,10 +975,7 @@ async function doLogin(){
     const saved=accounts[loginKey].userData;
     if(saved && saved.name && saved.members){
       U=saved;
-      saveUser();
-      try{localStorage.removeItem('hv_logged_out');deleteCookie('hv_user_backup');}catch(ex){}
-      // Immediately write cookie so it's ready before any navigation
-      try{ const _ud=JSON.stringify(U); setCookie('hv_user_backup',_ud.length<3800?_ud:JSON.stringify({name:U.name,email:U.email,phone:U.phone||'',age:U.age,gender:U.gender,blood:U.blood||'',isGuest:false,members:U.members,allergies:U.allergies||'',conditions:U.conditions||''}),365); }catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
       return;
@@ -1071,152 +1038,13 @@ async function doSignup(){
     showE(signupIsPhone ? 'An account with this mobile number already exists. Please sign in.' : 'An account with this email already exists. Please sign in.');
     return;
   }
-  // Validate security question
-  const sq=$('fsq')?.value, sa=$('fsa')?.value.trim().toLowerCase();
-  if(!sq){showE('Please choose a security question.');return;}
-  if(!sa||sa.length<2){showE('Please enter your security answer.');return;}
   U.name=n;
-  U.email=signupKey;
-  U.phone=signupIsPhone ? e.replace(/\s/g,'') : '';
+  U.email=signupKey;   // store normalised key as email (used as account identifier)
+  U.phone=signupIsPhone ? e.replace(/\s/g,'') : ''; // store raw phone separately if provided
   U._regPwd=await hashPwd(p);
-  U._secQ=sq;
-  U._secA=sa; // stored lowercase for case-insensitive matching
   try{ localStorage.setItem('hv_last_email', signupKey); }catch(ex){}
   go('onboard');
 }
-const SECURITY_QUESTIONS = {
-  pet:        "What was your first pet's name?",
-  school:     "What is the name of your first school?",
-  city:       "In which city were you born?",
-  mother:     "What is your mother's maiden name?",
-  bestfriend: "What is the name of your childhood best friend?",
-  food:       "What is your favourite food?",
-};
-
-function showForgotPassword(){
-  const ov = document.createElement('div');
-  ov.id = 'forgot-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-  ov.innerHTML = `
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:26px 20px 40px;width:100%;max-width:480px">
-      <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 20px"></div>
-      <div style="font-size:18px;font-weight:800;color:var(--g6);margin-bottom:4px">🔑 Reset Password</div>
-      <div style="font-size:12px;color:var(--g4);margin-bottom:18px">Enter your account and answer your security question</div>
-      <div id="fp-step1">
-        <div class="fld"><div class="flbl">Email or Mobile Number</div>
-          <input class="inp" id="fp-identity" type="text" placeholder="Email or 10-digit mobile number"/>
-        </div>
-        <button class="btn" onclick="forgotStep1()">Continue →</button>
-        <button class="btn2" onclick="document.getElementById('forgot-overlay').remove()">Cancel</button>
-      </div>
-      <div id="fp-step2" style="display:none">
-        <div id="fp-q-display" style="background:var(--bl);border-radius:11px;padding:12px 14px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--bd)"></div>
-        <div class="fld"><div class="flbl">Your Answer</div>
-          <input class="inp" id="fp-answer" type="text" placeholder="Type your answer"/>
-        </div>
-        <button class="btn" onclick="forgotStep2()">Verify Answer →</button>
-        <button class="btn2" onclick="document.getElementById('forgot-overlay').remove()">Cancel</button>
-      </div>
-      <div id="fp-step3" style="display:none">
-        <div style="background:var(--gl);border-radius:11px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#1B5E20;font-weight:600">✅ Answer correct! Set your new password.</div>
-        <div class="fld"><div class="flbl">New Password</div>
-          <div class="pwd-wrap"><input class="inp" id="fp-newpwd" type="password" placeholder="Min 6 characters"/>
-          <button class="pwd-eye" onclick="togglePwd('fp-newpwd',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          </div>
-        </div>
-        <div class="fld"><div class="flbl">Confirm New Password</div>
-          <div class="pwd-wrap"><input class="inp" id="fp-newpwd2" type="password" placeholder="Repeat new password"/>
-          <button class="pwd-eye" onclick="togglePwd('fp-newpwd2',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          </div>
-        </div>
-        <button class="btn" onclick="forgotStep3()">Reset Password & Sign In</button>
-        <button class="btn2" onclick="document.getElementById('forgot-overlay').remove()">Cancel</button>
-      </div>
-      <div id="fp-err" style="display:none;background:var(--rl);color:#C5221F;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:600;margin-top:10px"></div>
-    </div>`;
-  ov.addEventListener('click', e => { if(e.target===ov) ov.remove(); });
-  document.body.appendChild(ov);
-}
-
-function fpShowErr(msg){
-  const el=document.getElementById('fp-err');
-  if(el){el.textContent=msg;el.style.display='block';}
-}
-function fpHideErr(){
-  const el=document.getElementById('fp-err');
-  if(el) el.style.display='none';
-}
-
-// Step 1: verify account exists and has a security question
-function forgotStep1(){
-  fpHideErr();
-  const identity = (document.getElementById('fp-identity')?.value||'').trim();
-  if(!identity){ fpShowErr('Please enter your email or mobile number.'); return; }
-  const isPhone = /^[6-9]\d{9}$/.test(identity.replace(/\s/g,''));
-  const accountKey = isPhone ? identity.replace(/\s/g,'')+'@phone.hv' : identity;
-  const accounts = loadAccounts();
-  const acct = accounts[accountKey];
-  if(!acct){ fpShowErr('No account found for this email or mobile number.'); return; }
-  const secQ = acct.secQ || acct.userData?._secQ;
-  if(!secQ){ fpShowErr('No security question set for this account. Please contact support.'); return; }
-  // Store for next steps
-  window._fpKey = accountKey;
-  // Show the question
-  const qText = SECURITY_QUESTIONS[secQ] || secQ;
-  const qDisplay = document.getElementById('fp-q-display');
-  if(qDisplay) qDisplay.textContent = '🔐 ' + qText;
-  document.getElementById('fp-step1').style.display = 'none';
-  document.getElementById('fp-step2').style.display = 'block';
-  setTimeout(()=>{ document.getElementById('fp-answer')?.focus(); }, 100);
-}
-
-// Step 2: verify security answer
-function forgotStep2(){
-  fpHideErr();
-  const answer = (document.getElementById('fp-answer')?.value||'').trim().toLowerCase();
-  if(!answer){ fpShowErr('Please enter your answer.'); return; }
-  const accounts = loadAccounts();
-  const acct = accounts[window._fpKey];
-  const storedAnswer = acct.secA || acct.userData?._secA || '';
-  if(!storedAnswer || answer !== storedAnswer){
-    fpShowErr('Incorrect answer. Please try again.');
-    return;
-  }
-  // Answer correct — show new password fields
-  document.getElementById('fp-step2').style.display = 'none';
-  document.getElementById('fp-step3').style.display = 'block';
-  setTimeout(()=>{ document.getElementById('fp-newpwd')?.focus(); }, 100);
-}
-
-// Step 3: reset password and log in
-async function forgotStep3(){
-  fpHideErr();
-  const p1 = document.getElementById('fp-newpwd')?.value||'';
-  const p2 = document.getElementById('fp-newpwd2')?.value||'';
-  if(p1.length < 6){ fpShowErr('Password must be at least 6 characters.'); return; }
-  if(p1 !== p2){ fpShowErr('Passwords do not match.'); return; }
-  const newHash = await hashPwd(p1);
-  const accounts = loadAccounts();
-  if(!accounts[window._fpKey]) accounts[window._fpKey] = {};
-  accounts[window._fpKey].pwd = newHash;
-  // Also restore user data if available
-  const userData = accounts[window._fpKey].userData;
-  saveAccounts();
-  // Log user in automatically
-  if(userData && userData.name){
-    U = userData;
-    saveUser();
-    try{ localStorage.setItem('hv_last_email', window._fpKey); localStorage.removeItem('hv_logged_out'); }catch(e){}
-  }
-  document.getElementById('forgot-overlay')?.remove();
-  if(U && U.name){
-    go('home');
-  } else {
-    // Just close and let them sign in with new password
-    showE('Password reset! Please sign in with your new password.');
-  }
-}
-
 function doGoogle(){
   // Real Google OAuth is not integrated -- show a clear message instead of
   // silently creating a fake shared account (which caused data collisions).
@@ -1295,9 +1123,8 @@ function doLogout(){
     localStorage.removeItem('hv_user');
     localStorage.removeItem('hv_last_email');
     localStorage.removeItem('hv_session_snapshot');
+    // Set a logged-out flag so startApp skips all auto-restore logic
     localStorage.setItem('hv_logged_out', '1');
-    // Clear cookie backup so it doesn't restore after intentional logout
-    deleteCookie('hv_user_backup');
   }catch(e){}
   U={};
   chatHistory=[];
@@ -1368,15 +1195,9 @@ function finishOB(){
   // 1. Save account credentials to local registry FIRST (so saveUser has correct data)
   if(U.email && U._regPwd){
     const accounts=loadAccounts();
-    accounts[U.email]={
-      pwd:U._regPwd,
-      secQ:U._secQ||'',
-      secA:U._secA||'',
-      userData:U
-    };
+    accounts[U.email]={pwd:U._regPwd, userData:U};
     saveAccounts();
     delete U._regPwd;
-    // Keep _secQ and _secA in U so they persist in userData too
   }
   // 2. Save session to localStorage
   saveUser();
@@ -5742,15 +5563,11 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   const sources = [
     // 1. Primary: hv_user
     function(){ return loadUser(); },
-    // 2. Session snapshot
+    // 2. Session snapshot (written on every saveUser call)
     function(){
       try{ const s=localStorage.getItem('hv_session_snapshot'); return s?JSON.parse(s):null; }catch(e){ return null; }
     },
-    // 3. Cookie backup — survives Android full close wiping localStorage
-    function(){
-      try{ const s=getCookie('hv_user_backup'); return s?JSON.parse(s):null; }catch(e){ return null; }
-    },
-    // 4. Accounts registry (keyed by last email)
+    // 3. Accounts registry (keyed by last email)
     function(){
       try{
         const email=localStorage.getItem('hv_last_email');
