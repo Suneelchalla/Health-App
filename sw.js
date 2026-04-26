@@ -1,5 +1,5 @@
 /**
- * HealthVault Service Worker v13 — SKIP_WAITING + all previous fixes
+ * HealthVault Service Worker v14 — SKIP_WAITING + all previous fixes
  *
  * v13 changes:
  *  - Handle SKIP_WAITING message so new HTML is served immediately on update
@@ -13,7 +13,7 @@
  * Previous fixes (v6/v7): various alarm and icon fixes
  */
 
-const CACHE_NAME = 'healthvault-v13';
+const CACHE_NAME = 'healthvault-v14';
 const ASSETS = [
   '/Health-App/', '/Health-App/index.html',
   '/Health-App/manifest.json', '/Health-App/icon-192.png', '/Health-App/icon-512.png'
