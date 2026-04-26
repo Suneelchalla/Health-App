@@ -918,7 +918,7 @@ function doGoogle(){
     <div style="font-size:36px;margin-bottom:12px">🔐</div>
     <div style="font-size:16px;font-weight:800;color:var(--g6);margin-bottom:8px">Google Sign-In</div>
     <div style="font-size:13px;color:var(--g4);line-height:1.6;margin-bottom:20px">Google OAuth requires a backend integration that is not set up yet. Please use <b>email & password</b> sign-up instead -- it works fully offline and on any device.</div>
-    <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Use Email & Password</button>
+    <button onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()" style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Use Email & Password</button>
   </div>`;
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   document.body.appendChild(ov);
@@ -2053,6 +2053,7 @@ function saveRxTextOnly(){
 }
 
 function saveRxMedicine(){
+  if(window._rxMedSaving) return; window._rxMedSaving=true;
   const name = (document.getElementById('rx-med-name')?.value||'').trim();
   if(!name){ alert('Please enter the medicine name.'); return; }
   const extractedText = window._rxExtractedText || '';
@@ -2232,8 +2233,12 @@ async function autoLookupMedUse(name){
 }
 
 function saveMedicine(){
+  if(window._medSaving) return; window._medSaving=true;
   const name=(document.getElementById('med-name')?.value||'').trim();
-  if(!name){ alert('Please enter the medicine name.'); return; }
+  if(!name){ window._medSaving=false; alert('Please enter the medicine name.'); return; }
+  // Duplicate check: same name already active?
+  const existing=getMeds().find(m=>m.active!==false && m.name.toLowerCase()===name.toLowerCase());
+  if(existing){ window._medSaving=false; alert('⚠️ "'+name+'" is already in your medicine list.\nIf this is a new course, please delete or update the existing entry first.'); return; }
   const med={
     id:'m'+Date.now(), name,
     use:(document.getElementById('med-use')?.value||'').trim(),
@@ -2269,7 +2274,8 @@ function saveMedicine(){
   if(zone) zone.innerHTML='<div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:11px;color:var(--g4)">Tap to attach prescription photo</div>';
   const prev=document.getElementById('med-photo-preview'); if(prev) prev.innerHTML='';
   const list=document.getElementById('scan-med-list'); if(list) list.innerHTML=renderMedListInline();
-  alert('Medicine saved!');
+  window._medSaving=false;
+  alert('✅ Medicine saved!');
 }
 
 function rOCR(){ go('scan'); }
@@ -2384,8 +2390,9 @@ function previewRpPhoto(input){
 }
 
 function saveReport(existingId){
+  if(window._reportSaving) return; window._reportSaving=true;
   const name = document.getElementById('rp-name')?.value.trim();
-  if(!name){ alert('Please enter the report name.'); return; }
+  if(!name){ window._reportSaving=false; alert('Please enter the report name.'); return; }
   // Collect rows
   const rowEls = document.querySelectorAll('[id^="rr-"]');
   const results = [];
@@ -2426,6 +2433,7 @@ function saveReport(existingId){
     savePhotos(photos);
   }
   window._rpPhotoData = null;
+  window._reportSaving=false;
   alert('✅ Report saved!');
   go('lab');
 }
@@ -2701,20 +2709,27 @@ function showAddContact(existingIdx){
 }
 
 function saveContact(existingIdx){
+  if(window._contactSaving) return; window._contactSaving=true;
   const name  = document.getElementById('ac-name')?.value.trim();
   const phone = document.getElementById('ac-phone')?.value.trim();
-  if(!name){ alert('Please enter a name.'); return; }
+  if(!name){ window._contactSaving=false; alert('Please enter a name.'); return; }
+  const contacts = getImportantContacts();
+  // Duplicate check for new entries only
+  if(existingIdx === null || existingIdx === undefined){
+    const dup = contacts.find(ct=>ct.name.toLowerCase()===name.toLowerCase() && ct.phone===phone);
+    if(dup){ window._contactSaving=false; alert('⚠️ A contact named "'+name+'" with this phone number already exists.'); return; }
+  }
   const contact = {
     name,
     rel:   document.getElementById('ac-rel')?.value  || 'Other',
     phone: phone || '',
     note:  document.getElementById('ac-note')?.value.trim() || ''
   };
-  const contacts = getImportantContacts();
   if(existingIdx !== null && existingIdx !== undefined){ contacts[existingIdx] = contact; }
   else{ contacts.push(contact); }
   saveImportantContacts(contacts);
   document.getElementById('add-contact-overlay')?.remove();
+  window._contactSaving=false;
   rEmergency();
 }
 
@@ -2975,7 +2990,9 @@ function rInsurance(){
 }
 
 function showAddExpense(){
+  document.getElementById('exp-overlay')?.remove();
   const overlay=document.createElement('div');
+  overlay.id='exp-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
     <div style="font-size:16px;font-weight:800;margin-bottom:16px">Add Medical Expense</div>
@@ -2988,18 +3005,25 @@ function showAddExpense(){
       <select class="sel" id="exp-status"><option>Paid</option><option>Pending</option><option>Reimbursed</option></select>
     </div>
     <button class="btn" onclick="saveExpense()">✅ Save Expense</button>
-    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    <button class="btn2" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()">Cancel</button>
   </div>`;
   overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
 
 function saveExpense(){
+  if(window._expSaving) return; window._expSaving = true;
   const name=document.getElementById('exp-name')?.value.trim();
-  if(!name){ alert('Please enter a description.'); return; }
-  const exp={ id:'e'+Date.now(), name, amount:document.getElementById('exp-amt')?.value||'0', date:document.getElementById('exp-date')?.value||today(), status:document.getElementById('exp-status')?.value||'Paid' };
+  if(!name){ window._expSaving=false; alert('Please enter a description.'); return; }
+  const date=document.getElementById('exp-date')?.value||today();
+  const amt=document.getElementById('exp-amt')?.value||'0';
+  // Duplicate check: same name + same date + same amount
+  const dup=getExpenses().find(e=>e.name.toLowerCase()===name.toLowerCase()&&e.date===date&&e.amount===amt);
+  if(dup){ window._expSaving=false; alert('⚠️ An identical expense "'+name+'" on '+fmtDate(date)+' already exists.'); return; }
+  const exp={ id:'e'+Date.now(), name, amount:amt, date, status:document.getElementById('exp-status')?.value||'Paid' };
   const exps=getExpenses(); exps.push(exp); saveExpenses(exps);
-  document.querySelector('[style*="position:fixed"]')?.remove();
+  document.getElementById('exp-overlay')?.remove();
+  window._expSaving=false;
   rInsurance();
 }
 function deleteExpense(id){ if(!confirm('Delete this expense?')) return; saveExpenses(getExpenses().filter(e=>e.id!==id)); rInsurance(); }
@@ -3423,15 +3447,16 @@ function showVacEntry(vacId, vacName){
     </div>
     <button class="btn" onclick="saveVacEntry('${vacId}',this)">✅ Save Vaccination Record</button>
     ${rec.date?`<button class="btn2" style="color:var(--red);background:var(--rl);border-color:#F7C1C1" onclick="deleteVacEntry('${vacId}',this)">🗑️ Remove Record</button>`:''}
-    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    <button class="btn2" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()">Cancel</button>
   </div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
   document.body.appendChild(ov);
 }
 
 function saveVacEntry(vacId, btn){
+  if(window._vacEntrySaving) return; window._vacEntrySaving=true;
   const dateVal = document.getElementById('ve-date')?.value;
-  if(!dateVal){ alert('Please enter the date the vaccine was given.'); return; }
+  if(!dateVal){ window._vacEntrySaving=false; alert('Please enter the date the vaccine was given.'); return; }
   const data = getChildVacData();
   if(!data.records) data.records = {};
   data.records[vacId] = {
@@ -3440,8 +3465,11 @@ function saveVacEntry(vacId, btn){
     notes:  document.getElementById('ve-notes')?.value.trim()  || ''
   };
   saveChildVacData(data);
-  pushVacRemindersToSW(); // update SW after marking a vaccine done
-  btn.closest('[style*=fixed]').remove();
+  pushVacRemindersToSW();
+  // Close overlay reliably — walk up from btn
+  let el = btn;
+  while(el && el !== document.body){ if(el.style?.position==='fixed'){ el.remove(); break; } el=el.parentElement; }
+  window._vacEntrySaving=false;
   rChildVaccines();
 }
 
@@ -3477,7 +3505,9 @@ async function toggleVacReminder(sw){
 }
 
 function showAddVaccine(){
+  document.getElementById('vac-overlay')?.remove();
   const overlay=document.createElement('div');
+  overlay.id='vac-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
     <div style="font-size:16px;font-weight:800;margin-bottom:16px">Log Vaccine</div>
@@ -3491,19 +3521,26 @@ function showAddVaccine(){
       <select class="sel" id="vac-status"><option value="done">Done ✅</option><option value="due">Due soon ⏰</option><option value="overdue">Overdue 🔴</option></select>
     </div>
     <button class="btn" onclick="saveVaccine()">✅ Save Vaccine</button>
-    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    <button class="btn2" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()">Cancel</button>
   </div>`;
   overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
 
 function saveVaccine(){
+  if(window._vacSaving) return; window._vacSaving = true;
   const name=document.getElementById('vac-name')?.value.trim();
-  if(!name){ alert('Please enter the vaccine name.'); return; }
-  const vac={ id:'vac'+Date.now(), name, date:document.getElementById('vac-date')?.value||today(), clinic:document.getElementById('vac-clinic')?.value.trim()||'', nextDue:document.getElementById('vac-next')?.value.trim()||'', status:document.getElementById('vac-status')?.value||'done' };
-  const vacs=getVaccines(); vacs.push(vac); saveVaccines(vacs);
-  const vault=getVaultItems(); vault.unshift({ id:'v'+Date.now(), type:'vaccine', icon:'💉', title:`Vaccine: ${name}`, subtitle:`${vac.clinic||'--'} . ${fmtDate(vac.date)}`, date:vac.date }); saveVaultItems(vault);
-  document.querySelector('[style*="position:fixed"]')?.remove();
+  if(!name){ window._vacSaving=false; alert('Please enter the vaccine name.'); return; }
+  const vacs=getVaccines();
+  // Duplicate check: same name + same date already exists?
+  const date=document.getElementById('vac-date')?.value||today();
+  const dup = vacs.find(v=>v.name.toLowerCase()===name.toLowerCase() && v.date===date);
+  if(dup){ window._vacSaving=false; alert('⚠️ A vaccine "'+name+'" on '+fmtDate(date)+' is already recorded.'); return; }
+  const vac={ id:'vac'+Date.now(), name, date, clinic:document.getElementById('vac-clinic')?.value.trim()||'', nextDue:document.getElementById('vac-next')?.value.trim()||'', status:document.getElementById('vac-status')?.value||'done' };
+  vacs.push(vac); saveVaccines(vacs);
+  const vault=getVaultItems(); vault.unshift({ id:'v'+Date.now(), type:'vaccine', icon:'💉', title:'Vaccine: '+name, subtitle:(vac.clinic||'--')+' · '+fmtDate(vac.date), date:vac.date }); saveVaultItems(vault);
+  document.getElementById('vac-overlay')?.remove();
+  window._vacSaving=false;
   rVaccines();
 }
 function deleteVaccine(id){ if(!confirm('Delete this vaccine record?')) return; saveVaccines(getVaccines().filter(v=>v.id!==id)); rVaccines(); }
@@ -3669,6 +3706,8 @@ function editFamilyMember(id){
 }
 
 function saveMemberEdit(id){
+  const nameField = document.getElementById('fm-name');
+  if(nameField && !nameField.value.trim()){ nameField.focus(); nameField.style.borderColor='var(--red)'; alert('Please enter a name for this family member.'); return; }
   var ov     = document.getElementById('family-edit-ov');
   if(!ov) return;
   var name   = (ov.querySelector('#em-name').value||'').trim() || 'Member';
@@ -4362,8 +4401,8 @@ function showSymptomDetail(partKey,symIndex){
       <div style="font-size:12px;color:rgba(255,255,255,.72);line-height:1.8">${s.f.replace(/→/g,'<span style="color:#F44336;font-weight:700"> → </span>')}</div>
     </div>`:''}
     <div style="display:flex;gap:9px">
-      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;background:rgba(255,255,255,.07);color:rgba(255,255,255,.75);border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">← Back</button>
-      <button onclick="this.closest('[style*=fixed]').remove();go('symptom')" style="flex:2;background:linear-gradient(135deg,${p.col},${p.col}aa);color:#fff;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔍 Symptom Checker</button>
+      <button onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()" style="flex:1;background:rgba(255,255,255,.07);color:rgba(255,255,255,.75);border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">← Back</button>
+      <button onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove();go('symptom')" style="flex:2;background:linear-gradient(135deg,${p.col},${p.col}aa);color:#fff;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔍 Symptom Checker</button>
     </div>
   </div>`;
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
@@ -4822,7 +4861,7 @@ function addSkinPhoto(input){
       <img src="${e.target.result}" style="width:100%;border-radius:10px;max-height:160px;object-fit:cover;margin-bottom:14px"/>
       <input class="inp" id="skin-lbl-inp" placeholder="e.g. Right forearm rash, Left knee swelling…" value="Skin photo"/>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:12px;background:var(--g1);border:1px solid var(--g2);border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+        <button onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()" style="padding:12px;background:var(--g1);border:1px solid var(--g2);border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
         <button onclick="confirmSkinPhoto('${e.target.result.replace(/'/g,'').substring(0,10)}')" id="skin-save-btn" style="padding:12px;background:var(--blue);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Save Photo</button>
       </div>
     </div>`;
@@ -4856,7 +4895,7 @@ function viewPhoto(id){
     <div style="width:100%;max-width:480px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div style="color:#fff;font-size:14px;font-weight:700">${p.label}</div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer">✕</button>
+        <button onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer">✕</button>
       </div>
       <img src="${p.data}" style="width:100%;border-radius:12px;max-height:70vh;object-fit:contain"/>
       <div style="color:rgba(255,255,255,.7);font-size:11px;margin-top:8px;text-align:center">${fmtDate(p.date)}</div>
@@ -5075,7 +5114,9 @@ function rVitals(){
 }
 
 function showLogVital(key, label, unit, placeholder, color){
+  document.getElementById('vital-overlay')?.remove(); // prevent stacking
   const overlay = document.createElement('div');
+  overlay.id = 'vital-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
     <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
@@ -5093,7 +5134,7 @@ function showLogVital(key, label, unit, placeholder, color){
       <input class="inp" id="vital-note" placeholder="e.g. After meal, Fasting, Morning…"/>
     </div>
     <button class="btn" onclick="saveVital('${key}','${label}')">✅ Save Reading</button>
-    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    <button class="btn2" onclick="document.getElementById('vital-overlay').remove()">Cancel</button>
   </div>`;
   overlay.addEventListener('click',function(e){ if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
@@ -5101,25 +5142,24 @@ function showLogVital(key, label, unit, placeholder, color){
 }
 
 function saveVital(key, label){
+  if(window._vitalSaving) return; window._vitalSaving = true;
   const val = (document.getElementById('vital-val')?.value||'').trim();
-  if(!val){ alert('Please enter a reading.'); return; }
-  const vitals = getVitals();
+  if(!val){ window._vitalSaving=false; alert('Please enter a reading.'); return; }
   const entry = {
     id: 'vt'+Date.now(), type:key, label:label,
     value:val, date:document.getElementById('vital-date')?.value||today(),
     note:document.getElementById('vital-note')?.value||''
   };
-  vitals.push(entry);
-  saveVitals(vitals);
-  // Add to vault log
+  const vitals = getVitals();
+  vitals.push(entry); saveVitals(vitals);
   const vault=getVaultItems();
-  vault.unshift({ id:'v'+Date.now(), type:'vital', icon:'📊', title:`${label}: ${val}`, subtitle:entry.note||'Vital reading logged', date:entry.date });
+  vault.unshift({ id:'v'+Date.now(), type:'vital', icon:'📊', title:label+': '+val, subtitle:entry.note||'Vital reading logged', date:entry.date });
   saveVaultItems(vault);
-  // Sync to Google Sheets if logged in
   if(U.email && !U.isGuest){
     appsScriptPost('saveVital',{ email:U.email, userName:U.name, type:key, value:val, unit:'', note:entry.note }).catch(()=>{});
   }
-  document.querySelector('[style*="position:fixed"]')?.remove();
+  document.getElementById('vital-overlay')?.remove();
+  window._vitalSaving = false;
   rVitals();
 }
 
@@ -6052,10 +6092,12 @@ function apptCard(a,isPast){
 // Fix template literal issue for specColors
 function var_blue(){ return 'var(--blue)'; }
 function showAddAppt(existingId){
+  document.getElementById('appt-overlay')?.remove();
   const ex=existingId?getAppointments().find(a=>a.id===existingId):null;
   const now=new Date(); now.setDate(now.getDate()+1); now.setHours(10,0,0,0);
   const defDT=now.toISOString().slice(0,16);
   const overlay=document.createElement('div');
+  overlay.id='appt-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
     <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
@@ -6073,12 +6115,13 @@ function showAddAppt(existingId){
       <label for="appt-rem" onclick="event.stopPropagation()" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">🔔 Remind me 1 hour before</label>
     </div>
     <button class="btn" onclick="saveAppt(${existingId?`'${existingId}'`:'null'})">✅ ${ex?'Update':'Save'} Appointment</button>
-    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    <button class="btn2" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()">Cancel</button>
   </div>`;
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
 }
 function saveAppt(existingId){
+  if(window._apptSaving) return; window._apptSaving=true;
   existingId = existingId || null;
   const doc=document.getElementById('appt-doc')?.value.trim();
   if(!doc){alert('Please enter the doctor name.');return;}
@@ -6123,7 +6166,8 @@ function saveAppt(existingId){
       });
     }
   }
-  document.querySelector('[style*="position:fixed"]')?.remove();
+  document.getElementById('appt-overlay')?.remove();
+  window._apptSaving=false;
   rAppointments();
 }
 function viewAppt(id){ showAddAppt(id); }
@@ -6167,10 +6211,11 @@ function rMenstrual(){
     fertileStart=fs.toISOString().split('T')[0];
     fertileEnd=ovulDay;
   }
-  // Build calendar — use navigation state (default = current month)
-  if(typeof window._calViewYear === 'undefined' || typeof window._calViewMonth === 'undefined'){
+  // Build calendar — preserve navigation state across re-renders
+  // Only reset to current month on very first load (both undefined)
+  if(window._calViewYear == null || window._calViewMonth == null){
     const now_=new Date();
-    window._calViewYear = now_.getFullYear();
+    window._calViewYear  = now_.getFullYear();
     window._calViewMonth = now_.getMonth();
   }
   const yr=window._calViewYear; const mo=window._calViewMonth;
@@ -6228,7 +6273,10 @@ function rMenstrual(){
       <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--rl);border:1.5px dashed var(--red);border-radius:50%;display:inline-block"></span>Predicted</span>
     </div>
     <button class="btn" onclick="showLogPeriod()">+ Log Period</button>
-    <div style="font-size:13px;font-weight:700;color:var(--g6);margin:16px 0 10px">Period History (${cycles.length})</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px">
+      <div style="font-size:13px;font-weight:700;color:var(--g6)">Period History (${cycles.length})</div>
+      ${cycles.length>1?`<button onclick="deduplicateCycles()" style="background:var(--rl);color:#C5221F;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🧹 Remove Duplicates</button>`:''}
+    </div>
     ${cycles.length?cycles.slice().reverse().slice(0,6).map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:#fff;border-radius:10px;border:.5px solid var(--g2);margin-bottom:7px">
       <span style="font-size:20px">🌸</span>
       <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--g6)">${fmtDate(c.start)}${c.end?' → '+fmtDate(c.end):'<span style="color:var(--g4);font-weight:400"> · end not logged</span>'}</div>
@@ -6262,37 +6310,146 @@ function logPeriodDay(ds){
   showLogPeriod(ds);
 }
 function showLogPeriod(preDate){
-  const overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-  overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
-    <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
-    <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">🌸 Log Period</div>
-    <div class="fld"><div class="flbl">Start Date *</div><input class="inp" id="cy-start" type="date" value="${preDate||today()}"/></div>
-    <div class="fld"><div class="flbl">End Date <span style="font-weight:400;color:var(--g4)">(optional — estimated from flow if blank)</span></div><input class="inp" id="cy-end" type="date"/></div>
-    <div class="fld"><div class="flbl">Flow</div>
-      <div style="display:flex;gap:7px">
-        ${['Light','Medium','Heavy'].map(f=>`<button class="flow-btn" onclick="this.closest('[style]').querySelectorAll('.flow-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');window._cyFlow='${f}'">${f}</button>`).join('')}
-      </div>
-    </div>
-    <div class="fld"><div class="flbl">Symptoms (optional)</div><input class="inp" id="cy-sym" placeholder="e.g. cramps, headache, mood swings, bloating"/></div>
-    <button class="btn" onclick="saveCycle()">✅ Save</button>
-    <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
-  </div>`;
-  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  // Remove any existing log overlay first (prevent stacking)
+  document.getElementById('cy-log-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cy-log-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+
+  // Check if a cycle already exists that overlaps this date
+  const existing = getCycles();
+  const prefill  = preDate || today();
+
+  const sheet = document.createElement('div');
+  sheet.style.cssText = 'background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px';
+  sheet.innerHTML =
+    '<div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>'
+   +'<div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">🌸 Log Period</div>'
+   +'<div class="fld"><div class="flbl">Start Date *</div><input class="inp" id="cy-start" type="date" value="'+prefill+'"/></div>'
+   +'<div class="fld"><div class="flbl">End Date <span style="font-weight:400;color:var(--g4)">(optional — estimated from flow if blank)</span></div><input class="inp" id="cy-end" type="date"/></div>'
+      +'<div class="fld"><div class="flbl">Flow</div><div style="display:flex;gap:7px" id="flow-btns">'
+   +'<button class="flow-btn" onclick="setCyFlow(\'Light\',this)">Light</button>'
+   +'<button class="flow-btn on" onclick="setCyFlow(\'Medium\',this)">Medium</button>'
+   +'<button class="flow-btn" onclick="setCyFlow(\'Heavy\',this)">Heavy</button>'
+   +'</div></div>'
+   +'<div class="fld"><div class="flbl">Symptoms (optional)</div><input class="inp" id="cy-sym" placeholder="e.g. cramps, headache, mood swings, bloating"/></div>'
+   +'<div id="cy-dup-warn" style="display:none;background:var(--rl);color:#C5221F;border-radius:10px;padding:10px 13px;font-size:12px;margin-bottom:10px;line-height:1.5"></div>'
+   +'<button class="btn" id="cy-save-btn" onclick="saveCycle()">✅ Save Period</button>'
+   +'<button class="btn2" onclick="document.getElementById(&quot;cy-log-overlay&quot;).remove()">Cancel</button>';
+
+  overlay.appendChild(sheet);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
-  window._cyFlow='Medium';
+  window._cyFlow = 'Medium';
+  window._cySaving = false; // debounce flag
+}
+
+function setCyFlow(flow, btn){
+  document.querySelectorAll('#flow-btns .flow-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  window._cyFlow = flow;
 }
 function saveCycle(){
-  const start=document.getElementById('cy-start')?.value;
-  if(!start){alert('Please select a start date.');return;}
-  const c={ id:'cy'+Date.now(), start, end:document.getElementById('cy-end')?.value||'', flow:window._cyFlow||'Medium', symptoms:document.getElementById('cy-sym')?.value.trim()||'' };
-  const cycles=getCycles(); cycles.push(c); saveCycles(cycles);
-  document.querySelector('[style*="position:fixed"]')?.remove();
-  rMenstrual();
+  // Debounce — prevent double-tap saves
+  if(window._cySaving) return;
+  window._cySaving = true;
+
+  const startVal = document.getElementById('cy-start')?.value;
+  const endVal   = document.getElementById('cy-end')?.value;
+  const warnEl   = document.getElementById('cy-dup-warn');
+  const saveBtn  = document.getElementById('cy-save-btn');
+
+  if(!startVal){
+    alert('Please select a start date.');
+    window._cySaving = false;
+    return;
+  }
+
+  // Validate: end must be after start
+  if(endVal && endVal < startVal){
+    if(warnEl){ warnEl.textContent = '⚠️ End date cannot be before start date.'; warnEl.style.display='block'; }
+    window._cySaving = false;
+    return;
+  }
+
+  // Duplicate check — look for any cycle with the same start date
+  const cycles = getCycles();
+  const dupExact = cycles.find(cy => cy.start === startVal);
+  if(dupExact){
+    if(warnEl){
+      warnEl.innerHTML = '⚠️ <b>Duplicate entry.</b> A period starting on <b>' + fmtDate(startVal) + '</b> is already logged. Please delete the existing entry first, or choose a different start date.';
+      warnEl.style.display = 'block';
+    }
+    window._cySaving = false;
+    return;
+  }
+
+  // Overlap check — does this start date fall inside any existing cycle's range?
+  const overlap = cycles.find(cy => {
+    const cEnd = cy.end || cy.start; // if no end, treat as single-day
+    return startVal >= cy.start && startVal <= cEnd;
+  });
+  if(overlap){
+    if(warnEl){
+      warnEl.innerHTML = '⚠️ <b>Overlapping period.</b> The date <b>' + fmtDate(startVal) + '</b> falls within an already-logged period (' + fmtDate(overlap.start) + ' → ' + fmtDate(overlap.end||overlap.start) + '). Check your history below.';
+      warnEl.style.display = 'block';
+    }
+    window._cySaving = false;
+    return;
+  }
+
+  // All good — save
+  const entry = {
+    id:       'cy' + Date.now(),
+    start:    startVal,
+    end:      endVal || '',
+    flow:     window._cyFlow || 'Medium',
+    symptoms: document.getElementById('cy-sym')?.value.trim() || ''
+  };
+  cycles.push(entry);
+  // Sort by start date so history is always chronological
+  cycles.sort((a,b) => a.start < b.start ? -1 : a.start > b.start ? 1 : 0);
+  saveCycles(cycles);
+
+  // Show brief success feedback before closing
+  if(saveBtn){ saveBtn.textContent = '✅ Saved!'; saveBtn.style.background = 'var(--green)'; }
+  setTimeout(() => {
+    document.getElementById('cy-log-overlay')?.remove();
+    // Navigate calendar to the month of the saved entry so user sees it
+    const d = new Date(startVal);
+    window._calViewYear  = d.getFullYear();
+    window._calViewMonth = d.getMonth();
+    rMenstrual();
+  }, 600);
 }
 function deleteCycle(id){
-  if(!confirm('Delete this period log?'))return;
-  saveCycles(getCycles().filter(c=>c.id!==id));
+  if(!confirm('Delete this period log?')) return;
+  const remaining = getCycles().filter(cy => cy.id !== id);
+  saveCycles(remaining);
+  rMenstrual();
+}
+
+function deduplicateCycles(){
+  const cycles = getCycles();
+  const seen = new Set();
+  const unique = [];
+  // Sort by start date first, keep earliest-logged when start date is same
+  const sorted = cycles.slice().sort((a,b) => a.start < b.start ? -1 : 1);
+  for(const cy of sorted){
+    if(!seen.has(cy.start)){
+      seen.add(cy.start);
+      unique.push(cy);
+    }
+  }
+  const removed = cycles.length - unique.length;
+  if(removed === 0){
+    alert('No duplicates found — your history is clean!');
+    return;
+  }
+  if(!confirm('Found ' + removed + ' duplicate entr' + (removed===1?'y':'ies') + ' with the same start date. Remove ' + (removed===1?'it':'them') + '?')) return;
+  saveCycles(unique);
+  alert('Removed ' + removed + ' duplicate' + (removed===1?'':'s') + '. History is now clean.');
   rMenstrual();
 }
 
@@ -6426,7 +6583,7 @@ function showBillOCR(){
     <button class="btn" onclick="document.getElementById('bill-inp').click()">📷 Take Photo of Bill</button>
     <button class="btn2" onclick="document.getElementById('bill-gal').click()">🖼️ Choose from Gallery</button>
     <div id="bill-result" style="margin-top:14px"></div>
-    <button class="btn2" style="margin-top:8px" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    <button class="btn2" style="margin-top:8px" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()">Cancel</button>
   </div>`;
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
@@ -6440,7 +6597,7 @@ function processBillPhoto(input){
     const base64=e.target.result.split(',')[1];
     const geminiKey=loadKey('hv_gemini_key')||loadKey('gemini_key')||'';
     if(geminiKey){ extractBillWithGemini(base64,e.target.result,geminiKey,res); }
-    else{ if(res) res.innerHTML=`<div style="background:var(--al);border-radius:11px;padding:13px;font-size:12px;color:#B06000">💡 Add your Gemini API key in Profile → Settings for automatic bill reading. For now, please enter details manually.</div><button class="btn" style="margin-top:8px" onclick="this.closest('[style*=fixed]').remove();showAddExpense()">✏️ Enter Manually</button>`; }
+    else{ if(res) res.innerHTML=`<div style="background:var(--al);border-radius:11px;padding:13px;font-size:12px;color:#B06000">💡 Add your Gemini API key in Profile → Settings for automatic bill reading. For now, please enter details manually.</div><button class="btn" style="margin-top:8px" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove();showAddExpense()">✏️ Enter Manually</button>`; }
   };
   reader.readAsDataURL(file);
 }
@@ -6472,7 +6629,7 @@ async function extractBillWithGemini(base64,dataUrl,apiKey,res){
       </div>
       <button class="btn" onclick="prefillExpenseFromBill('${hosp.replace(/'/g,"\\'")}','${total}','${normDate}','${desc.replace(/'/g,"\\'")}')">✅ Add to Expenses</button>`;
   }catch(e){
-    if(res) res.innerHTML=`<div style="background:var(--rl);border-radius:11px;padding:12px;font-size:12px;color:#C5221F">Could not read bill automatically. Please enter manually.</div><button class="btn2" style="margin-top:8px" onclick="this.closest('[style*=fixed]').remove();showAddExpense()">✏️ Enter Manually</button>`;
+    if(res) res.innerHTML=`<div style="background:var(--rl);border-radius:11px;padding:12px;font-size:12px;color:#C5221F">Could not read bill automatically. Please enter manually.</div><button class="btn2" style="margin-top:8px" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove();showAddExpense()">✏️ Enter Manually</button>`;
   }
 }
 function prefillExpenseFromBill(hospital,amount,date,description){
