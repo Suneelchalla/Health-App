@@ -593,7 +593,16 @@ body.dark .qa .ql{color:#E0E0E0}
         <svg width="24" height="11" viewBox="0 0 24 11"><rect x="0" y="1" width="21" height="9" rx="2.5" fill="none" stroke="#202124" stroke-width="1.1"/><rect x="1.2" y="2.2" width="15" height="6.6" rx="1.5" fill="#202124"/><rect x="22" y="3" width="1.5" height="5" rx=".75" fill="#202124"/></svg>
       </div>
     </div>
-    <div class="screen" id="SCR"></div>
+    <div class="screen" id="SCR">
+      <!-- Instant splash shown before JS runs — replaced by startApp() -->
+      <div id="init-splash" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#1A73E8,#0D47A1);padding:40px 28px;text-align:center">
+        <div style="width:84px;height:84px;background:rgba(255,255,255,.18);border-radius:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:2px solid rgba(255,255,255,.3)">
+          <svg viewBox="0 0 24 24" width="46" height="46" stroke="#fff" fill="none" stroke-width="1.8"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg>
+        </div>
+        <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:-.5px">HealthVault</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.82);margin-top:12px;line-height:1.55">Your complete personal health companion</div>
+      </div>
+    </div>
     <div class="tabbar" id="TBAR" style="display:none">
       <div class="tab on" id="T-home" onclick="go('home')"><div class="tdot"></div><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span>Home</span></div>
       <div class="tab" id="T-body" onclick="go('body')"><div class="tdot"></div><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v6M9 10h6M9 21l3-8 3 8"/><path d="M10 17H7l-2 4M14 17h3l2 4"/></svg><span>Body</span></div>
@@ -884,7 +893,7 @@ async function doLogin(){
     const saved=accounts[e].userData;
     if(saved && saved.name && saved.members){
       U=saved;
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);}catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
       return;
@@ -909,7 +918,7 @@ async function doLogin(){
       delete U._pwdHash; // don't keep pwd hash in active session
       accounts[e]={pwd:pwdHash, userData:U};
       saveAccounts();
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);}catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
     } else {
@@ -5422,110 +5431,79 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 })();
 
 (function startApp(){
-  const saved = loadUser();
+  // Helper: ensure user object has a valid members array
+  function ensureMembers(user){
+    if(!user.members || !user.members.length){
+      user.members = [{id:'self',name:user.name,role:'Me',age:user.age||'',
+        gender:user.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
+    }
+    return user;
+  }
 
-  // Case 0: fast-restore from session snapshot (survives Android tab kill / iOS memory eviction)
-  // This is a lightweight copy written on every saveUser() call
-  if(!saved || !saved.name){
+  // Helper: activate a restored user and go home
+  function restoreUser(user){
+    U = ensureMembers(user);
+    try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+    try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
+    runDailyCleanup();
+    go('home');
+  }
+
+  // Try every local storage location in order — all synchronous, no waiting
+  const sources = [
+    // 1. Primary: hv_user
+    function(){ return loadUser(); },
+    // 2. Session snapshot (written on every saveUser call)
+    function(){
+      try{ const s=localStorage.getItem('hv_session_snapshot'); return s?JSON.parse(s):null; }catch(e){ return null; }
+    },
+    // 3. Accounts registry (keyed by last email)
+    function(){
+      try{
+        const email=localStorage.getItem('hv_last_email');
+        if(!email) return null;
+        const accts=loadAccounts();
+        return (accts[email]&&accts[email].userData)||null;
+      }catch(e){ return null; }
+    },
+  ];
+
+  for(const source of sources){
     try{
-      const snap = localStorage.getItem('hv_session_snapshot');
-      if(snap){
-        const snapUser = JSON.parse(snap);
-        if(snapUser && snapUser.name){
-          // Restore from snapshot and re-persist to hv_user
-          if(!snapUser.members || !snapUser.members.length){
-            snapUser.members = [{id:'self',name:snapUser.name,role:'Me',age:snapUser.age||'',gender:snapUser.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
-          }
-          U = snapUser;
-          try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-          runDailyCleanup();
-          go('home');
-          return;
-        }
+      const user = source();
+      if(user && user.name){
+        restoreUser(user);
+        return;
       }
     }catch(e){}
   }
 
-  // Case 1: fully valid saved session — go home immediately
-  if(saved && saved.name && saved.members){
-    U = saved;
-    runDailyCleanup();
-    // Re-warm SW reminders after app restore
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.ready.then(reg=>{
-        if(reg.active) reg.active.postMessage({type:'CHECK_ALARMS', clientId:getClientId()});
-      }).catch(()=>{});
-    }
-    go('home');
-    return;
-  }
-
-  // Case 2: saved user exists but may be missing members (older app version)
-  // Fix members array if missing then go home — no cloud call needed
-  if(saved && saved.name){
-    U = saved;
-    if(!U.members || !U.members.length){
-      U.members = [{
-        id:'self', name:U.name, role:'Me',
-        age:U.age||'', gender:U.gender||'', avatar:'🧑',
-        color:'#E8F0FE', textColor:'#0D47A1'
-      }];
-      try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-    }
-    runDailyCleanup();
-    go('home');
-    return;
-  }
-
-  // Case 2b: hv_user was cleared (e.g. Safari memory pressure) but accounts registry still exists
-  // Try to restore from accounts registry before hitting the cloud
-  const lastEmailForRestore = loadKey('hv_last_email');
-  if(lastEmailForRestore){
-    const accts = loadAccounts();
-    if(accts[lastEmailForRestore] && accts[lastEmailForRestore].userData && accts[lastEmailForRestore].userData.name){
-      U = accts[lastEmailForRestore].userData;
-      if(!U.members || !U.members.length){
-        U.members = [{id:'self',name:U.name,role:'Me',age:U.age||'',gender:U.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
-      }
-      try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-      runDailyCleanup();
-      go('home');
-      return;
-    }
-  }
-
-  // Case 3: no saved session but we have a last email — try cloud with 4s timeout
+  // Nothing local found — try cloud as last resort (only if we have an email)
   const lastEmail = loadKey('hv_last_email');
   if(lastEmail){
-    TB.style.display='none'; SN.style.display='none';
-    SCR.innerHTML='<div class="splash sc"><div class="sp-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"/><path d="M8 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-3"/><circle cx="12" cy="15" r="2"/></svg></div><div class="sp-name">HealthVault</div><div class="sp-tag" style="margin-top:24px;font-size:13px">Restoring your session…</div></div>';
+    // The HTML already shows the splash logo — just update the text
+    const initSplash = document.getElementById('init-splash');
+    if(initSplash){
+      const tag = initSplash.querySelector('div:last-child');
+      if(tag) tag.textContent = 'Restoring your session…';
+    }
     let resolved = false;
-    // 4-second timeout — if cloud is slow or offline, go to splash
     const timer = setTimeout(function(){
-      if(!resolved){ resolved=true; go('splash'); }
-    }, 4000);
+      if(!resolved){ resolved=true; go('login'); }
+    }, 5000);
     loadUserFromCloud(lastEmail).then(function(cloudUser){
       if(resolved) return;
       resolved = true;
       clearTimeout(timer);
-      if(cloudUser && cloudUser.name){
-        U = cloudUser;
-        if(!U.members || !U.members.length){
-          U.members = [{id:'self',name:U.name,role:'Me',age:U.age||'',gender:U.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
-        }
-        try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
-        runDailyCleanup();
-        go('home');
-      } else {
-        go('splash');
-      }
+      if(cloudUser && cloudUser.name){ restoreUser(cloudUser); }
+      else { go('login'); }
     }).catch(function(){
-      if(!resolved){ resolved=true; clearTimeout(timer); go('splash'); }
+      if(!resolved){ resolved=true; clearTimeout(timer); go('login'); }
     });
     return;
   }
 
-  // Case 4: fresh install
+  // Truly fresh install — show splash
   go('splash');
 })();
 
