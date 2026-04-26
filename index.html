@@ -893,7 +893,7 @@ async function doLogin(){
     const saved=accounts[e].userData;
     if(saved && saved.name && saved.members){
       U=saved;
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));}catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
       return;
@@ -918,7 +918,7 @@ async function doLogin(){
       delete U._pwdHash; // don't keep pwd hash in active session
       accounts[e]={pwd:pwdHash, userData:U};
       saveAccounts();
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));}catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
     } else {
@@ -1020,9 +1020,12 @@ function doLogout(){
     appsScriptPost('saveUser', { email:U.email, userData:U }).catch(()=>{});
   }
   try{
+    // Clear all session keys so startApp never auto-restores after logout
     localStorage.removeItem('hv_user');
     localStorage.removeItem('hv_last_email');
     localStorage.removeItem('hv_session_snapshot');
+    // Set a logged-out flag so startApp skips all auto-restore logic
+    localStorage.setItem('hv_logged_out', '1');
   }catch(e){}
   U={};
   chatHistory=[];
@@ -1101,7 +1104,7 @@ function finishOB(){
   const storedPwd = loadAccounts()[U.email]?.pwd || '';
   saveAllToSheets(storedPwd);
   // Ensure snapshot is written for new users (saveUser() may have run before members was set)
-  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
+  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); localStorage.removeItem('hv_logged_out'); }catch(e){}
   go('home');
 }
 
@@ -5431,6 +5434,12 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 })();
 
 (function startApp(){
+  // If user explicitly logged out, never auto-restore — go straight to splash
+  if(localStorage.getItem('hv_logged_out') === '1'){
+    go('splash');
+    return;
+  }
+
   // Helper: ensure user object has a valid members array
   function ensureMembers(user){
     if(!user.members || !user.members.length){
