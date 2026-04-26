@@ -639,18 +639,21 @@ const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
 // -- APPS SCRIPT URL (single source of truth) ---------
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeIss63j7rSJWMb0bhd44LHvZ-xy2iCaJaF5s8G4j8ChA5s9qr2EqFKtfHIliVqc0f/exec';
 
-// appsScriptPost: central helper for Google Apps Script POST calls.
-// action = action name (e.g. saveUser, saveData), payload = data object.
-// Returns parsed JSON response or { error: '...' } on failure.
+// appsScriptPost: sends data via GET request (URL params) to avoid CORS.
+// Google Apps Script blocks POST preflight from mobile browsers,
+// but GET requests always work cross-origin without any preflight.
 async function appsScriptPost(action, payload){
-  const url = (window._APPS_SCRIPT_URL || APPS_SCRIPT_URL);
+  const baseUrl = window._APPS_SCRIPT_URL || APPS_SCRIPT_URL;
   try{
-    const res = await fetch(url, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload })
-    });
+    // Extract email from payload for the param
+    const email = payload.email || (payload.userData && payload.userData.email) || '';
+    // Everything else goes in the 'data' param as URL-encoded JSON
+    const dataParam = encodeURIComponent(JSON.stringify(payload));
+    const url = baseUrl
+      + '?action=' + encodeURIComponent(action)
+      + '&email='  + encodeURIComponent(email)
+      + '&data='   + dataParam;
+    const res  = await fetch(url, { method:'GET', redirect:'follow' });
     const text = await res.text();
     if(!text || !text.trim()) return { error: 'Empty response from server' };
     const clean = text.replace(/^[)\]\x27}]+/, '').trim();
