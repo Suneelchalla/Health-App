@@ -2,6 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<script>
+// ── EARLY SESSION RESTORE ──────────────────────────────────────────────────
+// This runs FIRST, before CSS, before the main script, before the SW.
+// If the user is logged in, we mark a flag so startApp skips to home instantly.
+// This prevents any flash of the splash/login screen on reopen.
+(function(){
+  try{
+    if(localStorage.getItem('hv_logged_out')==='1') return;
+    function isValid(u){ return u && u.name && u.name!=='Guest'; }
+    // Check hv_user first (fastest)
+    var raw = localStorage.getItem('hv_user');
+    if(raw){ var u=JSON.parse(raw); if(isValid(u)){ window._earlyUser=u; return; } }
+    // Check snapshot
+    raw = localStorage.getItem('hv_session_snapshot');
+    if(raw){ var u=JSON.parse(raw); if(isValid(u)){ window._earlyUser=u; return; } }
+    // Check accounts registry
+    var em = localStorage.getItem('hv_last_email')||'';
+    if(em){
+      var accts = JSON.parse(localStorage.getItem('hv_accounts')||'{}');
+      if(accts[em] && accts[em].userData){
+        var u=accts[em].userData;
+        if(isValid(u)){ window._earlyUser=u; return; }
+      }
+      // Any account
+      var keys=Object.keys(accts);
+      for(var i=0;i<keys.length;i++){
+        var ud=accts[keys[i]]&&accts[keys[i]].userData;
+        if(isValid(ud)){ window._earlyUser=ud; return; }
+      }
+    }
+  }catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -5820,6 +5853,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 (function startApp(){
   // ── Explicitly logged out → show splash ─────────────────────────────────
   if(localStorage.getItem('hv_logged_out') === '1'){
+    window._earlyUser = null;
     go('splash');
     return;
   }
@@ -5846,22 +5880,27 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     go('home');
   }
 
-  // isValid: a user object is usable if it has at least a name
   function isValid(u){ return u && typeof u === 'object' && u.name && u.name !== 'Guest'; }
+
+  // ── Fast path: early restore script already found a user ─────────────────
+  if(window._earlyUser && isValid(window._earlyUser)){
+    const eu = window._earlyUser;
+    window._earlyUser = null;
+    restoreUser(eu);
+    return;
+  }
 
   const expectedEmail = (localStorage.getItem('hv_last_email') || '').trim().toLowerCase();
 
-  // ── Try every storage source. First valid result wins. ──────────────────
+  // ── Full storage scan ────────────────────────────────────────────────────
 
-  // 1. hv_accounts registry — most durable, written on every action
+  // 1. hv_accounts registry — most durable
   try{
     const accts = loadAccounts();
-    // First try the known last-email account
     if(expectedEmail && accts[expectedEmail]){
       const ud = accts[expectedEmail].userData;
       if(isValid(ud)){ restoreUser(ud); return; }
     }
-    // Fallback: any account in registry (handles case where hv_last_email was cleared)
     const allKeys = Object.keys(accts);
     for(let i = 0; i < allKeys.length; i++){
       const ud = accts[allKeys[i]] && accts[allKeys[i]].userData;
@@ -5869,7 +5908,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     }
   }catch(e){}
 
-  // 2. hv_user (primary fast-access key)
+  // 2. hv_user
   try{
     const u = loadUser();
     if(isValid(u)){ restoreUser(u); return; }
@@ -5878,24 +5917,16 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   // 3. hv_session_snapshot
   try{
     const s = localStorage.getItem('hv_session_snapshot');
-    if(s){
-      const u = JSON.parse(s);
-      if(isValid(u)){ restoreUser(u); return; }
-    }
+    if(s){ const u = JSON.parse(s); if(isValid(u)){ restoreUser(u); return; } }
   }catch(e){}
 
-  // 4. Cookie backup (last resort — survives process kill + memory eviction)
+  // 4. Cookie backup
   try{
     const ck = getCookie('hv_user_backup');
-    if(ck){
-      const u = JSON.parse(ck);
-      if(isValid(u)){ restoreUser(u); return; }
-    }
+    if(ck){ const u = JSON.parse(ck); if(isValid(u)){ restoreUser(u); return; } }
   }catch(e){}
 
-  // ── Nothing found locally at all ────────────────────────────────────────
-  // Only reach here if the device has truly no account data anywhere.
-  // If we have an email on record, try cloud once — otherwise show splash.
+  // ── Nothing found — try cloud if email known, else splash ────────────────
   if(expectedEmail){
     const initSplash = document.getElementById('init-splash');
     if(initSplash){
@@ -5918,7 +5949,6 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     return;
   }
 
-  // Truly fresh install — no account anywhere
   go('splash');
 })();
 
