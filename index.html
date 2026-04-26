@@ -700,11 +700,12 @@ function saveUser(){
   }catch(e){}
   if(U && U.email && !U.isGuest){
     try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
-    // Keep local accounts registry in sync — always upsert, not just when key exists
+    // Keep local accounts registry in sync — store a deep copy so changes to U
+    // don't silently mutate the stored userData reference
     try{
       const accounts=loadAccounts();
       if(!accounts[U.email]) accounts[U.email]={};
-      accounts[U.email].userData=U;
+      accounts[U.email].userData = JSON.parse(JSON.stringify(U)); // deep copy
       saveAccounts();
     }catch(e){}
     // Fire-and-forget: push session to Sessions sheet in Google Sheets
@@ -769,14 +770,15 @@ window.history.pushState({hvScreen:'init'}, '', window.location.href);
 // We detect the restore and navigate to home if the user is logged in.
 window.addEventListener('pageshow', function(e){
   if(e.persisted){
-    // Page was restored from bfcache — check if user is still logged in
     const snap = localStorage.getItem('hv_session_snapshot');
     const loggedOut = localStorage.getItem('hv_logged_out');
+    const expectedEmail = localStorage.getItem('hv_last_email');
     if(snap && loggedOut !== '1'){
       try{
         const user = JSON.parse(snap);
-        if(user && user.name){
-          U = user;
+        // Only restore if email matches the expected active account
+        if(user && user.name && (!expectedEmail || !user.email || user.email === expectedEmail)){
+          U = JSON.parse(JSON.stringify(user)); // deep copy
           go('home');
           return;
         }
@@ -786,21 +788,22 @@ window.addEventListener('pageshow', function(e){
 });
 
 // Also handle app coming back from background on Android Chrome
-// (visibilitychange fires when user switches back to the app)
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible'){
-    // If current screen is splash but user is actually logged in, go home
     const loggedOut = localStorage.getItem('hv_logged_out');
-    if(loggedOut === '1') return; // user intentionally logged out
+    if(loggedOut === '1') return;
     const snap = localStorage.getItem('hv_session_snapshot');
     if(!snap) return;
+    const expectedEmail = localStorage.getItem('hv_last_email');
     try{
       const user = JSON.parse(snap);
-      // Only redirect if we're stuck on splash/login and user data exists
       const currentScreen = _navHistory[_navHistory.length - 1] || '';
+      // Only restore if on an auth screen AND email matches active account
       if(user && user.name && ['splash','login','onboard',''].includes(currentScreen)){
-        U = user;
-        go('home');
+        if(!expectedEmail || !user.email || user.email === expectedEmail){
+          U = JSON.parse(JSON.stringify(user)); // deep copy
+          go('home');
+        }
       }
     }catch(ex){}
   }
@@ -1127,7 +1130,12 @@ async function doLogin(){
     if(!storedPwd.startsWith('sha256_')){ accounts[loginKey].pwd = pwdHash; saveAccounts(); }
     const saved=accounts[loginKey].userData;
     if(saved && saved.name && saved.members){
-      U=saved;
+      // CRITICAL: clear any previous session before loading this account's data
+      try{
+        localStorage.removeItem('hv_user');
+        localStorage.removeItem('hv_session_snapshot');
+      }catch(ex){}
+      U = JSON.parse(JSON.stringify(saved)); // deep copy — never share reference with accounts store
       try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
@@ -1147,8 +1155,10 @@ async function doLogin(){
           showE('Incorrect password. Please try again.');
           return;
         }
-        U=cloudUser;
+        U=JSON.parse(JSON.stringify(cloudUser)); // deep copy
         delete U._pwdHash;
+        // CRITICAL: clear previous session first
+        try{ localStorage.removeItem('hv_user'); localStorage.removeItem('hv_session_snapshot'); }catch(ex){}
         accounts[loginKey]={pwd:pwdHash, userData:U};
         saveAccounts();
         try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
@@ -1194,12 +1204,22 @@ async function doSignup(){
     showE(signupIsPhone ? 'An account with this mobile number already exists. Please sign in.' : 'An account with this email already exists. Please sign in.');
     return;
   }
-  U.name=n;
-  U.email=signupKey;   // store normalised key as email (used as account identifier)
-  U.phone=signupIsPhone ? e.replace(/\s/g,'') : ''; // store raw phone separately if provided
-  U._regPwd=await hashPwd(p);
-  U._secQIdx=parseInt(sqIdx);
-  U._secQAns=sqAns.toLowerCase();
+  // CRITICAL: wipe all stale session data before creating a new account.
+  // Without this, old user's data bleeds into the new account via localStorage.
+  try{
+    localStorage.removeItem('hv_user');
+    localStorage.removeItem('hv_session_snapshot');
+    localStorage.removeItem('hv_logged_out');
+  }catch(ex){}
+  // Start with a completely fresh user object — never inherit fields from previous U
+  U = {
+    name: n,
+    email: signupKey,
+    phone: signupIsPhone ? e.replace(/\s/g,'') : '',
+    _regPwd: await hashPwd(p),
+    _secQIdx: parseInt(sqIdx),
+    _secQAns: sqAns.toLowerCase()
+  };
   try{ localStorage.setItem('hv_last_email', signupKey); }catch(ex){}
   go('onboard');
 }
@@ -1275,19 +1295,25 @@ function doLogout(){
   // Sync one last time before logout
   if(U.email && !U.isGuest){
     appsScriptPost('saveUser', { email:U.email, userData:U }).catch(()=>{});
+    // Update the accounts registry so next login loads fresh saved data
+    try{
+      const accounts=loadAccounts();
+      if(accounts[U.email]) accounts[U.email].userData = JSON.parse(JSON.stringify(U));
+      saveAccounts();
+    }catch(e){}
   }
   try{
-    // Clear all session keys so startApp never auto-restores after logout
+    // Clear ALL session keys — hv_last_email must also go so startApp
+    // doesn't restore from accounts registry on the next open
     localStorage.removeItem('hv_user');
     localStorage.removeItem('hv_last_email');
     localStorage.removeItem('hv_session_snapshot');
     // Set a logged-out flag so startApp skips all auto-restore logic
     localStorage.setItem('hv_logged_out', '1');
   }catch(e){}
-  U={};
-  chatHistory=[];
-  // Reload the page so bfcache doesn't save a stale splash state
-  // that could confuse the next reopen
+  // Fully reset in-memory state
+  U = {};
+  chatHistory = [];
   window.location.reload();
 }
 
@@ -5722,6 +5748,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   }
 
   // Try every local storage location in order — all synchronous, no waiting
+  const expectedEmail = localStorage.getItem('hv_last_email') || null;
   const sources = [
     // 1. Primary: hv_user
     function(){ return loadUser(); },
@@ -5744,6 +5771,11 @@ Object.defineProperty(window, 'OPENAI_KEY', {
     try{
       const user = source();
       if(user && user.name){
+        // CRITICAL: if we know which account should be active, only restore
+        // a user whose email matches. This prevents old-user bleed-through.
+        if(expectedEmail && user.email && user.email !== expectedEmail){
+          continue; // skip — belongs to a different account
+        }
         restoreUser(user);
         return;
       }
