@@ -652,12 +652,16 @@ async function appsScriptPost(action, payload){
 // saveUser: writes to localStorage AND backs up to Google Sheets
 function saveUser(){
   try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+  // Always write a fast-restore snapshot so app reopens to home, not blank
+  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
   if(U && U.email && !U.isGuest){
     try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
-    // Keep local accounts registry in sync
+    // Keep local accounts registry in sync — always upsert, not just when key exists
     try{
       const accounts=loadAccounts();
-      if(accounts[U.email]){ accounts[U.email].userData=U; saveAccounts(); }
+      if(!accounts[U.email]) accounts[U.email]={};
+      accounts[U.email].userData=U;
+      saveAccounts();
     }catch(e){}
     // Fire-and-forget: push session to Sessions sheet in Google Sheets
     const logoutPwd = loadAccounts()[U.email]?.pwd || '';
@@ -1009,6 +1013,7 @@ function doLogout(){
   try{
     localStorage.removeItem('hv_user');
     localStorage.removeItem('hv_last_email');
+    localStorage.removeItem('hv_session_snapshot');
   }catch(e){}
   U={};
   chatHistory=[];
@@ -1086,6 +1091,8 @@ function finishOB(){
   // 3. Push full profile + session (with pwd hash) to Google Sheets
   const storedPwd = loadAccounts()[U.email]?.pwd || '';
   saveAllToSheets(storedPwd);
+  // Ensure snapshot is written for new users (saveUser() may have run before members was set)
+  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
   go('home');
 }
 
@@ -5416,6 +5423,28 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 
 (function startApp(){
   const saved = loadUser();
+
+  // Case 0: fast-restore from session snapshot (survives Android tab kill / iOS memory eviction)
+  // This is a lightweight copy written on every saveUser() call
+  if(!saved || !saved.name){
+    try{
+      const snap = localStorage.getItem('hv_session_snapshot');
+      if(snap){
+        const snapUser = JSON.parse(snap);
+        if(snapUser && snapUser.name){
+          // Restore from snapshot and re-persist to hv_user
+          if(!snapUser.members || !snapUser.members.length){
+            snapUser.members = [{id:'self',name:snapUser.name,role:'Me',age:snapUser.age||'',gender:snapUser.gender||'',avatar:'🧑',color:'#E8F0FE',textColor:'#0D47A1'}];
+          }
+          U = snapUser;
+          try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
+          runDailyCleanup();
+          go('home');
+          return;
+        }
+      }
+    }catch(e){}
+  }
 
   // Case 1: fully valid saved session — go home immediately
   if(saved && saved.name && saved.members){
