@@ -659,12 +659,48 @@ async function appsScriptPost(action, payload){
 
 // -- PERSISTENT STORAGE -------------------------------
 // saveUser: writes to localStorage AND backs up to Google Sheets
+// Cookie helpers — cookies survive Android PWA memory pressure better than localStorage
+function setCookie(name, value, days){
+  try{
+    const d = new Date();
+    d.setTime(d.getTime() + (days*24*60*60*1000));
+    document.cookie = name+'='+encodeURIComponent(value)+';expires='+d.toUTCString()+';path=/;SameSite=Lax';
+  }catch(e){}
+}
+function getCookie(name){
+  try{
+    const match = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(name+'='));
+    return match ? decodeURIComponent(match.split('=')[1]) : null;
+  }catch(e){ return null; }
+}
+function deleteCookie(name){
+  try{ document.cookie = name+'=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;'; }catch(e){}
+}
+
 function saveUser(){
   try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
   // Always write a fast-restore snapshot so app reopens to home, not blank
   try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
+  // Also save to cookie as ultimate fallback (survives Android PWA memory pressure)
+  try{
+    // Store full user in cookie (split into chunks if needed, but most users < 4KB)
+    const userData = JSON.stringify(U);
+    if(userData.length < 3800){
+      setCookie('hv_user_backup', userData, 365);
+    } else {
+      // Too large for one cookie — store just the essentials
+      setCookie('hv_user_backup', JSON.stringify({
+        name: U.name, email: U.email, phone: U.phone||'',
+        age: U.age, gender: U.gender, blood: U.blood||'',
+        isGuest: U.isGuest||false,
+        members: U.members,
+        allergies: U.allergies||'', conditions: U.conditions||''
+      }), 365);
+    }
+  }catch(e){}
   if(U && U.email && !U.isGuest){
     try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
+    setCookie('hv_last_email_backup', U.email, 365);
     // Keep local accounts registry in sync — always upsert, not just when key exists
     try{
       const accounts=loadAccounts();
@@ -940,7 +976,7 @@ async function doLogin(){
     const saved=accounts[loginKey].userData;
     if(saved && saved.name && saved.members){
       U=saved;
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');deleteCookie('hv_logged_out_backup');}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
       return;
@@ -1088,8 +1124,12 @@ function doLogout(){
     localStorage.removeItem('hv_user');
     localStorage.removeItem('hv_last_email');
     localStorage.removeItem('hv_session_snapshot');
+    // Clear cookie backups too
+    deleteCookie('hv_user_backup');
+    deleteCookie('hv_last_email_backup');
     // Set a logged-out flag so startApp skips all auto-restore logic
     localStorage.setItem('hv_logged_out', '1');
+    setCookie('hv_logged_out_backup', '1', 1);
   }catch(e){}
   U={};
   chatHistory=[];
@@ -1170,7 +1210,7 @@ function finishOB(){
   const storedPwd = loadAccounts()[U.email]?.pwd || '';
   saveAllToSheets(storedPwd);
   // Ensure snapshot is written for new users (saveUser() may have run before members was set)
-  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); localStorage.removeItem('hv_logged_out'); }catch(e){}
+  try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); localStorage.removeItem('hv_logged_out'); deleteCookie('hv_logged_out_backup'); }catch(e){}
   go('home');
 }
 
@@ -5501,7 +5541,7 @@ Object.defineProperty(window, 'OPENAI_KEY', {
 
 (function startApp(){
   // If user explicitly logged out, never auto-restore — go straight to splash
-  if(localStorage.getItem('hv_logged_out') === '1'){
+  if(localStorage.getItem('hv_logged_out') === '1' || getCookie('hv_logged_out_backup') === '1'){
     go('splash');
     return;
   }
@@ -5528,14 +5568,18 @@ Object.defineProperty(window, 'OPENAI_KEY', {
   const sources = [
     // 1. Primary: hv_user
     function(){ return loadUser(); },
-    // 2. Session snapshot (written on every saveUser call)
+    // 2. Session snapshot
     function(){
       try{ const s=localStorage.getItem('hv_session_snapshot'); return s?JSON.parse(s):null; }catch(e){ return null; }
     },
-    // 3. Accounts registry (keyed by last email)
+    // 3. Cookie backup (survives Android PWA memory pressure)
+    function(){
+      try{ const s=getCookie('hv_user_backup'); return s?JSON.parse(s):null; }catch(e){ return null; }
+    },
+    // 4. Accounts registry (keyed by last email)
     function(){
       try{
-        const email=localStorage.getItem('hv_last_email');
+        const email=localStorage.getItem('hv_last_email')||getCookie('hv_last_email_backup');
         if(!email) return null;
         const accts=loadAccounts();
         return (accts[email]&&accts[email].userData)||null;
