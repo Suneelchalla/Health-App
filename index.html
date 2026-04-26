@@ -6320,9 +6320,8 @@ function rMenstrual(){
       <span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;background:var(--rl);border:1.5px dashed var(--red);border-radius:50%;display:inline-block"></span>Predicted</span>
     </div>
     <button class="btn" onclick="showLogPeriod()">+ Log Period</button>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px">
+    <div style="margin:16px 0 10px">
       <div style="font-size:13px;font-weight:700;color:var(--g6)">Period History (${cycles.length})</div>
-      ${cycles.length>1?`<button onclick="deduplicateCycles()" style="background:var(--rl);color:#C5221F;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🧹 Remove Duplicates</button>`:''}
     </div>
     ${cycles.length?cycles.slice().reverse().slice(0,6).map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:#fff;border-radius:10px;border:.5px solid var(--g2);margin-bottom:7px">
       <span style="font-size:20px">🌸</span>
@@ -6477,28 +6476,6 @@ function deleteCycle(id){
   rMenstrual();
 }
 
-function deduplicateCycles(){
-  const cycles = getCycles();
-  const seen = new Set();
-  const unique = [];
-  // Sort by start date first, keep earliest-logged when start date is same
-  const sorted = cycles.slice().sort((a,b) => a.start < b.start ? -1 : 1);
-  for(const cy of sorted){
-    if(!seen.has(cy.start)){
-      seen.add(cy.start);
-      unique.push(cy);
-    }
-  }
-  const removed = cycles.length - unique.length;
-  if(removed === 0){
-    alert('No duplicates found — your history is clean!');
-    return;
-  }
-  if(!confirm('Found ' + removed + ' duplicate entr' + (removed===1?'y':'ies') + ' with the same start date. Remove ' + (removed===1?'it':'them') + '?')) return;
-  saveCycles(unique);
-  alert('Removed ' + removed + ' duplicate' + (removed===1?'':'s') + '. History is now clean.');
-  rMenstrual();
-}
 
 /* ══ 7. REAL DRUG INTERACTION CHECKER ══ */
 // Expanded local interaction DB (200+ pairs)
