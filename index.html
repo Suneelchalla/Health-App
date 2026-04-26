@@ -729,6 +729,48 @@ window.addEventListener('popstate', function(e){
 // Seed history on startup so first popstate has something to catch
 window.history.pushState({hvScreen:'init'}, '', window.location.href);
 
+// Handle Android/iOS restoring the app from memory (bfcache).
+// When this happens, JS does NOT re-run — so startApp() never fires again.
+// We detect the restore and navigate to home if the user is logged in.
+window.addEventListener('pageshow', function(e){
+  if(e.persisted){
+    // Page was restored from bfcache — check if user is still logged in
+    const snap = localStorage.getItem('hv_session_snapshot');
+    const loggedOut = localStorage.getItem('hv_logged_out');
+    if(snap && loggedOut !== '1'){
+      try{
+        const user = JSON.parse(snap);
+        if(user && user.name){
+          U = user;
+          go('home');
+          return;
+        }
+      }catch(ex){}
+    }
+  }
+});
+
+// Also handle app coming back from background on Android Chrome
+// (visibilitychange fires when user switches back to the app)
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible'){
+    // If current screen is splash but user is actually logged in, go home
+    const loggedOut = localStorage.getItem('hv_logged_out');
+    if(loggedOut === '1') return; // user intentionally logged out
+    const snap = localStorage.getItem('hv_session_snapshot');
+    if(!snap) return;
+    try{
+      const user = JSON.parse(snap);
+      // Only redirect if we're stuck on splash/login and user data exists
+      const currentScreen = _navHistory[_navHistory.length - 1] || '';
+      if(user && user.name && ['splash','login','onboard',''].includes(currentScreen)){
+        U = user;
+        go('home');
+      }
+    }catch(ex){}
+  }
+});
+
 function goProfile(){ go('profile'); }
 // Navigation history stack for back-button support
 const _navHistory = [];
@@ -1051,7 +1093,9 @@ function doLogout(){
   }catch(e){}
   U={};
   chatHistory=[];
-  go('splash');
+  // Reload the page so bfcache doesn't save a stale splash state
+  // that could confuse the next reopen
+  window.location.reload();
 }
 
 /* == ONBOARDING == */
