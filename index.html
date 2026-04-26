@@ -670,7 +670,7 @@ const $ = id => document.getElementById(id);
 const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
 
 // -- APPS SCRIPT URL (single source of truth) ---------
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeIss63j7rSJWMb0bhd44LHvZ-xy2iCaJaF5s8G4j8ChA5s9qr2EqFKtfHIliVqc0f/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlWe4uT_E5KZpkS9V6LX0AekO3u5dCWqwYkoE89NXv902D8l3OvupMYDDJfltkmzld/exec';
 
 // appsScriptPost: sends data via GET request (URL params) to avoid CORS.
 // Google Apps Script blocks POST preflight from mobile browsers,
@@ -720,7 +720,6 @@ function deleteCookie(name){
 function saveUser(){
   try{ localStorage.setItem('hv_user', JSON.stringify(U)); }catch(e){}
   try{ localStorage.setItem('hv_session_snapshot', JSON.stringify(U)); }catch(e){}
-  // Always re-affirm last_email and clear logged_out so startApp restores correctly
   if(U && U.email && !U.isGuest){
     try{ localStorage.setItem('hv_last_email', U.email); }catch(e){}
     try{ localStorage.removeItem('hv_logged_out'); }catch(e){}
@@ -734,26 +733,55 @@ function saveUser(){
       setCookie('hv_user_backup', JSON.stringify({
         name: U.name, email: U.email, phone: U.phone||'',
         age: U.age, gender: U.gender, blood: U.blood||'',
-        isGuest: U.isGuest||false,
-        members: U.members,
+        isGuest: U.isGuest||false, members: U.members,
         allergies: U.allergies||'', conditions: U.conditions||''
       }), 365);
     }
   }catch(e){}
   if(U && U.email && !U.isGuest){
-    // Keep local accounts registry in sync — store a deep copy
+    // Keep local accounts registry in sync — deep copy
     try{
       const accounts=loadAccounts();
       if(!accounts[U.email]) accounts[U.email]={};
       accounts[U.email].userData = JSON.parse(JSON.stringify(U));
       saveAccounts();
     }catch(e){}
-    // Fire-and-forget cloud sync
-    const logoutPwd = loadAccounts()[U.email]?.pwd || '';
-    const logoutData = Object.assign({}, U);
-    if(logoutPwd) logoutData._pwdHash = logoutPwd;
-    appsScriptPost('saveUser', { email:U.email, userData:logoutData }).catch(()=>{});
+    // Debounced auto-sync to cloud — fires 3s after last saveUser call
+    // This prevents hammering the API on rapid successive saves
+    _scheduleCloudSync();
   }
+}
+
+// Auto-sync scheduler — debounced 3 seconds
+let _syncTimer = null;
+let _lastSyncTime = 0;
+function _scheduleCloudSync(){
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function(){
+    _doCloudSync();
+  }, 3000);
+}
+
+async function _doCloudSync(){
+  if(!U || !U.email || U.isGuest) return;
+  // Don't sync more than once every 30 seconds automatically
+  const now = Date.now();
+  if(now - _lastSyncTime < 30000 && _lastSyncTime > 0) return;
+  _lastSyncTime = now;
+  try{
+    const accounts = loadAccounts();
+    const pwd = accounts[U.email]?.pwd || '';
+    const payload = Object.assign({}, U);
+    if(pwd) payload._pwdHash = pwd;
+    // Single saveUser call covers everything — profile, session, pwd hash
+    const r = await appsScriptPost('saveUser', { email: U.email, userData: payload });
+    if(!r.error){
+      saveKey('hv_last_sync', new Date().toLocaleString());
+      // Update sync status in UI if profile screen is open
+      const el = document.getElementById('sync-status-txt');
+      if(el) el.textContent = 'Last synced: ' + loadKey('hv_last_sync');
+    }
+  }catch(e){}
 }
 function loadUser(){ try{ const s=localStorage.getItem('hv_user'); return s?JSON.parse(s):null; }catch(e){return null;} }
 function saveKey(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -1339,19 +1367,9 @@ async function manualCloudSync(){
     const syncPwd = loadAccounts()[U.email]?.pwd || '';
     const syncData = Object.assign({}, U);
     if(syncPwd) syncData._pwdHash = syncPwd;
-    // 1. Save full session (includes all localStorage-based data in U object)
-    const r2 = await appsScriptPost('saveUser', { email: U.email, userData: syncData });
-    // 2. Save profile summary to UserProfiles sheet
-    const r1 = await appsScriptPost('saveData', {
-      email: U.email,
-      userProfile: {
-        name: U.name||'', age: U.age||'', gender: U.gender||'',
-        blood: U.blood||'', bloodGroup: U.blood||'',
-        conditions: U.conditions||'', allergies: U.allergies||'',
-        phone: U.phone||'', country: U.country||''
-      }
-    });
-    // 3. Sync each vital reading that hasn't been synced yet
+    // saveUser covers session + profile in one call — no saveData needed
+    const r = await appsScriptPost('saveUser', { email: U.email, userData: syncData });
+    // Sync unsynced vitals
     const vitals = getVitals();
     const unsynced = vitals.filter(v => !v._synced);
     for(const v of unsynced){
@@ -1360,15 +1378,14 @@ async function manualCloudSync(){
     }
     if(unsynced.length){ saveVitals(vitals); }
 
-    const err = r1.error || r2.error;
-    if(err){
+    if(r.error){
       btn.textContent = '❌ Sync Failed';
       const stat = document.getElementById('sync-status-txt');
-      if(stat) stat.textContent = 'Sync failed — ' + err.substring(0,50);
-      if(err.includes('Anyone')){
+      if(stat) stat.textContent = 'Sync failed — ' + r.error.substring(0,50);
+      if(r.error.includes('Anyone')){
         alert('Sync failed: Apps Script not public.\nFix: Deploy → Edit → Who has access = Anyone');
       } else {
-        alert('Sync failed: ' + err);
+        alert('Sync failed: ' + r.error);
       }
     } else {
       btn.textContent = '✅ Synced!';
@@ -1376,7 +1393,7 @@ async function manualCloudSync(){
       const stat = document.getElementById('sync-status-txt');
       if(stat) stat.textContent = 'Last synced: ' + now;
       saveKey('hv_last_sync', now);
-      // Also update accounts registry with fresh snapshot
+      _lastSyncTime = Date.now();
       try{
         const accounts = loadAccounts();
         if(accounts[U.email]) accounts[U.email].userData = JSON.parse(JSON.stringify(U));
@@ -1514,29 +1531,21 @@ function finishOB(){
 
 async function saveAllToSheets(pwdHash){
   if(!U.email || U.isGuest) return;
-  // Include pwd hash in cloud backup so cross-device login can verify password
   const cloudUserData = Object.assign({}, U);
   if(pwdHash) cloudUserData._pwdHash = pwdHash;
-
-  // Save session (with optional pwd hash) to Sessions sheet
+  // saveUser action handles everything: session, profile, pwd hash
+  // No need for a separate saveData call
   appsScriptPost('saveUser', { email: U.email, userData: cloudUserData })
-    .then(r=>{ 
-      if(r.error) console.warn('Sessions save error:', r.error);
-      else console.log('Sessions saved OK');
+    .then(r=>{
+      if(!r.error){
+        saveKey('hv_last_sync', new Date().toLocaleString());
+        const el = document.getElementById('sync-status-txt');
+        if(el) el.textContent = 'Last synced: ' + loadKey('hv_last_sync');
+      } else {
+        console.warn('Cloud sync error:', r.error);
+      }
     })
-    .catch(e=>{ console.warn('Sessions save failed:', e.message); });
-
-  // Save profile summary to UserProfiles sheet
-  appsScriptPost('saveData', {
-    email: U.email,
-    userProfile: {
-      name: U.name||'', age: U.age||'', gender: U.gender||'',
-      blood: U.blood||'', bloodGroup: U.blood||'',
-      conditions: U.conditions||'', allergies: U.allergies||'',
-      phone: U.phone||'', country: U.country||''
-    }
-  }).then(r=>{ if(r.error) console.warn('UserProfiles save error:', r.error); })
-    .catch(e=>{ console.warn('UserProfiles save failed:', e.message); });
+    .catch(e=>{ console.warn('Cloud sync failed:', e.message); });
 }
 
 /* == HOME == */
@@ -3320,12 +3329,12 @@ function rProfile(){
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <span style="font-size:20px">☁️</span>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--bd)">Cloud Backup</div>
-          <div style="font-size:11px;color:var(--blue)" id="sync-status-txt">${loadKey('hv_last_sync') ? 'Last synced: ' + loadKey('hv_last_sync') : 'Tap Sync Now to back up your data'}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--bd)">Auto Cloud Backup <span style="background:#E6F4EA;color:#1B5E20;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700">ON</span></div>
+          <div style="font-size:11px;color:var(--blue)" id="sync-status-txt">${loadKey('hv_last_sync') ? '✅ Last synced: ' + loadKey('hv_last_sync') : 'Syncs automatically when data changes'}</div>
         </div>
         <button onclick="testCloudConnection()" style="background:var(--bl);color:var(--bd);border:1px solid #C5D9F8;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" id="test-conn-btn">Test</button>
       </div>
-      <button onclick="manualCloudSync()" id="sync-btn" style="background:var(--blue);color:#fff;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit">☁️ Sync to Cloud Now</button>
+      <button onclick="manualCloudSync()" id="sync-btn" style="background:var(--w);color:var(--blue);border:1.5px solid #C5D9F8;border-radius:11px;padding:10px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit">↻ Force Sync Now</button>
     </div>
     <!-- Privacy note -->
     <div class="card" style="background:#F0F4FF;cursor:default;margin-bottom:12px;border-color:#C5D9F8">
@@ -5877,6 +5886,8 @@ Object.defineProperty(window, 'OPENAI_KEY', {
       if(ud.length < 3800) setCookie('hv_user_backup', ud, 365);
     }catch(e){}
     runDailyCleanup();
+    // Trigger background sync 5s after restore (enough time for app to fully load)
+    setTimeout(function(){ _doCloudSync(); }, 5000);
     go('home');
   }
 
