@@ -179,11 +179,11 @@ body.dark .qa .ql{color:#E0E0E0}
 
 
 /* LOGIN */
-.login-top{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:36px 24px 30px;color:#fff;flex-shrink:0}
-.login-top-logo{width:64px;height:64px;background:rgba(255,255,255,.2);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;border:1.5px solid rgba(255,255,255,.3);animation:loginLogoIn .7s cubic-bezier(0.34,1.56,0.64,1) both}
+.login-top{background:linear-gradient(145deg,#1A73E8,#0D47A1);padding:36px 24px 30px;color:#fff;flex-shrink:0;text-align:center;display:flex;flex-direction:column;align-items:center}
+.login-top-logo{width:64px;height:64px;background:rgba(255,255,255,.2);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:1.5px solid rgba(255,255,255,.3);animation:loginLogoIn .7s cubic-bezier(0.34,1.56,0.64,1) both}
 .login-top-logo svg{width:34px;height:34px;stroke:#fff;fill:none;stroke-width:2}
-.login-top h1{animation:loginTextIn .45s ease .5s both}
-.login-top p{animation:loginTextIn .45s ease .65s both}
+.login-top h1{animation:loginTextIn .45s ease .5s both;text-align:center}
+.login-top p{animation:loginTextIn .45s ease .65s both;text-align:center}
 @keyframes loginLogoIn{0%{transform:scale(0.2) rotate(-15deg);opacity:0}60%{transform:scale(1.15) rotate(3deg);opacity:1}80%{transform:scale(0.95)}100%{transform:scale(1) rotate(0deg);opacity:1}}
 @keyframes loginTextIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .login-top h1{font-size:24px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px}
@@ -198,7 +198,6 @@ body.dark .qa .ql{color:#E0E0E0}
 .soc-btn:active{background:var(--g1)}
 .soc-btn svg{width:19px;height:19px}
 .err{background:var(--rl);color:#C5221F;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:600;margin-bottom:12px;display:none}
-.guest-lnk{text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:10px;font-weight:700}
 
 /* ONBOARDING */
 .ob-hdr{padding:22px 22px 14px;background:var(--w);border-bottom:.5px solid var(--g2)}
@@ -923,7 +922,7 @@ function renderLF(m){
     <div style="text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:11px;font-weight:700">Forgot password?</div>
     <div class="or-div"><span>or continue with</span></div>
     <button class="soc-btn" onclick="doGoogle()"><svg viewBox="0 0 24 24" width="19" height="19"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
-    <div class="guest-lnk" onclick="doGuest()">Continue as Guest (limited features)</div>`;
+`;
   else c.innerHTML=`
     <div class="fld"><div class="flbl">Full Name</div><input class="inp" id="fn" type="text" placeholder="Your full name" autocomplete="name"/></div>
     <div class="fld"><div class="flbl">Email or Mobile Number</div><input class="inp" id="fe" type="text" inputmode="email" placeholder="Email or 10-digit mobile number" autocomplete="username"/></div>
@@ -1080,7 +1079,7 @@ function doGoogle(){
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   document.body.appendChild(ov);
 }
-function doGuest(){U.name='Guest';U.isGuest=true;go('onboard');}
+
 async function manualCloudSync(){
   if(!U.email || U.isGuest){
     alert('Sign in with an email account to sync data to cloud.');
