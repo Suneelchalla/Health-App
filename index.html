@@ -576,6 +576,10 @@ body.dark .qa .ql{color:#E0E0E0}
 .int-pair-meds{font-size:12px;font-weight:800;margin-bottom:4px}
 .int-pair-desc{font-size:11px;line-height:1.5}
 .int-pair-action{font-size:11px;font-weight:700;margin-top:5px;padding:4px 0}
+/* Suitcase logo animations used in splash and login screens */
+@keyframes bagFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+@keyframes floatDot{0%,100%{transform:translateY(0) scale(1);opacity:.8}50%{transform:translateY(-8px) scale(1.15);opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -633,7 +637,7 @@ const $ = id => document.getElementById(id);
 const SCR = $('SCR'), TB = $('TBAR'), SN = $('SNW');
 
 // -- APPS SCRIPT URL (single source of truth) ---------
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwvS65CljNqcnhcCUTB3_0rO5PXis_w_0fcoYLAgJBgNvlqSJhheXy9zLbwCkfWPKr/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeIss63j7rSJWMb0bhd44LHvZ-xy2iCaJaF5s8G4j8ChA5s9qr2EqFKtfHIliVqc0f/exec';
 
 // appsScriptPost: central helper for Google Apps Script POST calls.
 // action = action name (e.g. saveUser, saveData), payload = data object.
@@ -721,16 +725,17 @@ function loadKey(k){ try{ return localStorage.getItem(k)||''; }catch(e){return '
 // Fetch full user object from Google Sheets by email
 async function loadUserFromCloud(email){
   try{
-    const url = APPS_SCRIPT_URL + '?action=getUser&email=' + encodeURIComponent(email);
+    const baseUrl = window._APPS_SCRIPT_URL || APPS_SCRIPT_URL;
+    const url = baseUrl + '?action=getUser&email=' + encodeURIComponent(email);
     const res = await fetch(url, { redirect:'follow' });
     const text = await res.text();
     if(!text || text.trim() === '') return null;
     // Strip any XSSI prefix
     const clean = text.replace(/^[)\]\x27}]+/, '').trim();
-    // If it's a login page redirect, bail out
-    if(clean.startsWith('<')) { console.warn('loadUserFromCloud: got HTML -- script not public'); return null; }
+    // If it's a login page redirect, the script isn't public yet
+    if(clean.startsWith('<')) { console.warn('loadUserFromCloud: got HTML — deploy script as Anyone'); return null; }
     let data;
-    try { data = JSON.parse(clean); } catch(e){ console.warn('loadUserFromCloud parse error:', clean.substring(0,100)); return null; }
+    try { data = JSON.parse(clean); } catch(e){ console.warn('loadUserFromCloud parse error:', clean.substring(0,120)); return null; }
     if(data && data.userData) return data.userData;
     if(data && data.error) console.warn('loadUserFromCloud server error:', data.error);
     return null;
@@ -920,11 +925,7 @@ function rSplash(){
     <button class="btn" style="background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);margin-top:0;font-size:15px;padding:15px;border-radius:16px;letter-spacing:.2px" onclick="go('login')">Get Started →</button>
   </div>
   <div class="sp-note">Your data is encrypted end-to-end.<br>We never sell your health information.</div>
-  </div>
-  <style>
-    @keyframes bagFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
-    @keyframes floatDot{0%,100%{transform:translateY(0) scale(1);opacity:.8}50%{transform:translateY(-8px) scale(1.15);opacity:1}}
-  </style>`;
+  </div>`;
 }
 
 /* == LOGIN == */
@@ -961,8 +962,7 @@ function rLogin(){
     <div class="ltabs"><div class="ltab on" id="lt-login" onclick="swLT('login')">Sign In</div><div class="ltab" id="lt-signup" onclick="swLT('signup')">Create Account</div></div>
     <div id="err-m" class="err"></div>
     <div id="lf"></div>
-  </div></div>
-  <style>@keyframes bagFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}</style>`;
+  </div></div>`;
   renderLF('login');
 }
 function swLT(m){loginMode=m;['login','signup'].forEach(t=>{$('lt-'+t).className='ltab'+(t===m?' on':'')});renderLF(m);}
@@ -1016,8 +1016,7 @@ function doForgotPwd(){
     <div class="fld"><div class="flbl">Email or Mobile Number</div><input class="inp" id="frg-id" type="text" inputmode="email" placeholder="Email or 10-digit mobile"/></div>
     <button class="btn" style="margin-top:4px" onclick="frgStep2(this)">Verify Identity</button>
     <button class="btn2" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
-  </div>
-  <style>@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}</style>`;
+  </div>`;
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   document.body.appendChild(ov);
 }
@@ -1266,6 +1265,28 @@ function doGoogle(){
   document.body.appendChild(ov);
 }
 function doGuest(){U.name='Guest';U.isGuest=true;go('onboard');}
+async function testCloudConnection(){
+  const btn  = document.getElementById('test-conn-btn');
+  const stat = document.getElementById('sync-status-txt');
+  if(btn){ btn.textContent='Testing…'; btn.disabled=true; }
+  try{
+    const url  = (window._APPS_SCRIPT_URL || APPS_SCRIPT_URL) + '?action=ping';
+    const res  = await fetch(url, { redirect:'follow' });
+    const text = await res.text();
+    const clean = text.replace(/^[)\]\x27}]+/,'').trim();
+    const json  = JSON.parse(clean);
+    if(json.ok){
+      if(btn){ btn.textContent='✅ OK'; btn.style.background='var(--gl)'; btn.style.color='#1B5E20'; }
+      if(stat) stat.textContent = 'Connected · ' + new Date().toLocaleTimeString();
+    } else {
+      throw new Error(json.error || 'Bad response');
+    }
+  } catch(err){
+    if(btn){ btn.textContent='❌ Failed'; btn.style.background='var(--rl)'; btn.style.color='#C5221F'; }
+    if(stat) stat.textContent = 'Cannot reach server — check deployment';
+  }
+  setTimeout(()=>{ if(btn){ btn.textContent='Test'; btn.disabled=false; btn.style.background=''; btn.style.color=''; } }, 4000);
+}
 async function manualCloudSync(){
   if(!U.email || U.isGuest){
     alert('Sign in with an email account to sync data to cloud.');
@@ -1302,14 +1323,26 @@ async function manualCloudSync(){
 
     const err = r1.error || r2.error;
     if(err){
-      btn.textContent = '❌ Failed';
+      btn.textContent = '❌ Sync Failed';
+      const stat = document.getElementById('sync-status-txt');
+      if(stat) stat.textContent = 'Sync failed — ' + err.substring(0,50);
       if(err.includes('Anyone')){
-        alert('Sync failed: Apps Script not public. Fix: Deploy → Edit → Who has access = Anyone');
+        alert('Sync failed: Apps Script not public.\nFix: Deploy → Edit → Who has access = Anyone');
       } else {
         alert('Sync failed: ' + err);
       }
     } else {
       btn.textContent = '✅ Synced!';
+      const now = new Date().toLocaleString();
+      const stat = document.getElementById('sync-status-txt');
+      if(stat) stat.textContent = 'Last synced: ' + now;
+      saveKey('hv_last_sync', now);
+      // Also update accounts registry with fresh snapshot
+      try{
+        const accounts = loadAccounts();
+        if(accounts[U.email]) accounts[U.email].userData = JSON.parse(JSON.stringify(U));
+        saveAccounts();
+      }catch(ex){}
     }
   } catch(e){
     btn.textContent = '❌ Error';
@@ -3228,9 +3261,22 @@ function rProfile(){
     </div>
   </div>
   <div class="p16" style="padding-top:14px">
-    <div class="card" style="background:var(--gl);cursor:default;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:4px">🔒 100% Local & Private</div>
-      <div style="font-size:11px;color:#2D7A4F;line-height:1.5">All your health data is stored only on this device. No AI API, no cloud sync required. Your data never leaves your phone.</div>
+    <!-- Cloud Sync Card -->
+    <div style="background:#E8F0FE;border:1px solid #C5D9F8;border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:20px">☁️</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--bd)">Cloud Backup</div>
+          <div style="font-size:11px;color:var(--blue)" id="sync-status-txt">${loadKey('hv_last_sync') ? 'Last synced: ' + loadKey('hv_last_sync') : 'Tap Sync Now to back up your data'}</div>
+        </div>
+        <button onclick="testCloudConnection()" style="background:var(--bl);color:var(--bd);border:1px solid #C5D9F8;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" id="test-conn-btn">Test</button>
+      </div>
+      <button onclick="manualCloudSync()" id="sync-btn" style="background:var(--blue);color:#fff;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit">☁️ Sync to Cloud Now</button>
+    </div>
+    <!-- Privacy note -->
+    <div class="card" style="background:#F0F4FF;cursor:default;margin-bottom:12px;border-color:#C5D9F8">
+      <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:4px">🔒 Privacy First</div>
+      <div style="font-size:11px;color:#1A5BB5;line-height:1.5">Your data is stored on this device and optionally backed up to your private Google Sheet. No third parties ever see your health data.</div>
     </div>
     <button style="background:var(--rl);color:#C5221F;border:1.5px solid #F7C1C1;border-radius:12px;padding:12px;font-size:13px;font-weight:700;width:100%;cursor:pointer;font-family:inherit" onclick="doLogout()">Sign Out</button>
     <div class="pb"></div>
