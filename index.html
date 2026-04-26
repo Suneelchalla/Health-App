@@ -821,7 +821,7 @@ function swLT(m){loginMode=m;['login','signup'].forEach(t=>{$('lt-'+t).className
 function renderLF(m){
   const c=$('lf');
   if(m==='login') c.innerHTML=`
-    <div class="fld"><div class="flbl">Email or Phone</div><input class="inp" id="fe" type="email" placeholder="you@example.com"/></div>
+    <div class="fld"><div class="flbl">Email or Mobile Number</div><input class="inp" id="fe" type="text" inputmode="email" placeholder="Email or 10-digit mobile number" autocomplete="username"/></div>
     <div class="fld"><div class="flbl">Password</div><div class="pwd-wrap"><input class="inp" id="fp" type="password" placeholder="Your password"/><button class="pwd-eye" onclick="togglePwd('fp',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <button class="btn" style="margin-top:6px" onclick="doLogin()">Sign In</button>
     <div style="text-align:center;font-size:12px;color:var(--blue);cursor:pointer;margin-top:11px;font-weight:700">Forgot password?</div>
@@ -829,8 +829,8 @@ function renderLF(m){
     <button class="soc-btn" onclick="doGoogle()"><svg viewBox="0 0 24 24" width="19" height="19"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
     <div class="guest-lnk" onclick="doGuest()">Continue as Guest (limited features)</div>`;
   else c.innerHTML=`
-    <div class="fld"><div class="flbl">Full Name</div><input class="inp" id="fn" type="text" placeholder="Your full name"/></div>
-    <div class="fld"><div class="flbl">Email</div><input class="inp" id="fe" type="email" placeholder="you@example.com"/></div>
+    <div class="fld"><div class="flbl">Full Name</div><input class="inp" id="fn" type="text" placeholder="Your full name" autocomplete="name"/></div>
+    <div class="fld"><div class="flbl">Email or Mobile Number</div><input class="inp" id="fe" type="text" inputmode="email" placeholder="Email or 10-digit mobile number" autocomplete="username"/></div>
     <div class="fld"><div class="flbl">Password</div><div class="pwd-wrap"><input class="inp" id="fp" type="password" placeholder="Min 6 characters"/><button class="pwd-eye" onclick="togglePwd('fp',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <div class="fld"><div class="flbl">Confirm Password</div><div class="pwd-wrap"><input class="inp" id="fp2" type="password" placeholder="Repeat password"/><button class="pwd-eye" onclick="togglePwd('fp2',this)" type="button"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px"><input type="checkbox" id="fc" style="margin-top:3px;cursor:pointer"/><label for="fc" style="font-size:11px;color:var(--g5);line-height:1.5;cursor:pointer">I agree to the <span style="color:var(--blue);font-weight:700">Terms</span> and <span style="color:var(--blue);font-weight:700">Privacy Policy</span>. My health data is encrypted and never shared without consent.</label></div>
@@ -866,7 +866,12 @@ function loadAccounts(){ try{const s=localStorage.getItem('hv_accounts');window.
 async function doLogin(){
   const e=$('fe')?.value.trim(), p=$('fp')?.value;
   hideE();
-  if(!e||!e.includes('@')){showE('Please enter a valid email address.');return;}
+  // Accept email (contains @) or 10-digit mobile number
+  const isPhone = /^[6-9]\d{9}$/.test(e.replace(/\s/g,''));
+  const isEmail = e.includes('@') && e.includes('.');
+  if(!e || (!isEmail && !isPhone)){showE('Please enter a valid email address or 10-digit mobile number.');return;}
+  // Normalise phone: store as email-style key for account lookup
+  const loginKey = isPhone ? e.replace(/\s/g,'')+'@phone.hv' : e;
   if(!p||p.length<4){showE('Password must be at least 4 characters.');return;}
   const btn=document.querySelector('#lf .btn');
   if(btn){btn.textContent='Signing in…';btn.disabled=true;}
@@ -877,8 +882,8 @@ async function doLogin(){
   const legacyHash=hashPwdSync(p);
 
   // -- Step 1: Check local registry (works offline / same device) --
-  if(accounts[e]){
-    const storedPwd = accounts[e].pwd || '';
+  if(accounts[loginKey]){
+    const storedPwd = accounts[loginKey].pwd || '';
     const pwdOk = storedPwd === pwdHash || storedPwd === legacyHash ||
                   // Upgrade legacy djb2 hash to sha256 transparently
                   (storedPwd.startsWith('djb2_') && storedPwd === legacyHash) ||
@@ -889,61 +894,78 @@ async function doLogin(){
       return;
     }
     // Silently upgrade legacy hash to SHA-256 on successful login
-    if(!storedPwd.startsWith('sha256_')){ accounts[e].pwd = pwdHash; saveAccounts(); }
-    const saved=accounts[e].userData;
+    if(!storedPwd.startsWith('sha256_')){ accounts[loginKey].pwd = pwdHash; saveAccounts(); }
+    const saved=accounts[loginKey].userData;
     if(saved && saved.name && saved.members){
       U=saved;
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
+      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
       go('home');
       return;
     }
   }
 
-  // -- Step 2: Not in local registry → try cloud (cross-device login) --
-  if(btn){btn.textContent='Checking cloud…';btn.disabled=true;} 
-  loadUserFromCloud(e).then(function(cloudUser){
-    if(btn){btn.textContent='Signing in…';}
-    if(cloudUser && cloudUser.name && cloudUser.members){
-      // Cloud account found -- verify password
-      // If cloud has stored pwd hash, verify it; otherwise accept (first cross-device login)
-      const cloudPwd = cloudUser._pwdHash;
-      if(cloudPwd && cloudPwd !== pwdHash){
+  // -- Step 2: Not in local registry → try cloud (only for real emails, not phone keys) --
+  if(!isPhone){
+    if(btn){btn.textContent='Checking cloud…';btn.disabled=true;}
+    loadUserFromCloud(loginKey).then(function(cloudUser){
+      if(btn){btn.textContent='Signing in…';}
+      if(cloudUser && cloudUser.name && cloudUser.members){
+        const cloudPwd = cloudUser._pwdHash;
+        if(cloudPwd && cloudPwd !== pwdHash){
+          if(btn){btn.textContent='Sign In';btn.disabled=false;}
+          showE('Incorrect password. Please try again.');
+          return;
+        }
+        U=cloudUser;
+        delete U._pwdHash;
+        accounts[loginKey]={pwd:pwdHash, userData:U};
+        saveAccounts();
+        try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',loginKey);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
         if(btn){btn.textContent='Sign In';btn.disabled=false;}
-        showE('Incorrect password. Please try again.');
-        return;
+        go('home');
+      } else {
+        if(btn){btn.textContent='Sign In';btn.disabled=false;}
+        showE('No account found. Please create a new account, or open the app on your original device first to sync.');
       }
-      // ✅ Login successful from cloud
-      U=cloudUser;
-      delete U._pwdHash; // don't keep pwd hash in active session
-      accounts[e]={pwd:pwdHash, userData:U};
-      saveAccounts();
-      try{localStorage.setItem('hv_user',JSON.stringify(U));localStorage.setItem('hv_last_email',e);localStorage.setItem('hv_session_snapshot',JSON.stringify(U));localStorage.removeItem('hv_logged_out');}catch(ex){}
+    }).catch(function(err){
       if(btn){btn.textContent='Sign In';btn.disabled=false;}
-      go('home');
-    } else {
-      // -- Step 3: Cloud also has no record --
-      if(btn){btn.textContent='Sign In';btn.disabled=false;}
-      showE('No account found for this email on this device or cloud. Please create a new account, or open the app on your original device first to sync.');
-    }
-  }).catch(function(err){
+    // Cloud unreachable -- be helpful
+    showE('Could not reach cloud. Check your internet and try again.');
+    });
+  } else {
+    // Phone number not found locally
     if(btn){btn.textContent='Sign In';btn.disabled=false;}
-    // Cloud unreachable -- be helpful instead of blocking
-    showE('Could not reach cloud to verify your account. Check your internet connection and try again. If this is a new device, open the app on your original device first.');
-  });
+    showE('No account found for this mobile number on this device. Please register first.');
+  }
 }
 async function doSignup(){
   const n=$('fn')?.value.trim(),e=$('fe')?.value.trim(),p=$('fp')?.value,p2=$('fp2')?.value,c=$('fc')?.checked;
   hideE();
   if(!n){showE('Please enter your full name.');return;}
-  if(!e||!e.includes('@')){showE('Please enter a valid email.');return;}
+  if(!e){showE('Please enter your email or mobile number.');return;}
+  // Validate: accept email or 10-digit Indian mobile number
+  const signupIsPhone = /^[6-9]\d{9}$/.test(e.replace(/\s/g,''));
+  const signupIsEmail = e.includes('@') && e.includes('.');
+  if(!signupIsPhone && !signupIsEmail){
+    showE('Please enter a valid email (e.g. you@example.com) or a 10-digit mobile number (e.g. 9876543210).');
+    return;
+  }
   if(!p||p.length<6){showE('Password must be at least 6 characters.');return;}
   if(p!==p2){showE('Passwords do not match.');return;}
   if(!c){showE('Please accept the Terms to continue.');return;}
+  // Normalise: phone stored as accountKey, email stored as-is
+  const signupKey = signupIsPhone ? e.replace(/\s/g,'')+'@phone.hv' : e;
   const accounts=loadAccounts();
-  if(accounts[e]){showE('An account with this email already exists. Please sign in.');return;}
-  U.name=n; U.email=e; U._regPwd=await hashPwd(p);
-  try{ localStorage.setItem('hv_last_email', e); }catch(ex){}
+  if(accounts[signupKey]){
+    showE(signupIsPhone ? 'An account with this mobile number already exists. Please sign in.' : 'An account with this email already exists. Please sign in.');
+    return;
+  }
+  U.name=n;
+  U.email=signupKey;   // store normalised key as email (used as account identifier)
+  U.phone=signupIsPhone ? e.replace(/\s/g,'') : ''; // store raw phone separately if provided
+  U._regPwd=await hashPwd(p);
+  try{ localStorage.setItem('hv_last_email', signupKey); }catch(ex){}
   go('onboard');
 }
 function doGoogle(){
