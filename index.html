@@ -777,9 +777,14 @@ async function _doCloudSync(){
     const r = await appsScriptPost('saveUser', { email: U.email, userData: payload });
     if(!r.error){
       saveKey('hv_last_sync', new Date().toLocaleString());
+      saveKey('hv_sync_failed', '');
       // Update sync status in UI if profile screen is open
       const el = document.getElementById('sync-status-txt');
-      if(el) el.textContent = 'Last synced: ' + loadKey('hv_last_sync');
+      if(el) el.textContent = '✅ Last synced: ' + loadKey('hv_last_sync');
+    } else {
+      saveKey('hv_sync_failed', '1');
+      const el = document.getElementById('sync-status-txt');
+      if(el) el.textContent = '⚠️ Sync failed — check your Apps Script URL in Settings';
     }
   }catch(e){}
 }
@@ -1635,7 +1640,7 @@ function runDailyCleanup(){
     const toDelete = [];
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
-      if(k && k.startsWith('hv_taken_') && k !== 'hv_taken_' + t) toDelete.push(k);
+      if(k && k.startsWith('hv_taken_') && !k.endsWith('_' + t)) toDelete.push(k);
     }
     toDelete.forEach(k => localStorage.removeItem(k));
   }catch(e){}
@@ -1917,7 +1922,15 @@ function rHome(){
     alerts.push({type:'blue',icon:'💧',title:`${glassesToday} of ${waterGoal} glasses -- keep hydrating`,sub:'Tap to log a glass of water.',action:"go('water')"});
   }
 
-  const alertHTML = alerts.slice(0,3).map(a=>
+  // Always show appointment alert if today, regardless of other alerts
+  const urgentAppt = nextAppt && Math.round((new Date(nextAppt.datetime)-now_)/(1000*60*60*24))===0;
+  const regularAlerts = alerts.filter(a => !(urgentAppt && a.icon==='📅'));
+  const apptAlert = alerts.find(a => a.icon==='📅');
+  const finalAlerts = urgentAppt && apptAlert
+    ? [apptAlert, ...regularAlerts].slice(0,4)
+    : alerts.slice(0,4);
+
+  const alertHTML = finalAlerts.map(a=>
     `<div class="h-alert ${a.type}" onclick="go('${a.action.replace(/go\('|'\)/g,'')}')" >
       <div class="h-alert-ico">${a.icon}</div>
       <div class="h-alert-body">
@@ -2026,6 +2039,7 @@ function rHome(){
       }).join('')}`;
 
   SCR.innerHTML=`<div class="sc">
+  ${U.isGuest ? '<div style="background:#FFF8E1;border-bottom:1px solid #F9AB00;padding:9px 14px;display:flex;align-items:center;gap:9px;flex-shrink:0"><span style="font-size:15px">⚠️</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:#B06000">Guest Mode — data is not saved</div><div style="font-size:11px;color:#8A6200;margin-top:1px">Create a free account to keep your health data safe.</div></div><button onclick="go(\'login\')" style="background:#F9AB00;color:#fff;border:none;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">Sign Up</button></div>' : ''}
   ${famBar}
   <div class="hh">
     <div class="hgreet">${greet}</div>
@@ -2164,14 +2178,26 @@ function rScan(){
 function renderMedListInline(){
   const meds = getMeds();
   if(!meds.length) return '<div style="text-align:center;padding:12px;color:var(--g4);font-size:12px;background:var(--g1);border-radius:10px">No medicines yet. Add one above.</div>';
-  return meds.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:#fff;border-radius:10px;margin-bottom:7px;border:.5px solid var(--g2)">
+  return meds.map(m=>{
+    const durDays = parseDurationToDays(m.duration);
+    let endsLabel = '';
+    if(m.active===false && m.endedOn){
+      endsLabel = `<span style="color:var(--g4);font-size:10px;margin-left:4px">· ended ${fmtDate(m.endedOn)}</span>`;
+    } else if(durDays && m.date){
+      const endDate = new Date(m.date); endDate.setDate(endDate.getDate()+durDays);
+      const endStr = endDate.toISOString().split('T')[0];
+      const daysLeft = Math.round((endDate-new Date())/(1000*60*60*24));
+      if(daysLeft>0) endsLabel = `<span style="color:var(--teal);font-size:10px;font-weight:600;margin-left:4px">· ends ${fmtDate(endStr)} (${daysLeft}d left)</span>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:#fff;border-radius:10px;margin-bottom:7px;border:.5px solid var(--g2);opacity:${m.active===false?'0.6':'1'}">
     <div style="font-size:18px">💊</div>
     <div style="flex:1">
       <div style="font-size:13px;font-weight:700;color:var(--g6)">${m.name} ${m.dosage||''}</div>
-      <div style="font-size:10px;color:var(--g4)">${m.use?'<span style="color:var(--teal);font-weight:600">'+m.use+'</span> . ':''}${m.food||''} . ${m.duration||''} . ${[m.morning?'🌅':'',m.afternoon?'☀️':'',m.night?'🌙':''].filter(Boolean).join(' ')||'As directed'}</div>
+      <div style="font-size:10px;color:var(--g4)">${m.use?'<span style="color:var(--teal);font-weight:600">'+m.use+'</span> · ':''}${m.food||''} · ${m.duration||''}${endsLabel} · ${[m.morning?'🌅':'',m.afternoon?'☀️':'',m.night?'🌙':''].filter(Boolean).join(' ')||'As directed'}</div>
     </div>
     <button onclick="deleteMedInline('${m.id}')" style="background:var(--rl);border:none;border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer;color:#C5221F">🗑️</button>
-  </div>`).join('') + '<div class="pb"></div>';
+  </div>`;
+  }).join('') + '<div class="pb"></div>';
 }
 
 function deleteMedInline(id){
@@ -3215,15 +3241,42 @@ const LOCAL_FAQ = [
 
 function localChatReply(msg){
   const m = msg.toLowerCase();
+  // Personalise: check if user is asking about a medicine they are on
+  const userMeds = getMeds().filter(x=>x.active!==false).map(x=>x.name.toLowerCase());
+  const userConditions = (U.conditions||'').toLowerCase();
+  // Interaction warning: if asking "can I take X" and they're on a conflicting med
+  const takeMatch = m.match(/can i take (.+?)[\?\.,$]/);
+  if(takeMatch){
+    const asked = takeMatch[1].trim();
+    const askedGeneric = normaliseMedName(asked);
+    const allMeds = [...userMeds, askedGeneric];
+    const hits = findInteractions(allMeds.map((n,i)=>i===allMeds.length-1?asked:getMeds().filter(x=>x.active!==false)[i]?.name||n));
+    if(hits.length){
+      const warn = hits.map(h=>`⚠️ ${h.med1} + ${h.med2}: ${h.effect} — ${h.action}`).join('\n');
+      return `Based on your saved medicines, there is a potential interaction to be aware of:\n\n${warn}\n\n⚕️ Always confirm with your doctor or pharmacist before taking a new medicine.`;
+    }
+  }
   for(const faq of LOCAL_FAQ){
     if(faq.q.some(k => m.includes(k))) return faq.a;
+  }
+  // If asking about a medicine they are already on, acknowledge it
+  const onMed = userMeds.find(med => m.includes(med) || m.includes(normaliseMedName(med)));
+  if(onMed){
+    const interactions = findInteractions(userMeds.map(n=>getMeds().find(x=>x.name.toLowerCase()===n)?.name||n));
+    const relatedInts = interactions.filter(h=>h.med1.toLowerCase().includes(onMed)||h.med2.toLowerCase().includes(onMed));
+    if(relatedInts.length){
+      return `You are currently taking ${onMed}. There are known interactions in your medicine list:\n\n${relatedInts.map(h=>`⚠️ ${h.med1} + ${h.med2}: ${h.effect}`).join('\n')}\n\nPlease discuss with your doctor or pharmacist.`;
+    }
+    return `You are currently taking ${onMed}. For specific questions about dosage or side effects, please consult your prescribing doctor or a pharmacist. I can answer general questions about common health topics.`;
   }
   return `I don't have specific information on "${msg}" in my local database. For accurate health advice on this topic, please consult a qualified doctor or pharmacist. I can answer questions about common topics like fever, blood pressure, cholesterol, diabetes, medicines, sleep, diet and exercise.`;
 }
 
 function rChatbot(){
   if(!chatHistory.length){
-    chatHistory=[{role:'bot',text:'Hello! I\'m your HealthVault assistant 👋\n\nI work completely offline -- no internet or API key needed. I can help with general health questions on topics like:\n\n💊 Medicines (paracetamol, ibuprofen…)\n🩸 Lab values (cholesterol, HbA1c, vitamin D…)\n❤️ Lifestyle (diet, exercise, sleep, stress…)\n\nNote: I provide educational info only -- always consult a doctor for personal health decisions.',time:'Now'}];
+    const hasMeds = getMeds().filter(m=>m.active!==false).length > 0;
+    const medContext = hasMeds ? `\n\n💊 I can see your saved medicines and will warn you about interactions if you ask about a new medicine.` : '';
+    chatHistory=[{role:'bot',text:`Hello! I'm your HealthVault assistant 👋\n\nI work completely offline — no internet or API key needed. I can help with general health questions on topics like:\n\n💊 Medicines (paracetamol, ibuprofen…)\n🩸 Lab values (cholesterol, HbA1c, vitamin D…)\n❤️ Lifestyle (diet, exercise, sleep, stress…)${medContext}\n\nNote: I provide educational info only — always consult a doctor for personal health decisions.`,time:'Now'}];
   }
   SCR.innerHTML=`<div class="sc" style="height:100%;display:flex;flex-direction:column">
   <div class="hdr" style="flex-shrink:0"><div style="display:flex;align-items:center;gap:10px"><div class="bk" onclick="goBack()">←</div><div><div class="hdr-t">Health Assistant</div><div class="hdr-s">Offline . No API needed . Educational only</div></div></div></div>
@@ -3299,7 +3352,7 @@ function rProfile(){
   </div>
   <div class="pgr" style="margin-top:0">
     <div class="ps" onclick="go('vitals')" style="cursor:pointer"><div class="psv" style="color:var(--red)">${getVitals().length}</div><div class="psl">Vitals</div></div>
-    <div class="ps" onclick="go('healthscore')" style="cursor:pointer"><div class="psv" style="color:var(--amber)">${calcHealthScore()}</div><div class="psl">Health Score</div></div>
+    <div class="ps" onclick="go('healthscore')" style="cursor:pointer"><div class="psv" style="color:var(--amber)">${calcHealthScore()}</div><div class="psl">Tracking Score</div></div>
   </div>
   <div>
     <div style="padding:12px 14px;font-size:10px;font-weight:700;color:var(--g4);text-transform:uppercase;letter-spacing:.5px">Health Summary</div>
@@ -3311,7 +3364,7 @@ function rProfile(){
       {i:'💉',l:'Vaccination Tracker',v:'View schedule',fn:"go('vaccines')"},
       {i:'🆘',l:'Emergency Contact',v:U.ecName||'Not set',fn:"go('emergency')"},
       {i:'📊',l:'Vitals Tracker',v:getVitals().length+' readings',fn:"go('vitals')"},
-      {i:'🏆',l:'Health Score',v:'View score',fn:"go('healthscore')"},
+      {i:'🏆',l:'Tracking Score',v:'View score',fn:"go('healthscore')"},
       {i:'🔍',l:'Search',v:'Find anything',fn:"go('search')"},
       {i:'🌐',l:'Language',v:U.language||'English',fn:''},
       {i:'📤',l:'Export Health Data',v:'Download JSON',fn:'exportData()'},
@@ -3330,7 +3383,7 @@ function rProfile(){
         <span style="font-size:20px">☁️</span>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700;color:var(--bd)">Auto Cloud Backup <span style="background:#E6F4EA;color:#1B5E20;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700">ON</span></div>
-          <div style="font-size:11px;color:var(--blue)" id="sync-status-txt">${loadKey('hv_last_sync') ? '✅ Last synced: ' + loadKey('hv_last_sync') : 'Syncs automatically when data changes'}</div>
+          <div style="font-size:11px;color:var(--blue)" id="sync-status-txt">${loadKey('hv_sync_failed')==='1' ? '⚠️ Last sync failed — check Apps Script URL in Settings' : loadKey('hv_last_sync') ? '✅ Last synced: ' + loadKey('hv_last_sync') : 'Syncs automatically when data changes'}</div>
         </div>
         <button onclick="testCloudConnection()" style="background:var(--bl);color:var(--bd);border:1px solid #C5D9F8;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" id="test-conn-btn">Test</button>
       </div>
@@ -4163,11 +4216,11 @@ function editFamilyMember(id){
     + '<div style="font-size:11px;font-weight:700;color:var(--g4);margin-bottom:8px">GENDER</div>'
     + '<div id="gen-pick" style="display:flex;gap:8px;margin-bottom:22px">'+genHtml+'</div>'
     + '<div style="display:flex;gap:10px">'
-    + '<button onclick="document.getElementById(\'family-edit-ov\').remove()" style="flex:1;background:var(--g1);color:var(--g5);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>'
+    + '<button onclick="cancelMemberEdit(\''+id+'\')" style="flex:1;background:var(--g1);color:var(--g5);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>'
     + '<button onclick="saveMemberEdit(\''+id+'\')" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Save Changes</button>'
     + '</div></div>';
 
-  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  ov.addEventListener('click', function(e){ if(e.target===ov) cancelMemberEdit(id); });
   // Remove any existing overlay first
   var existing = document.getElementById('family-edit-ov');
   if(existing) existing.remove();
@@ -4198,11 +4251,22 @@ function saveMemberEdit(id){
   if(!m){ ov.remove(); return; }
   m.name=name; m.age=age; m.gender=gender; m.role=role;
   m.avatar = avatar || smartAvatar(role, gender, age);
+  delete m._isNew;
   saveUser(); ov.remove();
   if((U.activeMember||'self')===id) rHome(); else rFamily();
 }
 
 /* Returns the best-fit emoji for a member based on role + gender + age */
+function cancelMemberEdit(id){
+  // If this was a newly added (unsaved) member, remove it from U.members on cancel
+  var m = (U.members||[]).find(function(x){ return x.id===id; });
+  if(m && m._isNew){
+    U.members = U.members.filter(function(x){ return x.id!==id; });
+  }
+  var ov = document.getElementById('family-edit-ov');
+  if(ov) ov.remove();
+  rFamily();
+}
 function smartAvatar(role, gender, age){
   var r = (role||'').toLowerCase();
   var g = (gender||'').toLowerCase();
@@ -4254,9 +4318,10 @@ function smartAvatar(role, gender, age){
 function addFamilyMember(){
   var colors=[['#E6F4EA','#1B5E20'],['#FCE4EC','#880E4F'],['#EDE7FE','#311B92'],['#E0F2F1','#004D40'],['#FFF8E1','#F57F17']];
   var ci=(U.members?U.members.length:0)%colors.length;
-  var nm={id:'m'+Date.now(),name:'',role:'Child',age:'',gender:'female',avatar:'👶',color:colors[ci][0],textColor:colors[ci][1]};
+  var nm={id:'m'+Date.now(),name:'',role:'Child',age:'',gender:'female',avatar:'👶',color:colors[ci][0],textColor:colors[ci][1],_isNew:true};
   if(!U.members) U.members=[];
-  U.members.push(nm); saveUser();
+  U.members.push(nm);
+  // Don't saveUser() yet — only save after the user confirms the name in editFamilyMember
   editFamilyMember(nm.id);
 }
 
@@ -4925,7 +4990,7 @@ function rMore(){
     {i:'💉',t:'Vaccination Tracker',s:'Immunisation schedule',sc:'vaccines',c:'#E8F0FE'},
     {i:'🍽️',t:'Food & Medicine',s:'Dietary interactions',sc:'foodint',c:'var(--gl)'},
     {i:'📊',t:'Vitals Tracker',s:'BP, sugar, weight, SpO2',sc:'vitals',c:'var(--rl)'},
-    {i:'🏆',t:'Health Score',s:'Track your data completeness',sc:'healthscore',c:'var(--al)'},
+    {i:'🏆',t:'Tracking Score',s:'Track your data completeness',sc:'healthscore',c:'var(--al)'},
     {i:'🔍',t:'Search',s:'Find medicines, reports, vault',sc:'search',c:'var(--gl)'},
     {i:'📋',t:'Health Vault',s:'Complete history & edit/delete',sc:'vault',c:'var(--pl)'},
     {i:'🆘',t:'Emergency Contacts',s:'Manage SOS contacts & medical info',sc:'emergency',c:'var(--rl)'},
@@ -5527,12 +5592,12 @@ function rVitals(){
 
   // Normal ranges for each type
   const ranges = {
-    bp:    { check: function(v){ const p=v.split('/'); const s=parseInt(p[0]),d=parseInt(p[1]); if(s>140||d>90) return 'HIGH'; if(s<90||d<60) return 'LOW'; return 'NORMAL'; }},
-    sugar: { check: function(v){ const n=parseFloat(v); if(n>140) return 'HIGH'; if(n<70) return 'LOW'; return 'NORMAL'; }},
-    weight:{ check: function(v){ return 'NORMAL'; }},
-    temp:  { check: function(v){ const n=parseFloat(v); if(n>37.5) return 'HIGH'; if(n<36.0) return 'LOW'; return 'NORMAL'; }},
-    spo2:  { check: function(v){ const n=parseFloat(v); if(n<95) return 'LOW'; return 'NORMAL'; }},
-    pulse: { check: function(v){ const n=parseFloat(v); if(n>100) return 'HIGH'; if(n<60) return 'LOW'; return 'NORMAL'; }},
+    bp:    { check: function(v){ const p=v.split('/'); if(p.length<2) return 'INVALID'; const s=parseInt(p[0]),d=parseInt(p[1]); if(isNaN(s)||isNaN(d)) return 'INVALID'; if(s>140||d>90) return 'HIGH'; if(s<90||d<60) return 'LOW'; return 'NORMAL'; }},
+    sugar: { check: function(v,ctx){ const n=parseFloat(v); if(isNaN(n)) return 'INVALID'; if(ctx==='fasting'){ if(n>=126) return 'HIGH'; if(n>=100) return 'ELEVATED'; if(n<70) return 'LOW'; return 'NORMAL'; } if(n>180) return 'HIGH'; if(n>140) return 'ELEVATED'; if(n<70) return 'LOW'; return 'NORMAL'; }},
+    weight:{ check: function(v){ const n=parseFloat(v); if(isNaN(n)||n<=0) return 'INVALID'; return 'NORMAL'; }},
+    temp:  { check: function(v){ const n=parseFloat(v); if(isNaN(n)) return 'INVALID'; if(n>37.5) return 'HIGH'; if(n<36.0) return 'LOW'; return 'NORMAL'; }},
+    spo2:  { check: function(v){ const n=parseFloat(v); if(isNaN(n)) return 'INVALID'; if(n<95) return 'LOW'; return 'NORMAL'; }},
+    pulse: { check: function(v){ const n=parseFloat(v); if(isNaN(n)) return 'INVALID'; if(n>100) return 'HIGH'; if(n<60) return 'LOW'; return 'NORMAL'; }},
   };
 
   SCR.innerHTML=`<div class="sc">
@@ -5545,7 +5610,7 @@ function rVitals(){
       ${types.map(function(t){
         const l = latest[t.key];
         const status = l ? ranges[t.key].check(l.value) : null;
-        const statusColor = status==='HIGH'?'var(--red)':status==='LOW'?'var(--amber)':'var(--green)';
+        const statusColor = status==='HIGH'?'var(--red)':status==='LOW'?'var(--amber)':status==='ELEVATED'?'var(--orange)':status==='INVALID'?'var(--g4)':'var(--green)';
         return `<div style="background:#fff;border-radius:12px;padding:12px;border:.5px solid var(--g2);cursor:pointer" onclick="showLogVital('${t.key}','${t.label}','${t.unit}','${t.placeholder}','${t.color}')">
           <div style="font-size:20px;margin-bottom:5px">${t.icon}</div>
           <div style="font-size:11px;font-weight:700;color:var(--g5);margin-bottom:4px">${t.label}</div>
@@ -5564,9 +5629,9 @@ function rVitals(){
       ? '<div style="text-align:center;padding:20px;color:var(--g4);background:var(--g1);border-radius:12px;font-size:13px">No readings yet. Tap any card above to log a reading.</div>'
       : vitals.slice().reverse().slice(0,20).map(function(v){
           const t = types.find(function(x){ return x.key===v.type; }) || {icon:'📊',label:v.type,unit:'',color:'var(--blue)'};
-          const status = ranges[v.type] ? ranges[v.type].check(v.value) : 'NORMAL';
-          const sc = status==='HIGH'?'var(--rl)':status==='LOW'?'var(--al)':'var(--gl)';
-          const tc = status==='HIGH'?'#C5221F':status==='LOW'?'#B06000':'#1B5E20';
+          const status = ranges[v.type] ? ranges[v.type].check(v.value, v.sugarCtx) : 'NORMAL';
+          const sc = status==='HIGH'?'var(--rl)':status==='LOW'?'var(--al)':status==='ELEVATED'?'var(--ol)':status==='INVALID'?'var(--g2)':'var(--gl)';
+          const tc = status==='HIGH'?'#C5221F':status==='LOW'?'#B06000':status==='ELEVATED'?'#D84600':status==='INVALID'?'var(--g4)':'#1B5E20';
           return `<div class="vitem" style="position:relative">
             <div class="vico">${t.icon}</div>
             <div style="flex:1">
@@ -5587,16 +5652,27 @@ function showLogVital(key, label, unit, placeholder, color){
   const overlay = document.createElement('div');
   overlay.id = 'vital-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  const sugarToggle = key==='sugar' ? `
+    <div class="fld">
+      <div class="flbl">Reading type</div>
+      <div style="display:flex;gap:8px">
+        <div id="sctx-fasting" onclick="setSugarCtx('fasting')" style="flex:1;padding:9px;text-align:center;border-radius:9px;border:1.5px solid var(--blue);background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer">🌅 Fasting</div>
+        <div id="sctx-postmeal" onclick="setSugarCtx('postmeal')" style="flex:1;padding:9px;text-align:center;border-radius:9px;border:1.5px solid var(--g2);background:var(--g1);color:var(--g5);font-size:13px;font-weight:700;cursor:pointer">🍽️ Post-meal</div>
+        <div id="sctx-random" onclick="setSugarCtx('random')" style="flex:1;padding:9px;text-align:center;border-radius:9px;border:1.5px solid var(--g2);background:var(--g1);color:var(--g5);font-size:13px;font-weight:700;cursor:pointer">🔀 Random</div>
+      </div>
+      <div id="sugar-ctx-hint" style="font-size:11px;color:var(--g4);margin-top:6px">Fasting: Normal &lt;100 · Pre-diabetic 100–125 · Diabetic ≥126 mg/dL</div>
+    </div>` : '';
   overlay.innerHTML=`<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px">
     <div style="width:36px;height:4px;background:#E0E0E0;border-radius:2px;margin:0 auto 18px"></div>
     <div style="font-size:17px;font-weight:800;color:var(--g6);margin-bottom:16px">Log ${label}</div>
+    ${sugarToggle}
     <div class="fld">
       <div class="flbl">Reading (${unit})</div>
       <input class="inp" id="vital-val" placeholder="${placeholder}" type="text" inputmode="decimal" style="font-size:20px;font-weight:700;text-align:center"/>
     </div>
     <div class="fld">
       <div class="flbl">Date</div>
-      <input class="inp" id="vital-date" type="date" value="${today()}"/>
+      <input class="inp" id="vital-date" type="date" value="${today()}" max="${today()}"/>
     </div>
     <div class="fld">
       <div class="flbl">Note (optional)</div>
@@ -5607,7 +5683,25 @@ function showLogVital(key, label, unit, placeholder, color){
   </div>`;
   overlay.addEventListener('click',function(e){ if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  window._sugarCtx = 'fasting';
   setTimeout(function(){ document.getElementById('vital-val')?.focus(); },100);
+}
+function setSugarCtx(ctx){
+  window._sugarCtx = ctx;
+  ['fasting','postmeal','random'].forEach(function(c){
+    const el = document.getElementById('sctx-'+c);
+    if(!el) return;
+    const on = c===ctx;
+    el.style.background = on?'var(--blue)':'var(--g1)';
+    el.style.color = on?'#fff':'var(--g5)';
+    el.style.borderColor = on?'var(--blue)':'var(--g2)';
+  });
+  const hint = document.getElementById('sugar-ctx-hint');
+  if(hint){
+    if(ctx==='fasting') hint.textContent='Fasting: Normal <100 · Pre-diabetic 100–125 · Diabetic ≥126 mg/dL';
+    else if(ctx==='postmeal') hint.textContent='Post-meal (2h): Normal <140 · Pre-diabetic 140–199 · Diabetic ≥200 mg/dL';
+    else hint.textContent='Random: Normal <140 · High ≥200 with symptoms may indicate diabetes';
+  }
 }
 
 function saveVital(key, label){
@@ -5617,10 +5711,13 @@ function saveVital(key, label){
   const entry = {
     id: 'vt'+Date.now(), type:key, label:label,
     value:val, date:document.getElementById('vital-date')?.value||today(),
-    note:document.getElementById('vital-note')?.value||''
+    note:document.getElementById('vital-note')?.value||'',
+    sugarCtx: key==='sugar' ? (window._sugarCtx||'fasting') : undefined
   };
   const vitals = getVitals();
   vitals.push(entry); saveVitals(vitals);
+  // Auto-update profile weight when a weight vital is saved
+  if(key==='weight'){ const n=parseFloat(val); if(!isNaN(n)&&n>0){ U.weight=n; saveUser(); } }
   const vault=getVaultItems();
   vault.unshift({ id:'v'+Date.now(), type:'vital', icon:'📊', title:label+': '+val, subtitle:entry.note||'Vital reading logged', date:entry.date });
   saveVaultItems(vault);
@@ -5756,7 +5853,7 @@ function rHealthScore(){
   ];
 
   SCR.innerHTML=`<div class="sc">
-  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Health Score</div><div class="bk-s">Your health data completeness score</div></div></div>
+  <div class="brow"><div class="bk" onclick="goBack()">←</div><div style="flex:1"><div class="bk-t">Health Tracking Score</div><div class="bk-s">How actively you track your health data</div></div></div>
   <div class="p16" style="padding-top:20px">
 
     <!-- Big score circle -->
@@ -5791,7 +5888,7 @@ function rHealthScore(){
 
     <div class="card" style="background:var(--bl);border:1px solid #C5D9F8;cursor:default">
       <div style="font-size:12px;font-weight:700;color:var(--bd);margin-bottom:5px">ℹ️ About this score</div>
-      <div style="font-size:11px;color:#185EA5;line-height:1.6">This score measures how well you are tracking your health data in HealthVault. It is not a medical assessment of your actual health status.</div>
+      <div style="font-size:11px;color:#185EA5;line-height:1.6">This score measures how actively you are logging health data in HealthVault — not your actual health status. A healthy person who logs nothing scores low; someone managing multiple conditions who logs diligently scores high. Use it as a motivation to track consistently.</div>
     </div>
     <div class="pb"></div>
   </div></div>`;
@@ -6114,11 +6211,11 @@ function saveWaterLog(o){ try{localStorage.setItem('hv_water',JSON.stringify(o))
 
 /* ══ 1. TODAY'S MEDICINE WIDGET ══ */
 function getTakenToday(){
-  const key='hv_taken_'+today();
+  const key='hv_taken_'+activeMemberId()+'_'+today();
   try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];}
 }
 function setTakenToday(arr){
-  const key='hv_taken_'+today();
+  const key='hv_taken_'+activeMemberId()+'_'+today();
   try{localStorage.setItem(key,JSON.stringify(arr));}catch(e){}
 }
 function renderTodayMedWidget(){
@@ -6627,6 +6724,7 @@ function showAddAppt(existingId){
   const ex=existingId?getAppointments().find(a=>a.id===existingId):null;
   const now=new Date(); now.setDate(now.getDate()+1); now.setHours(10,0,0,0);
   const defDT=now.toISOString().slice(0,16);
+  const minDT=new Date().toISOString().slice(0,16);
   const overlay=document.createElement('div');
   overlay.id='appt-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
@@ -6639,7 +6737,7 @@ function showAddAppt(existingId){
         ${['General','Cardiologist','Dentist','Dermatologist','Orthopaedic','Eye Doctor','Gynaecologist','Neurologist','Paediatrician','ENT','Other'].map(s=>`<option ${ex&&ex.specialty===s?'selected':''}>${s}</option>`).join('')}
       </select></div>
     <div class="fld"><div class="flbl">Hospital / Clinic</div><input class="inp" id="appt-hosp" placeholder="e.g. Apollo Hospital, Chennai" value="${ex?ex.hospital:''}"/></div>
-    <div class="fld"><div class="flbl">Date & Time *</div><input class="inp" id="appt-dt" type="datetime-local" value="${ex?ex.datetime.slice(0,16):defDT}"/></div>
+    <div class="fld"><div class="flbl">Date & Time *</div><input class="inp" id="appt-dt" type="datetime-local" value="${ex?ex.datetime.slice(0,16):defDT}" min="${minDT}"/></div>
     <div class="fld"><div class="flbl">Notes</div><input class="inp" id="appt-notes" placeholder="e.g. Bring blood reports, fasting required" value="${ex?ex.notes:''}"/></div>
     <div style="background:var(--gl);border-radius:10px;padding:10px 12px;margin-bottom:14px">
       <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:8px">🔔 Reminders</div>
@@ -6665,6 +6763,7 @@ function saveAppt(existingId){
   if(!doc){alert('Please enter the doctor name.');return;}
   const dt=document.getElementById('appt-dt')?.value;
   if(!dt){alert('Please select date and time.');return;}
+  if(new Date(dt)<new Date()){alert('Please select a future date and time for the appointment.');window._apptSaving=false;return;}
   const appt={
     id:existingId||('ap'+Date.now()),
     doctor:doc, specialty:document.getElementById('appt-spec')?.value||'General',
@@ -6955,6 +7054,19 @@ function saveCycle(){
     return;
   }
 
+  // Also check: does our end date overlap with a future cycle's start?
+  if(endVal){
+    const endOverlap = cycles.find(cy => cy.start > startVal && cy.start <= endVal);
+    if(endOverlap){
+      if(warnEl){
+        warnEl.innerHTML = '⚠️ <b>End date overlap.</b> Your end date <b>' + fmtDate(endVal) + '</b> overlaps with a cycle already logged from <b>' + fmtDate(endOverlap.start) + '</b>. Please shorten the end date.';
+        warnEl.style.display = 'block';
+      }
+      window._cySaving = false;
+      return;
+    }
+  }
+
   // All good — save
   const entry = {
     id:       'cy' + Date.now(),
@@ -7027,8 +7139,74 @@ const INTERACTION_DB = [
   {a:'augmentin',b:'methotrexate',sev:'severe',effect:'Augmentin reduces methotrexate clearance → toxicity risk.',action:'Avoid combination. Consult oncology/rheumatology.'},
   {a:'paracetamol',b:'ibuprofen',sev:'safe',effect:'Generally safe for short-term combined use. Both work differently.',action:'Can be alternated every 3-4 hours for better pain control. Avoid regular long-term combined use.'},
 ];
+/* Indian brand name → generic name mapping for interaction checker */
+const BRAND_TO_GENERIC = {
+  // Paracetamol brands
+  'crocin':'paracetamol','calpol':'paracetamol','dolo':'paracetamol','dolo 650':'paracetamol',
+  'panadol':'paracetamol','pyrigesic':'paracetamol','febrinil':'paracetamol','metacin':'paracetamol',
+  // Ibuprofen brands
+  'brufen':'ibuprofen','advil':'ibuprofen','nurofen':'ibuprofen','ibugesic':'ibuprofen',
+  // Combo paracetamol+ibuprofen
+  'combiflam':'ibuprofen', // flag ibuprofen as the risky component
+  // Aspirin brands
+  'ecosprin':'aspirin','disprin':'aspirin','colsprin':'aspirin',
+  // Metformin brands
+  'glycomet':'metformin','glucophage':'metformin','obimet':'metformin','gluconorm':'metformin',
+  'diabex':'metformin','glyciphage':'metformin','gluformin':'metformin',
+  // Atorvastatin brands
+  'atorva':'atorvastatin','lipitor':'atorvastatin','storvas':'atorvastatin','atorfit':'atorvastatin',
+  // Warfarin brands
+  'warf':'warfarin','coumadin':'warfarin','uniwarfin':'warfarin',
+  // Amlodipine brands
+  'amlokind':'amlodipine','amlong':'amlodipine','stamlo':'amlodipine','norvasc':'amlodipine',
+  // Ramipril / lisinopril
+  'cardace':'ramipril','hopace':'ramipril','tritace':'ramipril',
+  'lisoril':'lisinopril','zestril':'lisinopril','cipril':'lisinopril',
+  // Clopidogrel
+  'clopilet':'clopidogrel','plavix':'clopidogrel','deplatt':'clopidogrel',
+  // Omeprazole / pantoprazole
+  'omez':'omeprazole','prilosec':'omeprazole','ocid':'omeprazole',
+  'pantocid':'pantoprazole','pan':'pantoprazole','pantop':'pantoprazole','pantodac':'pantoprazole',
+  // Metronidazole
+  'flagyl':'metronidazole','metrogyl':'metronidazole',
+  // Sertraline / fluoxetine
+  'zoloft':'sertraline','serta':'sertraline','serlin':'sertraline',
+  'prozac':'fluoxetine','fludac':'fluoxetine','flunil':'fluoxetine',
+  // Alprazolam / clonazepam
+  'alprax':'alprazolam','restyl':'alprazolam','trika':'alprazolam',
+  'rivotril':'clonazepam','lonazep':'clonazepam',
+  // Ciprofloxacin / amoxicillin
+  'ciplox':'ciprofloxacin','cifran':'ciprofloxacin',
+  'mox':'amoxicillin','amoxil':'amoxicillin','novamox':'amoxicillin',
+  // Digoxin / amiodarone
+  'lanoxin':'digoxin','cordarone':'amiodarone','tachyra':'amiodarone',
+  // Levothyroxine
+  'thyronorm':'levothyroxine','eltroxin':'levothyroxine','thyrox':'levothyroxine',
+  // Sildenafil
+  'viagra':'sildenafil','manforce':'sildenafil','penegra':'sildenafil',
+  // Prednisolone
+  'wysolone':'prednisolone','omnacortil':'prednisolone',
+  // Tramadol
+  'tramazac':'tramadol','ultracet':'tramadol',
+  // Iron supplements
+  'ferrous':'iron','fefol':'iron','livogen':'iron','fersolate':'iron',
+  // Augmentin
+  'augmentin':'augmentin','clavam':'augmentin','moxclav':'augmentin',
+  // Calcium
+  'shelcal':'calcium','calcimax':'calcium','cipcal':'calcium',
+  // Metoprolol
+  'betaloc':'metoprolol','metolar':'metoprolol','lopressor':'metoprolol',
+};
+
+function normaliseMedName(n){
+  // Strip dosage forms and strengths
+  const stripped = n.toLowerCase().replace(/\s*(tablet|cap|capsule|mg|ml|mcg|tab|sr|xr|er|cr|od|bd|tds|qid|forte|plus|ds)\b.*/gi,'').trim();
+  // Check brand map
+  return BRAND_TO_GENERIC[stripped] || stripped;
+}
+
 function findInteractions(medNames){
-  const normalised=medNames.map(n=>n.toLowerCase().replace(/\s*(tablet|cap|capsule|mg|ml|tab|sr|xr)\b.*/gi,'').trim());
+  const normalised=medNames.map(n=>normaliseMedName(n));
   const results=[];
   for(let i=0;i<normalised.length;i++){
     for(let j=i+1;j<normalised.length;j++){
