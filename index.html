@@ -6641,9 +6641,16 @@ function showAddAppt(existingId){
     <div class="fld"><div class="flbl">Hospital / Clinic</div><input class="inp" id="appt-hosp" placeholder="e.g. Apollo Hospital, Chennai" value="${ex?ex.hospital:''}"/></div>
     <div class="fld"><div class="flbl">Date & Time *</div><input class="inp" id="appt-dt" type="datetime-local" value="${ex?ex.datetime.slice(0,16):defDT}"/></div>
     <div class="fld"><div class="flbl">Notes</div><input class="inp" id="appt-notes" placeholder="e.g. Bring blood reports, fasting required" value="${ex?ex.notes:''}"/></div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px;background:var(--gl);border-radius:10px;cursor:pointer" onclick="if(event.target.tagName!=='INPUT'){document.getElementById('appt-rem').click();}">
-      <input type="checkbox" id="appt-rem" style="width:18px;height:18px;cursor:pointer" ${ex&&ex.reminder?'checked':''}/>
-      <label for="appt-rem" onclick="event.stopPropagation()" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">🔔 Remind me 1 hour before</label>
+    <div style="background:var(--gl);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:#1B5E20;margin-bottom:8px">🔔 Reminders</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer" onclick="if(event.target.tagName!=='INPUT'){document.getElementById('appt-rem-1d').click();}">
+        <input type="checkbox" id="appt-rem-1d" style="width:18px;height:18px;cursor:pointer;flex-shrink:0" ${ex&&ex.reminder1d?'checked':''}/>
+        <label for="appt-rem-1d" onclick="event.stopPropagation()" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">1 day before</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="if(event.target.tagName!=='INPUT'){document.getElementById('appt-rem-6h').click();}">
+        <input type="checkbox" id="appt-rem-6h" style="width:18px;height:18px;cursor:pointer;flex-shrink:0" ${ex&&ex.reminder6h?'checked':''}/>
+        <label for="appt-rem-6h" onclick="event.stopPropagation()" style="font-size:13px;font-weight:600;color:#1B5E20;cursor:pointer">6 hours before</label>
+      </div>
     </div>
     <button class="btn" onclick="saveAppt(${existingId?`'${existingId}'`:'null'})">✅ ${ex?'Update':'Save'} Appointment</button>
     <button class="btn2" onclick="this.closest('[id]')?.remove()||this.closest('[style*=fixed]')?.remove()">Cancel</button>
@@ -6664,33 +6671,49 @@ function saveAppt(existingId){
     hospital:document.getElementById('appt-hosp')?.value.trim()||'',
     datetime:new Date(dt).toISOString(),
     notes:document.getElementById('appt-notes')?.value.trim()||'',
-    reminder:document.getElementById('appt-rem')?.checked||false
+    reminder1d:document.getElementById('appt-rem-1d')?.checked||false,
+    reminder6h:document.getElementById('appt-rem-6h')?.checked||false
   };
   const appts=getAppointments();
   if(existingId){ const i=appts.findIndex(a=>a.id===existingId); if(i>=0)appts[i]=appt; else appts.push(appt); }
   else appts.push(appt);
   saveAppointments(appts);
-  // Schedule reminder — push to SW so it survives tab close
-  if(appt.reminder){
+  // Schedule reminders — push to SW so they survive tab close
+  const hasReminder = appt.reminder1d || appt.reminder6h;
+  if(hasReminder){
     if(Notification.permission==='granted'){
-      const ms=new Date(appt.datetime)-Date.now()-3600000;
-      if(ms>0){
-        // Store in SW via message so reminder survives page close
-        if('serviceWorker' in navigator){
-          navigator.serviceWorker.ready.then(reg=>{
-            if(reg.active) reg.active.postMessage({
-              type:'SET_APPT_REMINDER',
-              clientId: getClientId(),
-              id: appt.id,
-              fireAt: new Date(appt.datetime).getTime()-3600000,
-              title:'📅 Appointment in 1 hour',
-              body:`Dr. ${appt.doctor}${appt.hospital?' · '+appt.hospital:''}`
-            });
-          }).catch(()=>{});
-        }
-        // Page-side fallback (works while app is open)
-        setTimeout(()=>fireNotification(`📅 Appointment in 1 hour`,`Dr. ${appt.doctor}${appt.hospital?' · '+appt.hospital:''}`,'appt-'+appt.id),ms);
+      const apptMs = new Date(appt.datetime).getTime();
+      const docBody = `Dr. ${appt.doctor}${appt.hospital?' · '+appt.hospital:''}`;
+      const remDefs = [
+        { key:'1d', offset:86400000, title:'📅 Appointment Tomorrow' },
+        { key:'6h', offset:21600000, title:'📅 Appointment in 6 hours' }
+      ];
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.ready.then(reg=>{
+          if(!reg.active) return;
+          // Clear any existing reminders for this appt first
+          ['1d','6h'].forEach(k=>{
+            reg.active.postMessage({ type:'CLEAR_APPT_REMINDER', clientId:getClientId(), id:appt.id+'-'+k });
+          });
+          remDefs.forEach(r=>{
+            if(!appt['reminder'+r.key]) return;
+            const fireAt = apptMs - r.offset;
+            if(fireAt > Date.now()){
+              reg.active.postMessage({
+                type:'SET_APPT_REMINDER', clientId:getClientId(),
+                id: appt.id+'-'+r.key, fireAt,
+                title: r.title, body: docBody
+              });
+            }
+          });
+        }).catch(()=>{});
       }
+      // Page-side fallback (works while app is open)
+      remDefs.forEach(r=>{
+        if(!appt['reminder'+r.key]) return;
+        const ms = apptMs - r.offset - Date.now();
+        if(ms>0) setTimeout(()=>fireNotification(r.title, docBody, 'appt-'+appt.id+'-'+r.key), ms);
+      });
     } else {
       requestNotifPermission().then(granted=>{
         if(!granted) alert('Please allow notifications to receive appointment reminders.');
@@ -6708,7 +6731,10 @@ function deleteAppt(id){
   // Also clear the SW reminder for this appointment
   if('serviceWorker' in navigator){
     navigator.serviceWorker.ready.then(reg=>{
-      if(reg.active) reg.active.postMessage({ type:'CLEAR_APPT_REMINDER', clientId:getClientId(), id });
+      if(!reg.active) return;
+      ['1d','6h'].forEach(k=>{
+        reg.active.postMessage({ type:'CLEAR_APPT_REMINDER', clientId:getClientId(), id:id+'-'+k });
+      });
     }).catch(()=>{});
   }
   rAppointments();
